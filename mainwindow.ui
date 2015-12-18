@@ -24,104 +24,236 @@
        <attribute name="title">
         <string>Settings</string>
        </attribute>
-       <widget class="QGroupBox" name="groupBox_serial">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>651</width>
-          <height>161</height>
-         </rect>
-        </property>
-        <property name="title">
-         <string>Serial</string>
-        </property>
-        <widget class="QComboBox" name="comboBox_serialDevices">
-         <property name="geometry">
-          <rect>
-           <x>30</x>
-           <y>50</y>
-           <width>411</width>
-           <height>22</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="pushButton_serialConnect">
-         <property name="geometry">
-          <rect>
-           <x>470</x>
-           <y>50</y>
-           <width>81</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Connect</string>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="pushButton_serialDisconnect">
-         <property name="geometry">
-          <rect>
-           <x>560</x>
-           <y>50</y>
-           <width>81</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Disconnect</string>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="pushButton_serialRefresh">
-         <property name="geometry">
-          <rect>
-           <x>30</x>
-           <y>90</y>
-           <width>81</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Refresh List</string>
-         </property>
-        </widget>
-       </widget>
-       <widget class="QGroupBox" name="groupBox_file">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>190</y>
-          <width>651</width>
-          <height>191</height>
-         </rect>
-        </property>
-        <property name="title">
-         <string>File</string>
-        </property>
-        <widget class="QLineEdit" name="lineEdit_filePath">
-         <property name="geometry">
-          <rect>
-           <x>30</x>
-           <y>40</y>
-           <width>411</width>
-           <height>22</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="pushButton_fileLoad">
-         <property name="geometry">
-          <rect>
-           <x>470</x>
-           <y>40</y>
-           <width>81</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Load File</string>
-         </property>
-        </widget>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QGroupBox" name="groupBox_serial">
+            <property name="minimumSize">
+             <size>
+              <width>500</width>
+              <height>150</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>Serial</string>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <layout class="QFormLayout" name="formLayout">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_port">
+                 <property name="text">
+                  <string>Port: </string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="comboBox_serialPort">
+                 <property name="editable">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>Baud Rate: </string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QComboBox" name="comboBox_parity"/>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_2">
+                 <property name="text">
+                  <string>Parity: </string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QComboBox" name="comboBox_baud"/>
+               </item>
+               <item row="3" column="1">
+                <widget class="QComboBox" name="comboBox_bytesize"/>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>Bytesize: </string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QComboBox" name="comboBox_stopbits"/>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>Stopbits: </string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_5">
+                 <item>
+                  <widget class="QPushButton" name="pushButton_serialRefresh">
+                   <property name="text">
+                    <string>Refresh List</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton_serialConnect">
+                   <property name="text">
+                    <string>Connect</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_2">
+                 <item>
+                  <widget class="QRadioButton" name="radioButton_XonXoff">
+                   <property name="text">
+                    <string>XON/XOFF</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="radioButton_RtsCts">
+                   <property name="text">
+                    <string>RTS/CTS</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="radioButton_DsrDtr">
+                   <property name="text">
+                    <string>DSR/DTR</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_doPlot">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>Plot!</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeType">
+                  <enum>QSizePolicy::Minimum</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_file">
+            <property name="minimumSize">
+             <size>
+              <width>500</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>File</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <layout class="QFormLayout" name="formLayout_2">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_5">
+                   <property name="text">
+                    <string>Path: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="lineEdit_filePath"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_fileLoad">
+                 <property name="text">
+                  <string>Load File</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+            <zorder>lineEdit_filePath</zorder>
+            <zorder>pushButton_fileLoad</zorder>
+            <zorder>groupBox_serial</zorder>
+            <zorder>groupBox_serial</zorder>
+            <zorder>groupBox_serial</zorder>
+            <zorder>label_5</zorder>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>145</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_view">
        <attribute name="title">

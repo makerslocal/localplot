@@ -32,6 +32,7 @@ public slots:
 
     void handle_serialOpened();
     void handle_serialClosed();
+    void handle_serialConnectBtn();
 
 signals:
 
