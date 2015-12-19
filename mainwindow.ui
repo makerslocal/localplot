@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_settings">
        <attribute name="title">
@@ -208,9 +208,16 @@
                 </layout>
                </item>
                <item>
+                <widget class="QPushButton" name="pushButton_fileSelect">
+                 <property name="text">
+                  <string>Select File</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QPushButton" name="pushButton_fileLoad">
                  <property name="text">
-                  <string>Load File</string>
+                  <string>Load</string>
                  </property>
                 </widget>
                </item>

@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->pushButton_serialRefresh, SIGNAL(clicked()), this, SLOT(do_refreshSerialList()));
     connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
+    connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
+    connect(ui->pushButton_fileLoad, SIGNAL(clicked()), this, SLOT(do_loadFile()));
 
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
@@ -21,10 +23,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBox_parity->insertItems(0, QStringList() << "None" << "Odd" << "Even" << "Mark" << "Space");
     ui->comboBox_stopbits->insertItems(0, QStringList() << "1" << "1.5" << "2");
     do_refreshSerialList();
+
+    ui->graphicsView_view->setScene(&plotScene);
 }
 
 MainWindow::~MainWindow()
 {
+    do_closeSerial();
+
     delete ui;
 }
 
@@ -151,6 +157,7 @@ void MainWindow::do_closeSerial()
 {
     if (!serialBuffer.isNull())
     {
+        serialBuffer->close();
         serialBuffer.clear();
     }
     handle_serialClosed();
@@ -174,6 +181,13 @@ void MainWindow::handle_serialOpened()
     ui->pushButton_serialConnect->setText("Disconnect");
     ui->comboBox_serialPort->setEnabled(false);
     ui->pushButton_serialRefresh->setEnabled(false);
+    ui->comboBox_baud->setEnabled(false);
+    ui->comboBox_bytesize->setEnabled(false);
+    ui->comboBox_parity->setEnabled(false);
+    ui->comboBox_stopbits->setEnabled(false);
+    ui->radioButton_DsrDtr->setEnabled(false);
+    ui->radioButton_RtsCts->setEnabled(false);
+    ui->radioButton_XonXoff->setEnabled(false);
 }
 
 void MainWindow::handle_serialClosed()
@@ -182,8 +196,106 @@ void MainWindow::handle_serialClosed()
     ui->pushButton_serialConnect->setText("Connect");
     ui->comboBox_serialPort->setEnabled(true);
     ui->pushButton_serialRefresh->setEnabled(true);
+    ui->comboBox_baud->setEnabled(true);
+    ui->comboBox_bytesize->setEnabled(true);
+    ui->comboBox_parity->setEnabled(true);
+    ui->comboBox_stopbits->setEnabled(true);
+    ui->radioButton_DsrDtr->setEnabled(true);
+    ui->radioButton_RtsCts->setEnabled(true);
+    ui->radioButton_XonXoff->setEnabled(true);
 }
 
+void MainWindow::handle_selectFileBtn()
+{
+    QString fileName;
+
+    fileName = QFileDialog::getOpenFileName(this,
+        tr("Open File"), "", tr("HPGL Files (*.hpgl *.HPGL)"));
+
+    ui->lineEdit_filePath->setText(fileName);
+}
+
+int MainWindow::get_nextInt(QString input, int * index)
+{
+    QChar tmp = input[*index];
+    QString buffer = "";
+
+    while (tmp != ',' && tmp != ';')
+    {
+        buffer.append(tmp);
+        tmp = input[++*index];
+    }
+    return(atoi(buffer.toStdString().c_str()));
+}
+
+void MainWindow::do_loadFile()
+{
+    if (inputFile.isOpen())
+    {
+        inputFile.close();
+    }
+    inputFile.setFileName(ui->lineEdit_filePath->text());
+    inputFile.open(QIODevice::ReadOnly);
+    cmdList.clear();
+    ui->textBrowser_read->clear();
+    while (!inputFile.atEnd())
+    {
+        QString buffer = "";
+        char tmp = 0;
+        while (tmp != ';')
+        {
+            inputFile.read(&tmp, 1);
+            buffer += tmp;
+        }
+        cmdList.append(buffer);
+        ui->textBrowser_read->append(buffer);
+    }
+
+    plotScene.clear();
+
+    int curX, curY;
+    for (int i = 0; i < cmdList.count(); i++)
+    {
+        if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'D')
+        {
+            ui->textBrowser_console->append("Found PD: " + cmdList.at(i));
+            int charIndex = 2;
+            int nextX, nextY;
+            while (cmdList.at(i)[charIndex] != ';')
+            {
+                nextX = get_nextInt(cmdList.at(i), &charIndex);
+                charIndex++;
+                nextY = get_nextInt(cmdList.at(i), &charIndex);
+                plotScene.addLine(curX, -curY, nextX, -nextY);
+                ui->textBrowser_console->append(timeStamp() + "Adding line [" +
+                                                QString::number(curX) + "," + QString::number(curY) +
+                                                "] to [" + QString::number(nextX) + "," +
+                                                QString::number(nextY) + "].");
+                curX = nextX;
+                curY = nextY;
+            }
+        }
+        else if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'U')
+        {
+            ui->textBrowser_console->append("Found PU: " + cmdList.at(i));
+            int charIndex = 2;
+            while (cmdList.at(i)[charIndex] != ';')
+            {
+                curX = get_nextInt(cmdList.at(i), &charIndex);
+                charIndex++;
+                curY = get_nextInt(cmdList.at(i), &charIndex);
+            }
+        }
+    }
+
+    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
+    ui->graphicsView_view->show();
+}
+
+void MainWindow::do_plot()
+{
+    //serialBuffer->write();
+}
 
 
 
