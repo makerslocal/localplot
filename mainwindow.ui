@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_settings">
        <attribute name="title">
@@ -151,7 +151,7 @@
                <item>
                 <widget class="QPushButton" name="pushButton_doPlot">
                  <property name="enabled">
-                  <bool>false</bool>
+                  <bool>true</bool>
                  </property>
                  <property name="text">
                   <string>Plot!</string>
@@ -224,12 +224,6 @@
               </layout>
              </item>
             </layout>
-            <zorder>lineEdit_filePath</zorder>
-            <zorder>pushButton_fileLoad</zorder>
-            <zorder>groupBox_serial</zorder>
-            <zorder>groupBox_serial</zorder>
-            <zorder>groupBox_serial</zorder>
-            <zorder>label_5</zorder>
            </widget>
           </item>
           <item>

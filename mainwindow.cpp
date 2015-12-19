@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->pushButton_fileLoad, SIGNAL(clicked()), this, SLOT(do_loadFile()));
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
@@ -242,13 +243,16 @@ void MainWindow::do_loadFile()
     {
         QString buffer = "";
         char tmp = 0;
-        while (tmp != ';')
+        while (tmp != ';' && !inputFile.atEnd())
         {
             inputFile.read(&tmp, 1);
             buffer += tmp;
         }
-        cmdList.append(buffer);
-        ui->textBrowser_read->append(buffer);
+        if (buffer.endsWith(";"))
+        {
+            cmdList.append(buffer);
+            ui->textBrowser_read->append(buffer);
+        }
     }
 
     plotScene.clear();
@@ -259,13 +263,15 @@ void MainWindow::do_loadFile()
         if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'D')
         {
             ui->textBrowser_console->append("Found PD: " + cmdList.at(i));
-            int charIndex = 2;
+            int charIndex = 1;
             int nextX, nextY;
             while (cmdList.at(i)[charIndex] != ';')
             {
+                charIndex++;
                 nextX = get_nextInt(cmdList.at(i), &charIndex);
                 charIndex++;
                 nextY = get_nextInt(cmdList.at(i), &charIndex);
+
                 plotScene.addLine(curX, -curY, nextX, -nextY);
                 ui->textBrowser_console->append(timeStamp() + "Adding line [" +
                                                 QString::number(curX) + "," + QString::number(curY) +
@@ -278,9 +284,10 @@ void MainWindow::do_loadFile()
         else if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'U')
         {
             ui->textBrowser_console->append("Found PU: " + cmdList.at(i));
-            int charIndex = 2;
+            int charIndex = 1;
             while (cmdList.at(i)[charIndex] != ';')
             {
+                charIndex++;
                 curX = get_nextInt(cmdList.at(i), &charIndex);
                 charIndex++;
                 curY = get_nextInt(cmdList.at(i), &charIndex);
@@ -294,7 +301,16 @@ void MainWindow::do_loadFile()
 
 void MainWindow::do_plot()
 {
-    //serialBuffer->write();
+    if (!serialBuffer->isOpen() || cmdList.isEmpty())
+    {
+        ui->textBrowser_console->append(timeStamp() + "Can't plot!");
+        return;
+    }
+    for (int i = 0; i < cmdList.count(); i++)
+    {
+        int size = cmdList.at(i).length();
+        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
+    }
 }
 
 
