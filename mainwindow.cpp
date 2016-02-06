@@ -1,6 +1,23 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+/**
+ * Reference: http://cstep.luberth.com/HPGL.pdf
+ *
+ * Language Structure:
+ * Using Inkscape's default format -> XXy1,y1,y2,y2;
+ * Two uppercase characters followed by a CSV list and terminated with a semicolon.
+ *
+ * HPGL Structure:
+ * Preamble: list of cached commands
+ * Pathing: parsed structure of points and state
+ * Postamble: list of cached commands
+ *
+ * Path Vertex Object:
+ * State: up or down
+ * Vertex coordinate: in graphic units (1/1016") (0.025mm)
+ */
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -239,61 +256,76 @@ void MainWindow::do_loadFile()
     inputFile.open(QIODevice::ReadOnly);
     cmdList.clear();
     ui->textBrowser_read->clear();
-    while (!inputFile.atEnd())
+//    while (!inputFile.atEnd())
+//    {
+//        QString buffer = "";
+//        char tmp = 0;
+//        while (tmp != ';' && !inputFile.atEnd())
+//        {
+//            inputFile.read(&tmp, 1);
+//            buffer += tmp;
+//        }
+//        if (buffer.endsWith(";"))
+//        {
+//            hpgl_cmd aparser = hpgl_cmd(buffer);
+//            cmdList.append(aparser);
+//            ui->textBrowser_read->append(cmdList.last().print());
+//        }
+//    }
+
+    QString buffer = "";
+    QTextStream fstream(&inputFile);
+    buffer = fstream.readAll();
+    buffer.remove('\n');
+    int numCmds = buffer.count(';');
+    qDebug() << "File: " << buffer;
+    for (int i = 0; i < numCmds; i++)
     {
-        QString buffer = "";
-        char tmp = 0;
-        while (tmp != ';' && !inputFile.atEnd())
-        {
-            inputFile.read(&tmp, 1);
-            buffer += tmp;
-        }
-        if (buffer.endsWith(";"))
-        {
-            cmdList.append(buffer);
-            ui->textBrowser_read->append(buffer);
-        }
+        QString tmp;
+        tmp = buffer.section(';', i, i);
+        cmdList.push_back(hpgl_cmd(tmp));
+        qDebug() << "Just added: " << cmdList.back().print();
     }
 
     plotScene.clear();
 
-    int curX, curY;
-    for (int i = 0; i < cmdList.count(); i++)
-    {
-        if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'D')
-        {
-            ui->textBrowser_console->append("Found PD: " + cmdList.at(i));
-            int charIndex = 1;
-            int nextX, nextY;
-            while (cmdList.at(i)[charIndex] != ';')
-            {
-                charIndex++;
-                nextX = get_nextInt(cmdList.at(i), &charIndex);
-                charIndex++;
-                nextY = get_nextInt(cmdList.at(i), &charIndex);
+//    int curX, curY;
+//    for (int i = 0; i < cmdList.count(); i++)
+//    {
+//        if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'D')
+//        {
+//            ui->textBrowser_console->append("Found PD: " + cmdList.at(i));
+//            int charIndex = 1;
+//            int nextX, nextY;
+//            while (cmdList.at(i)[charIndex] != ';')
+//            {
+//                charIndex++;
+//                nextX = get_nextInt(cmdList.at(i), &charIndex);
+//                charIndex++;
+//                nextY = get_nextInt(cmdList.at(i), &charIndex);
 
-                plotScene.addLine(curX, -curY, nextX, -nextY);
-                ui->textBrowser_console->append(timeStamp() + "Adding line [" +
-                                                QString::number(curX) + "," + QString::number(curY) +
-                                                "] to [" + QString::number(nextX) + "," +
-                                                QString::number(nextY) + "].");
-                curX = nextX;
-                curY = nextY;
-            }
-        }
-        else if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'U')
-        {
-            ui->textBrowser_console->append("Found PU: " + cmdList.at(i));
-            int charIndex = 1;
-            while (cmdList.at(i)[charIndex] != ';')
-            {
-                charIndex++;
-                curX = get_nextInt(cmdList.at(i), &charIndex);
-                charIndex++;
-                curY = get_nextInt(cmdList.at(i), &charIndex);
-            }
-        }
-    }
+//                plotScene.addLine(curX, -curY, nextX, -nextY);
+//                ui->textBrowser_console->append(timeStamp() + "Adding line [" +
+//                                                QString::number(curX) + "," + QString::number(curY) +
+//                                                "] to [" + QString::number(nextX) + "," +
+//                                                QString::number(nextY) + "].");
+//                curX = nextX;
+//                curY = nextY;
+//            }
+//        }
+//        else if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'U')
+//        {
+//            ui->textBrowser_console->append("Found PU: " + cmdList.at(i));
+//            int charIndex = 1;
+//            while (cmdList.at(i)[charIndex] != ';')
+//            {
+//                charIndex++;
+//                curX = get_nextInt(cmdList.at(i), &charIndex);
+//                charIndex++;
+//                curY = get_nextInt(cmdList.at(i), &charIndex);
+//            }
+//        }
+//    }
 
     ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
     ui->graphicsView_view->show();
@@ -306,11 +338,11 @@ void MainWindow::do_plot()
         ui->textBrowser_console->append(timeStamp() + "Can't plot!");
         return;
     }
-    for (int i = 0; i < cmdList.count(); i++)
-    {
-        int size = cmdList.at(i).length();
-        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
-    }
+//    for (int i = 0; i < cmdList.count(); i++)
+//    {
+//        int size = cmdList.at(i).length();
+//        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
+//    }
 }
 
 

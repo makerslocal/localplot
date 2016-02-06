@@ -16,6 +16,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
 
+#include "hpgl_cmd.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -50,7 +52,7 @@ private:
     QSerialPortInfo serialPorts;
     QPointer<QSerialPort> serialBuffer;
     QFile inputFile;
-    QVector<QString> cmdList;
+    QList<hpgl_cmd> cmdList;
     QGraphicsScene plotScene;
 
 };
