@@ -16,6 +16,12 @@
  * Path Vertex Object:
  * State: up or down
  * Vertex coordinate: in graphic units (1/1016") (0.025mm)
+ *
+ * Program file structure
+ * hpgl_coord - Structure for storing simple coordinates, may be merged later
+ * hpgl_cmd - Structure for storing a single hpgl command
+ * hpgl_obj - An hpgl object, or cluster of commands that share similar
+ *             properties and transformations.
  */
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -286,6 +292,8 @@ void MainWindow::do_loadFile()
         cmdList.push_back(hpgl_cmd(tmp));
         qDebug() << "Just added: " << cmdList.back().print();
     }
+
+    // Set up new graphics view.
 
     plotScene.clear();
 
