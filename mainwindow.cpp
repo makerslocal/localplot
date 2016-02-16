@@ -8,11 +8,6 @@
  * Using Inkscape's default format -> XXy1,y1,y2,y2;
  * Two uppercase characters followed by a CSV list and terminated with a semicolon.
  *
- * HPGL Structure:
- * Preamble: list of cached commands
- * Pathing: parsed structure of points and state
- * Postamble: list of cached commands
- *
  * Path Vertex Object:
  * State: up or down
  * Vertex coordinate: in graphic units (1/1016") (0.025mm)

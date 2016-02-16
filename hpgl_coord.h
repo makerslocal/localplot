@@ -21,7 +21,7 @@ public:
     QString print();
 
 public slots:
-    //int ();
+    //
 
 protected:
     int x;

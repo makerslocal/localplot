@@ -4,7 +4,7 @@
  * Object class
  */
 
-hpgl_cmd::hpgl_cmd()
+hpgl_obj::hpgl_obj()
 {
     opcode = "NA";
     verts.clear();

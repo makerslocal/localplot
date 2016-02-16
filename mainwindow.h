@@ -16,7 +16,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
 
-#include "hpgl_cmd.h"
+#include "hpgl_obj.h"
 
 namespace Ui {
 class MainWindow;
@@ -45,16 +45,15 @@ public slots:
     void handle_selectFileBtn();
 
 signals:
-
+    //
 
 private:
     Ui::MainWindow *ui;
     QSerialPortInfo serialPorts;
     QPointer<QSerialPort> serialBuffer;
     QFile inputFile;
-    QList<hpgl_cmd> cmdList;
+    QList<hpgl_obj> items;
     QGraphicsScene plotScene;
-
 };
 
 #endif // MAINWINDOW_H
