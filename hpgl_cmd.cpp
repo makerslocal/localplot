@@ -42,6 +42,7 @@ hpgl_cmd::hpgl_cmd(QString text)
         // need coords
         text.remove(0,2);
         int commaCount = text.count(',');
+        qDebug() << "Comma count: " << commaCount;
         for (int i = 0; i < commaCount; i++)
         {
             //qDebug() << "processing coord: " << text.at(i) << endl;
@@ -60,17 +61,30 @@ hpgl_cmd::~hpgl_cmd()
     //
 }
 
+int hpgl_cmd::printLen()
+{
+    QString check = print();
+    return check.length();
+}
+
 QString hpgl_cmd::print()
 {
     QString retval = "";
     retval += opcode;
-    for (int i = 0; i < verts.length(); i++)
+    if (opcode == "SP")
     {
-        hpgl_coord tmp = verts[i];
-        retval += tmp.print();
-        if (i < (verts.length()-1))
+        retval += QString::number(pen);
+    }
+    else
+    {
+        for (int i = 0; i < verts.length(); i++)
         {
-            retval += ",";
+            hpgl_coord tmp = verts[i];
+            retval += tmp.print();
+            if (i < (verts.length()-1))
+            {
+                retval += ",";
+            }
         }
     }
     retval += ";";

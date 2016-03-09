@@ -255,7 +255,7 @@ void MainWindow::do_loadFile()
     }
     inputFile.setFileName(ui->lineEdit_filePath->text());
     inputFile.open(QIODevice::ReadOnly);
-    cmdList.clear();
+    items.clear();
     ui->textBrowser_read->clear();
 //    while (!inputFile.atEnd())
 //    {
@@ -277,16 +277,7 @@ void MainWindow::do_loadFile()
     QString buffer = "";
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
-    buffer.remove('\n');
-    int numCmds = buffer.count(';');
-    qDebug() << "File: " << buffer;
-    for (int i = 0; i < numCmds; i++)
-    {
-        QString tmp;
-        tmp = buffer.section(';', i, i);
-        cmdList.push_back(hpgl_cmd(tmp));
-        qDebug() << "Just added: " << cmdList.back().print();
-    }
+
 
     // Set up new graphics view.
 
@@ -336,16 +327,37 @@ void MainWindow::do_loadFile()
 
 void MainWindow::do_plot()
 {
-    if (!serialBuffer->isOpen() || cmdList.isEmpty())
+    qDebug() << "Plotting file!";
+    if (serialBuffer.isNull())
+    {
+        for (int i = 0; i < items.count(); i++)
+        {
+            hpgl_obj obj = items.at(i);
+            int size = obj.printLen();
+//            for (int d = 0; d < size; d++)
+//            {
+//                qDebug() << "Raw output: " << *(cmd.print()+(d*sizeof(char)));
+//            }
+        }
+        return;
+    }
+    if (!serialBuffer->isOpen() || items.isEmpty())
     {
         ui->textBrowser_console->append(timeStamp() + "Can't plot!");
         return;
     }
-//    for (int i = 0; i < cmdList.count(); i++)
-//    {
-//        int size = cmdList.at(i).length();
+    for (int i = 0; i < items.count(); i++)
+    {
+        hpgl_obj obj = items.at(i);
+        int size = obj.printLen();
+        QString printThis = obj.print();
 //        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
-//    }
+        serialBuffer->write(printThis.toStdString().c_str());
+//        for (int d = 0; d < size; d++)
+//        {
+//            qDebug() << "Raw output: " << cmd.print()[d];
+//        }
+    }
 }
 
 

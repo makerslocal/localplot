@@ -17,6 +17,8 @@ public:
     hpgl_obj();
     hpgl_obj(QString text);
     ~hpgl_obj();
+    QString print();
+    int printLen();
 
 public slots:
     //

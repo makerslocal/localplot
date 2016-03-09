@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QString>
 #include <QList>
+#include <string>
 
 #include "hpgl_coord.h"
 
@@ -23,6 +24,7 @@ public:
     void set_verts(QList<hpgl_coord> newVerts);
     QList<hpgl_coord> get_verts();
     QString print();
+    int printLen();
 
 public slots:
     //

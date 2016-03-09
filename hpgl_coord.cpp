@@ -43,6 +43,6 @@ QString hpgl_coord::print()
     text = QString::number(x);
     text += ",";
     text += QString::number(y);
-    qDebug() << "printed string: " << text;
+    //qDebug() << "printed string: " << text;
     return(text);
 }
