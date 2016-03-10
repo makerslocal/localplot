@@ -45,6 +45,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
 
+    connect(ui->doubleSpinBox_viewScale, SIGNAL(valueChanged(double)), this, SLOT(do_drawView()));
+
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
     ui->comboBox_baud->setCurrentIndex(2);
@@ -291,10 +293,13 @@ void MainWindow::do_drawView()
 {
     do_updatePens();
 
-    int xScale = ui->graphicsView_view->physicalDpiX();
-    int yScale = ui->graphicsView_view->physicalDpiY();
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    double scale = ui->doubleSpinBox_viewScale->value();
+    double xFactor = (xDpi / 1016.0 * scale);
+    double yFactor = (yDpi / 1016.0 * scale);
 
-    qDebug() << "physical: x:" << xScale << " y:" << yScale;
+    //qDebug() << "physical: x:" << xDpi << " y:" << yDpi;
 
     // Set up new graphics view.
     plotScene.clear();
@@ -317,13 +322,13 @@ void MainWindow::do_drawView()
             int x, y;
             x = lines_down[i].x1();
             y = lines_down[i].y1();
-            x = x*(xScale/1016.0);
-            y = y*-1*(yScale/1016.0);
+            x = x*xFactor;
+            y = y*-1*yFactor;
             lines_down[i].setP1(QPoint(x, y));
             x = lines_down[i].x2();
-            x = x*(xScale/1016.0);
+            x = x*xFactor;
             y = lines_down[i].y2();
-            y = y*-1*(yScale/1016.0);
+            y = y*-1*yFactor;
             lines_down[i].setP2(QPoint(x, y));
         }
 
@@ -331,14 +336,14 @@ void MainWindow::do_drawView()
         {
             int x, y;
             x = lines_up[i].x1();
-            x = x*(xScale/1016);
+            x = x*xFactor;
             y = lines_up[i].y1();
-            y = y*-1*(yScale/1016);
+            y = y*-1*yFactor;
             lines_up[i].setP1(QPoint(x, y));
             x = lines_up[i].x2();
-            x = x*(xScale/1016);
+            x = x*xFactor;
             y = lines_up[i].y2();
-            y = y*-1*(yScale/1016);
+            y = y*-1*yFactor;
             lines_up[i].setP2(QPoint(x, y));
         }
 
