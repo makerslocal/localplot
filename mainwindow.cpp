@@ -31,6 +31,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_fileLoad, SIGNAL(clicked()), this, SLOT(do_loadFile()));
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 
+    // Set up the two drawing pens
+    downPen.setColor(QColor(0, 0, 200));
+    downPen.setWidth(2);
+    upPen.setStyle(Qt::DotLine);
+    upPen.setWidth(2);
+    upPen.setColor(QColor(200, 150, 150));
+
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
     ui->comboBox_baud->setCurrentIndex(2);
@@ -247,6 +254,68 @@ int MainWindow::get_nextInt(QString input, int * index)
     return(atoi(buffer.toStdString().c_str()));
 }
 
+void MainWindow::do_drawView()
+{
+    // Set up new graphics view.
+    plotScene.clear();
+
+    QList<QLine> lines_down;
+    lines_down.clear();
+    QList<QLine> lines_up;
+    lines_up.clear();
+
+
+    for (int i = 0; i < objList.length(); i++)
+    {
+        // Get a list of qlines
+        lines_down = objList[i].line_list_down();
+        lines_up = objList[i].line_list_up();
+
+        // Transform qlines to be upright
+        for (int i = 0; i < lines_down.length(); i++)
+        {
+            int x, y;
+            x = lines_down[i].x1();
+            y = lines_down[i].y1();
+            y = y*-1;
+            lines_down[i].setP1(QPoint(x, y));
+            x = lines_down[i].x2();
+            y = lines_down[i].y2();
+            y = y*-1;
+            lines_down[i].setP2(QPoint(x, y));
+        }
+
+        for (int i = 0; i < lines_up.length(); i++)
+        {
+            int x, y;
+            x = lines_up[i].x1();
+            y = lines_up[i].y1();
+            y = y*-1;
+            lines_up[i].setP1(QPoint(x, y));
+            x = lines_up[i].x2();
+            y = lines_up[i].y2();
+            y = y*-1;
+            lines_up[i].setP2(QPoint(x, y));
+        }
+
+        // Write qlines to the scene
+        for (int i = 0; i < objList.length(); i++)
+        {
+            for (int l = 0; l < lines_down.length(); l++)
+            {
+                plotScene.addLine(lines_down[l], downPen);
+            }
+            for (int l = 0; l < lines_up.length(); l++)
+            {
+                plotScene.addLine(lines_up[l], upPen);
+            }
+        }
+    }
+
+    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
+    ui->graphicsView_view->show();
+}
+
 void MainWindow::do_loadFile()
 {
     if (inputFile.isOpen())
@@ -255,83 +324,15 @@ void MainWindow::do_loadFile()
     }
     inputFile.setFileName(ui->lineEdit_filePath->text());
     inputFile.open(QIODevice::ReadOnly);
-    objList.clear();
-    ui->textBrowser_read->clear();
+    //objList.clear();
+    //ui->textBrowser_read->clear();
 
     QString buffer = "";
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
     objList.push_back(hpgl_obj(buffer));
 
-    // Set up new graphics view.
-
-    QPen downPen;
-    QPen upPen;
-
-    downPen.setColor(QColor(0, 0, 255));
-    downPen.setWidth(2);
-    downPen.setJoinStyle(Qt::RoundJoin);
-
-    upPen.setStyle(Qt::DotLine);
-    upPen.setWidth(2);
-    upPen.setColor(QColor(200, 100, 100));
-
-    plotScene.clear();
-
-    QList<QLine> lines_down;
-    lines_down.clear();
-    QList<QLine> lines_up;
-    lines_up.clear();
-
-    // Get a list of qlines
-    for (int i = 0; i < objList.length(); i++)
-    {
-        lines_down = objList[i].line_list_down();
-        lines_up = objList[i].line_list_up();
-    }
-
-    // Transform qlines to be upright
-    for (int i = 0; i < lines_down.length(); i++)
-    {
-        int x, y;
-        x = lines_down[i].x1();
-        y = lines_down[i].y1();
-        y = y*-1;
-        lines_down[i].setP1(QPoint(x, y));
-        x = lines_down[i].x2();
-        y = lines_down[i].y2();
-        y = y*-1;
-        lines_down[i].setP2(QPoint(x, y));
-    }
-
-    for (int i = 0; i < lines_up.length(); i++)
-    {
-        int x, y;
-        x = lines_up[i].x1();
-        y = lines_up[i].y1();
-        y = y*-1;
-        lines_up[i].setP1(QPoint(x, y));
-        x = lines_up[i].x2();
-        y = lines_up[i].y2();
-        y = y*-1;
-        lines_up[i].setP2(QPoint(x, y));
-    }
-
-    // Write qlines to the scene
-    for (int i = 0; i < objList.length(); i++)
-    {
-        for (int l = 0; l < lines_down.length(); l++)
-        {
-            plotScene.addLine(lines_down[l], downPen);
-        }
-        for (int l = 0; l < lines_up.length(); l++)
-        {
-            plotScene.addLine(lines_up[l], upPen);
-        }
-    }
-
-    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
-    ui->graphicsView_view->show();
+    do_drawView();
 }
 
 void MainWindow::do_plot()
@@ -343,10 +344,10 @@ void MainWindow::do_plot()
         {
             hpgl_obj obj = objList.at(i);
             int size = obj.printLen();
-//            for (int d = 0; d < size; d++)
-//            {
-//                qDebug() << "Raw output: " << *(cmd.print()+(d*sizeof(char)));
-//            }
+            for (int d = 0; d < size; d++)
+            {
+                qDebug() << "Raw output: " << obj.print();
+            }
         }
         return;
     }
@@ -358,7 +359,7 @@ void MainWindow::do_plot()
     for (int i = 0; i < objList.count(); i++)
     {
         hpgl_obj obj = objList.at(i);
-        int size = obj.printLen();
+//        int size = obj.printLen();
         QString printThis = obj.print();
 //        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
         serialBuffer->write(printThis.toStdString().c_str());

@@ -38,6 +38,7 @@ public slots:
     void do_closeSerial();
     void do_loadFile();
     void do_plot();
+    void do_drawView();
 
     void handle_serialOpened();
     void handle_serialClosed();
@@ -54,6 +55,8 @@ private:
     QFile inputFile;
     QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
+    QPen downPen;
+    QPen upPen;
 };
 
 #endif // MAINWINDOW_H
