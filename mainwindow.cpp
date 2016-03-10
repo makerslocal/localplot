@@ -32,11 +32,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 
     // Set up the two drawing pens
-    downPen.setColor(QColor(0, 0, 200));
-    downPen.setWidth(2);
     upPen.setStyle(Qt::DotLine);
-    upPen.setWidth(2);
-    upPen.setColor(QColor(200, 150, 150));
+    do_updatePens();
+
+    // Update pens on ui change
+    connect(ui->spinBox_downPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_downPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_downPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_downPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_upPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_upPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
 
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
@@ -254,8 +261,41 @@ int MainWindow::get_nextInt(QString input, int * index)
     return(atoi(buffer.toStdString().c_str()));
 }
 
+void MainWindow::do_updatePens()
+{
+    // Variables
+    int rgbColor[3];
+    int penSize;
+    QColor penColor;
+
+    // Set downPen
+    penSize = ui->spinBox_downPen_size->value();
+    rgbColor[0] = ui->spinBox_downPen_red->value();
+    rgbColor[1] = ui->spinBox_downPen_green->value();
+    rgbColor[2] = ui->spinBox_downPen_blue->value();
+    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+    downPen.setColor(penColor);
+    downPen.setWidth(penSize);
+
+    // Set upPen
+    penSize = ui->spinBox_upPen_size->value();
+    rgbColor[0] = ui->spinBox_upPen_red->value();
+    rgbColor[1] = ui->spinBox_upPen_green->value();
+    rgbColor[2] = ui->spinBox_upPen_blue->value();
+    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+    upPen.setColor(penColor);
+    upPen.setWidth(penSize);
+}
+
 void MainWindow::do_drawView()
 {
+    do_updatePens();
+
+    int xScale = ui->graphicsView_view->physicalDpiX();
+    int yScale = ui->graphicsView_view->physicalDpiY();
+
+    qDebug() << "physical: x:" << xScale << " y:" << yScale;
+
     // Set up new graphics view.
     plotScene.clear();
 
@@ -277,11 +317,13 @@ void MainWindow::do_drawView()
             int x, y;
             x = lines_down[i].x1();
             y = lines_down[i].y1();
-            y = y*-1;
+            x = x*(xScale/1016.0);
+            y = y*-1*(yScale/1016.0);
             lines_down[i].setP1(QPoint(x, y));
             x = lines_down[i].x2();
+            x = x*(xScale/1016.0);
             y = lines_down[i].y2();
-            y = y*-1;
+            y = y*-1*(yScale/1016.0);
             lines_down[i].setP2(QPoint(x, y));
         }
 
@@ -289,12 +331,14 @@ void MainWindow::do_drawView()
         {
             int x, y;
             x = lines_up[i].x1();
+            x = x*(xScale/1016);
             y = lines_up[i].y1();
-            y = y*-1;
+            y = y*-1*(yScale/1016);
             lines_up[i].setP1(QPoint(x, y));
             x = lines_up[i].x2();
+            x = x*(xScale/1016);
             y = lines_up[i].y2();
-            y = y*-1;
+            y = y*-1*(yScale/1016);
             lines_up[i].setP2(QPoint(x, y));
         }
 
@@ -311,6 +355,8 @@ void MainWindow::do_drawView()
             }
         }
     }
+
+    //plotScene.addRect(plotScene.sceneRect(), downPen);
 
     ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
     ui->graphicsView_view->show();

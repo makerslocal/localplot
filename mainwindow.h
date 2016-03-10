@@ -15,6 +15,8 @@
 #include <QFileDialog>
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
+#include <QPen>
+#include <QLineF>
 
 #include "hpgl_obj.h"
 
@@ -39,6 +41,7 @@ public slots:
     void do_loadFile();
     void do_plot();
     void do_drawView();
+    void do_updatePens();
 
     void handle_serialOpened();
     void handle_serialClosed();

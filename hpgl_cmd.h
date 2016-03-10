@@ -3,7 +3,6 @@
 
 #include <QList>
 #include <QLine>
-#include <QPen>
 
 #include <string>
 
