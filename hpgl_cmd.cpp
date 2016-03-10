@@ -10,8 +10,8 @@
 
 hpgl_cmd::hpgl_cmd()
 {
-    opcode = "NA";
-    verts.clear();
+    _opcode = "NA";
+    coordList.clear();
     pen = 0;
 }
 
@@ -23,22 +23,22 @@ hpgl_cmd::hpgl_cmd(QString text)
     qDebug() << "Processing command: ";
 
     // Get opcode, first two characters
-    opcode = text.mid(0, 2);
+    _opcode = text.mid(0, 2);
 
     // Parse opcode
-    if (opcode == "IN")
+    if (_opcode == "IN")
     {
         // Just opcode
         qDebug() << "IN";
     }
-    else if (opcode == "SP")
+    else if (_opcode == "SP")
     {
         pen = text.mid(2,1).toInt();
         qDebug() << "SP[" << QString::number(pen) << "]";
     }
-    else if (opcode == "PU" || opcode == "PD")
+    else if (_opcode == "PU" || _opcode == "PD")
     {
-        qDebug() << opcode;
+        qDebug() << _opcode;
         // need coords
         text.remove(0,2);
         int commaCount = text.count(',');
@@ -51,7 +51,7 @@ hpgl_cmd::hpgl_cmd(QString text)
             int newY = text.section(',', i, i).toInt();
             //i++;
             qDebug() << "Found x: " << newX << " y: " << newY;
-            verts.push_back(hpgl_coord(newX, newY));
+            coordList.push_back(hpgl_coord(newX, newY));
         }
     }
 }
@@ -59,6 +59,32 @@ hpgl_cmd::hpgl_cmd(QString text)
 hpgl_cmd::~hpgl_cmd()
 {
     //
+}
+
+QString hpgl_cmd::opcode()
+{
+    return(_opcode);
+}
+
+QList<hpgl_coord> hpgl_cmd::get_verts()
+{
+    return coordList;
+}
+
+QList<QLine> hpgl_cmd::line_list()
+{
+    QList<QLine> lineList;
+    lineList.clear();
+    int x1, y1, x2, y2;
+    for (int i = 0; i < (coordList.length()-1); i++)
+    {
+        x1 = coordList[i].get_x();
+        y1 = coordList[i].get_y();
+        x2 = coordList[i+1].get_x();
+        y2 = coordList[i+1].get_y();
+        lineList.push_back(QLine(x1, y1, x2, y2));
+    }
+    return lineList;
 }
 
 int hpgl_cmd::printLen()
@@ -70,18 +96,18 @@ int hpgl_cmd::printLen()
 QString hpgl_cmd::print()
 {
     QString retval = "";
-    retval += opcode;
-    if (opcode == "SP")
+    retval += _opcode;
+    if (_opcode == "SP")
     {
         retval += QString::number(pen);
     }
     else
     {
-        for (int i = 0; i < verts.length(); i++)
+        for (int i = 0; i < coordList.length(); i++)
         {
-            hpgl_coord tmp = verts[i];
+            hpgl_coord tmp = coordList[i];
             retval += tmp.print();
-            if (i < (verts.length()-1))
+            if (i < (coordList.length()-1))
             {
                 retval += ",";
             }

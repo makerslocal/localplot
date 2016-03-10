@@ -52,7 +52,7 @@ private:
     QSerialPortInfo serialPorts;
     QPointer<QSerialPort> serialBuffer;
     QFile inputFile;
-    QList<hpgl_obj> items;
+    QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
 };
 

@@ -1,9 +1,10 @@
 #ifndef HPGLCMD_H
 #define HPGLCMD_H
 
-#include <QDebug>
-#include <QString>
 #include <QList>
+#include <QLine>
+#include <QPen>
+
 #include <string>
 
 #include "hpgl_coord.h"
@@ -24,15 +25,17 @@ public:
     void set_verts(QList<hpgl_coord> newVerts);
     QList<hpgl_coord> get_verts();
     QString print();
+    QString opcode();
     int printLen();
+    QList<QLine> line_list();
 
 public slots:
     //
 
 protected:
     //QChar opcode[2];
-    QString opcode;
-    QList<hpgl_coord> verts;
+    QString _opcode;
+    QList<hpgl_coord> coordList;
     int pen;
 };
 

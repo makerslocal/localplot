@@ -255,71 +255,46 @@ void MainWindow::do_loadFile()
     }
     inputFile.setFileName(ui->lineEdit_filePath->text());
     inputFile.open(QIODevice::ReadOnly);
-    items.clear();
+    objList.clear();
     ui->textBrowser_read->clear();
-//    while (!inputFile.atEnd())
-//    {
-//        QString buffer = "";
-//        char tmp = 0;
-//        while (tmp != ';' && !inputFile.atEnd())
-//        {
-//            inputFile.read(&tmp, 1);
-//            buffer += tmp;
-//        }
-//        if (buffer.endsWith(";"))
-//        {
-//            hpgl_cmd aparser = hpgl_cmd(buffer);
-//            cmdList.append(aparser);
-//            ui->textBrowser_read->append(cmdList.last().print());
-//        }
-//    }
 
     QString buffer = "";
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
-
+    objList.push_back(hpgl_obj(buffer));
 
     // Set up new graphics view.
 
+    QPen downPen;
+    QPen upPen;
+
+    downPen.setColor(QColor(0, 0, 255));
+    downPen.setWidth(2);
+    downPen.setJoinStyle(Qt::RoundJoin);
+
+    upPen.setStyle(Qt::DotLine);
+    upPen.setWidth(2);
+    upPen.setColor(QColor(200, 100, 100));
+
     plotScene.clear();
 
-//    int curX, curY;
-//    for (int i = 0; i < cmdList.count(); i++)
-//    {
-//        if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'D')
-//        {
-//            ui->textBrowser_console->append("Found PD: " + cmdList.at(i));
-//            int charIndex = 1;
-//            int nextX, nextY;
-//            while (cmdList.at(i)[charIndex] != ';')
-//            {
-//                charIndex++;
-//                nextX = get_nextInt(cmdList.at(i), &charIndex);
-//                charIndex++;
-//                nextY = get_nextInt(cmdList.at(i), &charIndex);
-
-//                plotScene.addLine(curX, -curY, nextX, -nextY);
-//                ui->textBrowser_console->append(timeStamp() + "Adding line [" +
-//                                                QString::number(curX) + "," + QString::number(curY) +
-//                                                "] to [" + QString::number(nextX) + "," +
-//                                                QString::number(nextY) + "].");
-//                curX = nextX;
-//                curY = nextY;
-//            }
-//        }
-//        else if (cmdList.at(i)[0] == 'P' && cmdList.at(i)[1] == 'U')
-//        {
-//            ui->textBrowser_console->append("Found PU: " + cmdList.at(i));
-//            int charIndex = 1;
-//            while (cmdList.at(i)[charIndex] != ';')
-//            {
-//                charIndex++;
-//                curX = get_nextInt(cmdList.at(i), &charIndex);
-//                charIndex++;
-//                curY = get_nextInt(cmdList.at(i), &charIndex);
-//            }
-//        }
-//    }
+    QList<QLine> lines_down;
+    lines_down.clear();
+    QList<QLine> lines_up;
+    lines_up.clear();
+    for (int i = 0; i < objList.length(); i++)
+    {
+        lines_down = objList[i].line_list_down();
+        lines_up = objList[i].line_list_up();
+        for (int l = 0; l < lines_down.length(); l++)
+        {
+            plotScene.addLine(lines_down[l], downPen);
+        }
+        for (int l = 0; l < lines_up.length(); l++)
+        {
+            plotScene.addLine(lines_up[l], upPen);
+        }
+    }
 
     ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
     ui->graphicsView_view->show();
@@ -330,9 +305,9 @@ void MainWindow::do_plot()
     qDebug() << "Plotting file!";
     if (serialBuffer.isNull())
     {
-        for (int i = 0; i < items.count(); i++)
+        for (int i = 0; i < objList.count(); i++)
         {
-            hpgl_obj obj = items.at(i);
+            hpgl_obj obj = objList.at(i);
             int size = obj.printLen();
 //            for (int d = 0; d < size; d++)
 //            {
@@ -341,14 +316,14 @@ void MainWindow::do_plot()
         }
         return;
     }
-    if (!serialBuffer->isOpen() || items.isEmpty())
+    if (!serialBuffer->isOpen() || objList.isEmpty())
     {
         ui->textBrowser_console->append(timeStamp() + "Can't plot!");
         return;
     }
-    for (int i = 0; i < items.count(); i++)
+    for (int i = 0; i < objList.count(); i++)
     {
-        hpgl_obj obj = items.at(i);
+        hpgl_obj obj = objList.at(i);
         int size = obj.printLen();
         QString printThis = obj.print();
 //        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
