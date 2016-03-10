@@ -282,10 +282,44 @@ void MainWindow::do_loadFile()
     lines_down.clear();
     QList<QLine> lines_up;
     lines_up.clear();
+
+    // Get a list of qlines
     for (int i = 0; i < objList.length(); i++)
     {
         lines_down = objList[i].line_list_down();
         lines_up = objList[i].line_list_up();
+    }
+
+    // Transform qlines to be upright
+    for (int i = 0; i < lines_down.length(); i++)
+    {
+        int x, y;
+        x = lines_down[i].x1();
+        y = lines_down[i].y1();
+        y = y*-1;
+        lines_down[i].setP1(QPoint(x, y));
+        x = lines_down[i].x2();
+        y = lines_down[i].y2();
+        y = y*-1;
+        lines_down[i].setP2(QPoint(x, y));
+    }
+
+    for (int i = 0; i < lines_up.length(); i++)
+    {
+        int x, y;
+        x = lines_up[i].x1();
+        y = lines_up[i].y1();
+        y = y*-1;
+        lines_up[i].setP1(QPoint(x, y));
+        x = lines_up[i].x2();
+        y = lines_up[i].y2();
+        y = y*-1;
+        lines_up[i].setP2(QPoint(x, y));
+    }
+
+    // Write qlines to the scene
+    for (int i = 0; i < objList.length(); i++)
+    {
         for (int l = 0; l < lines_down.length(); l++)
         {
             plotScene.addLine(lines_down[l], downPen);
