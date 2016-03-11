@@ -16,7 +16,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
 #include <QPen>
-#include <QLineF>
+#include <QScreen>
 
 #include "hpgl_obj.h"
 
@@ -60,6 +60,7 @@ private:
     QGraphicsScene plotScene;
     QPen downPen;
     QPen upPen;
+    QScreen * screen;
 };
 
 #endif // MAINWINDOW_H

@@ -51,7 +51,7 @@ hpgl_cmd::hpgl_cmd(QString text)
             int newY = text.section(',', i, i).toInt();
             //i++;
             qDebug() << "Found x: " << newX << " y: " << newY;
-            coordList.push_back(hpgl_coord(newX, newY));
+            coordList.push_back(QPoint(newX, newY));
         }
     }
 }
@@ -66,7 +66,7 @@ QString hpgl_cmd::opcode()
     return(_opcode);
 }
 
-QList<hpgl_coord> hpgl_cmd::get_verts()
+QList<QPoint> hpgl_cmd::get_verts()
 {
     return coordList;
 }
@@ -78,10 +78,10 @@ QList<QLine> hpgl_cmd::line_list()
     int x1, y1, x2, y2;
     for (int i = 0; i < (coordList.length()-1); i++)
     {
-        x1 = coordList[i].get_x();
-        y1 = coordList[i].get_y();
-        x2 = coordList[i+1].get_x();
-        y2 = coordList[i+1].get_y();
+        x1 = coordList[i].x();
+        y1 = coordList[i].y();
+        x2 = coordList[i+1].x();
+        y2 = coordList[i+1].y();
         lineList.push_back(QLine(x1, y1, x2, y2));
     }
     return lineList;
@@ -105,8 +105,10 @@ QString hpgl_cmd::print()
     {
         for (int i = 0; i < coordList.length(); i++)
         {
-            hpgl_coord tmp = coordList[i];
-            retval += tmp.print();
+            QPoint tmp = coordList[i];
+            retval += QString::number(tmp.x());
+            retval += ",";
+            retval += QString::number(tmp.y());
             if (i < (coordList.length()-1))
             {
                 retval += ",";

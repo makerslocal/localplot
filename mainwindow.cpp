@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
     upPen.setStyle(Qt::DotLine);
     do_updatePens();
 
-    // Update pens on ui change
+    // Update view on pen parameter change
     connect(ui->spinBox_downPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_downPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_downPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
@@ -44,8 +44,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinBox_upPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-
-    connect(ui->doubleSpinBox_viewScale, SIGNAL(valueChanged(double)), this, SLOT(do_drawView()));
+    connect(ui->doubleSpinBox_viewScale, SIGNAL(valueChanged(double)), this, SLOT(do_drawView())); // Update view if the scale changes
+    connect(screen, SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
 
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
@@ -293,13 +293,14 @@ void MainWindow::do_drawView()
 {
     do_updatePens();
 
+    // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
+    // scale is the value set by our user
     double scale = ui->doubleSpinBox_viewScale->value();
+    // Factor is the conversion from HP Graphic Unit to pixels
     double xFactor = (xDpi / 1016.0 * scale);
     double yFactor = (yDpi / 1016.0 * scale);
-
-    //qDebug() << "physical: x:" << xDpi << " y:" << yDpi;
 
     // Set up new graphics view.
     plotScene.clear();
@@ -323,12 +324,12 @@ void MainWindow::do_drawView()
             x = lines_down[i].x1();
             y = lines_down[i].y1();
             x = x*xFactor;
-            y = y*-1*yFactor;
+            y = y*(-1)*yFactor;
             lines_down[i].setP1(QPoint(x, y));
             x = lines_down[i].x2();
             x = x*xFactor;
             y = lines_down[i].y2();
-            y = y*-1*yFactor;
+            y = y*(-1)*yFactor;
             lines_down[i].setP2(QPoint(x, y));
         }
 
@@ -338,12 +339,12 @@ void MainWindow::do_drawView()
             x = lines_up[i].x1();
             x = x*xFactor;
             y = lines_up[i].y1();
-            y = y*-1*yFactor;
+            y = y*(-1)*yFactor;
             lines_up[i].setP1(QPoint(x, y));
             x = lines_up[i].x2();
             x = x*xFactor;
             y = lines_up[i].y2();
-            y = y*-1*yFactor;
+            y = y*(-1)*yFactor;
             lines_up[i].setP2(QPoint(x, y));
         }
 
@@ -361,8 +362,30 @@ void MainWindow::do_drawView()
         }
     }
 
+    // Draw origin text
+    QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
+    label->setRotation(90);
+    QRectF labelRect = label->boundingRect();
+    qDebug() << "label x: " << labelRect.width();
+    label->setY(label->y() - labelRect.width());
+    plotScene.addText("(0,0)");
+    QString scaleText = "Scale: " + QString::number(scale);
+    QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
+    QRectF scaleTextItemRect = scaleTextItem->boundingRect();
+    scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
+
+    // Draw origin
+    QPen originPen;
+    originPen.setColor(QColor(0, 0, 0));
+    originPen.setWidth(1);
+    plotScene.addLine(0, 0, 100, 0, originPen);
+    plotScene.addLine(0, 0, 0, -100, originPen);
+
+    // Set scene rectangle to match new items
+    plotScene.setSceneRect(plotScene.itemsBoundingRect());
     //plotScene.addRect(plotScene.sceneRect(), downPen);
 
+    // Set scene to view
     ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
     ui->graphicsView_view->show();
 }

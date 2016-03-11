@@ -43,8 +43,8 @@ QList<QLine> hpgl_obj::line_list_up()
             if (cmdList[i].line_list().isEmpty())
             {
                 hpgl_cmd tmp = cmdList.at(i);
-                int end_x = tmp.get_verts().last().get_x();
-                int end_y = tmp.get_verts().last().get_y();
+                int end_x = tmp.get_verts().last().x();
+                int end_y = tmp.get_verts().last().y();
                 QLine implicitLine = QLine(lastPoint.x(), lastPoint.y(),end_x , end_y);
                 lineList.push_back(implicitLine);
             }
@@ -98,4 +98,9 @@ QString hpgl_obj::print()
         retval += cmd.print();
     }
     return(retval);
+}
+
+void hpgl_obj::set_scale(int factor)
+{
+    cmdTransform.scale(factor, factor);
 }

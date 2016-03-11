@@ -14,12 +14,10 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    hpgl_coord.cpp \
     hpgl_cmd.cpp \
     hpgl_obj.cpp
 
 HEADERS  += mainwindow.h \
-    hpgl_coord.h \
     hpgl_cmd.h \
     hpgl_obj.h
 
