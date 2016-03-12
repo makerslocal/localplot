@@ -47,6 +47,8 @@ public slots:
     void handle_serialClosed();
     void handle_serialConnectBtn();
     void handle_selectFileBtn();
+    void handle_objectTransform();
+//    void handle_autoTranslateBtn();
 
 signals:
     //
@@ -60,7 +62,6 @@ private:
     QGraphicsScene plotScene;
     QPen downPen;
     QPen upPen;
-    QScreen * screen;
 };
 
 #endif // MAINWINDOW_H

@@ -16,17 +16,24 @@ public:
     hpgl_obj(QString text);
     ~hpgl_obj();
     QString print();
-    int printLen();
-    QList<QLine> line_list_up();
-    QList<QLine> line_list_down();
-    void set_scale(int factor);
+//    int printLen();
+    void gen_line_lists();
+    void gen_height(QList<QLine> lineList);
+    void gen_width(QList<QLine> lineList);
+
+    QTransform cmdTransformScale;
+    QTransform cmdTransformRotate;
+    QTransform cmdTransformTranslate;
+    QList<QLine> lineListUp;
+    QList<QLine> lineListDown;
 
 public slots:
     //
 
 protected:
     QList<hpgl_cmd> cmdList;
-    QTransform cmdTransform;
+    int width;
+    int height;
 };
 
 #endif // HPGLOBJ_H

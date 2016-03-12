@@ -18,24 +18,16 @@ class hpgl_cmd
 {
 public:
     hpgl_cmd();
-    hpgl_cmd(QString text);
-    hpgl_cmd(QChar newOpcode[], QList<QPoint> newVerts);
+    hpgl_cmd(QString newopcode, QList<QPoint> newList);
     ~hpgl_cmd();
-    void set_opcode(QString newOpcode);
-    void set_opcode(QChar newOpcode[]);
-    void set_verts(QList<QPoint> newVerts);
-    QList<QPoint> get_verts();
-    QString print();
-    QString print(QTransform transform);
     QString opcode();
-    int printLen();
-    QList<QLine> line_list();
+    QList<QPoint> point_list();
+    int get_pen();
 
 public slots:
     //
 
 protected:
-    //QChar opcode[2];
     QString _opcode;
     QList<QPoint> coordList;
     int pen;

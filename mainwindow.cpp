@@ -13,7 +13,6 @@
  * Vertex coordinate: in graphic units (1/1016") (0.025mm)
  *
  * Program file structure
- * hpgl_coord - Structure for storing simple coordinates, may be merged later
  * hpgl_cmd - Structure for storing a single hpgl command
  * hpgl_obj - An hpgl object, or cluster of commands that share similar
  *             properties and transformations.
@@ -44,8 +43,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinBox_upPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
     connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->doubleSpinBox_viewScale, SIGNAL(valueChanged(double)), this, SLOT(do_drawView())); // Update view if the scale changes
-    connect(screen, SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
+    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
+
+    connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
 
     // Initialize interface
     ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
@@ -250,6 +253,17 @@ void MainWindow::handle_selectFileBtn()
     ui->lineEdit_filePath->setText(fileName);
 }
 
+//void MainWindow::handle_autoTranslateBtn()
+//{
+//    for (int i = 0; i < objList.count(); i++)
+//    {
+//        if (objList[i].minX() < 0)
+//        {
+//            int val = ui->spinBox_objTranslationX
+//        }
+//    }
+//}
+
 int MainWindow::get_nextInt(QString input, int * index)
 {
     QChar tmp = input[*index];
@@ -297,7 +311,8 @@ void MainWindow::do_drawView()
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
     // scale is the value set by our user
-    double scale = ui->doubleSpinBox_viewScale->value();
+    //double scale = ui->doubleSpinBox_objScale->value();
+    double scale = 1.0;
     // Factor is the conversion from HP Graphic Unit to pixels
     double xFactor = (xDpi / 1016.0 * scale);
     double yFactor = (yDpi / 1016.0 * scale);
@@ -314,8 +329,9 @@ void MainWindow::do_drawView()
     for (int i = 0; i < objList.length(); i++)
     {
         // Get a list of qlines
-        lines_down = objList[i].line_list_down();
-        lines_up = objList[i].line_list_up();
+        objList[i].gen_line_lists();
+        lines_down = objList[i].lineListDown;
+        lines_up = objList[i].lineListUp;
 
         // Transform qlines to be upright
         for (int i = 0; i < lines_down.length(); i++)
@@ -376,10 +392,10 @@ void MainWindow::do_drawView()
 
     // Draw origin
     QPen originPen;
-    originPen.setColor(QColor(0, 0, 0));
-    originPen.setWidth(1);
-    plotScene.addLine(0, 0, 100, 0, originPen);
-    plotScene.addLine(0, 0, 0, -100, originPen);
+    originPen.setColor(QColor(150, 150, 150));
+    originPen.setWidth(2);
+    plotScene.addLine(0, 0, xDpi, 0, originPen);
+    plotScene.addLine(0, 0, 0, -yDpi, originPen);
 
     // Set scene rectangle to match new items
     plotScene.setSceneRect(plotScene.itemsBoundingRect());
@@ -398,7 +414,7 @@ void MainWindow::do_loadFile()
     }
     inputFile.setFileName(ui->lineEdit_filePath->text());
     inputFile.open(QIODevice::ReadOnly);
-    //objList.clear();
+    objList.clear();
     //ui->textBrowser_read->clear();
 
     QString buffer = "";
@@ -412,20 +428,7 @@ void MainWindow::do_loadFile()
 void MainWindow::do_plot()
 {
     qDebug() << "Plotting file!";
-    if (serialBuffer.isNull())
-    {
-        for (int i = 0; i < objList.count(); i++)
-        {
-            hpgl_obj obj = objList.at(i);
-            int size = obj.printLen();
-            for (int d = 0; d < size; d++)
-            {
-                qDebug() << "Raw output: " << obj.print();
-            }
-        }
-        return;
-    }
-    if (!serialBuffer->isOpen() || objList.isEmpty())
+    if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
     {
         ui->textBrowser_console->append(timeStamp() + "Can't plot!");
         return;
@@ -435,14 +438,63 @@ void MainWindow::do_plot()
         hpgl_obj obj = objList.at(i);
 //        int size = obj.printLen();
         QString printThis = obj.print();
+        if (printThis == "OOB")
+        {
+            ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
+            //ui->textBrowser_console->append("(try the auto translation button)");
+            ui->textBrowser_console->append("(An X or Y value is less than zero)");
+            return;
+        }
 //        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
         serialBuffer->write(printThis.toStdString().c_str());
-//        for (int d = 0; d < size; d++)
-//        {
-//            qDebug() << "Raw output: " << cmd.print()[d];
-//        }
     }
 }
+
+void MainWindow::handle_objectTransform()
+{
+    QTransform Tscale, Trotate, Ttranslate;
+    double scale = ui->doubleSpinBox_objScale->value();
+    double rotation = ui->doubleSpinBox_objRotation->value();
+    int translateX = ui->spinBox_objTranslationX->value();
+    int translateY = ui->spinBox_objTranslationY->value();
+
+    Tscale.scale(scale, scale);
+    Trotate.rotate(rotation);
+    Ttranslate.translate(translateX, translateY);
+
+    //qDebug() << "MATRIX: " << transform;
+
+    for (int i = 0; i < objList.count(); i++)
+    {
+        objList[i].cmdTransformScale = Tscale;
+        objList[i].cmdTransformRotate = Trotate;
+        objList[i].cmdTransformTranslate = Ttranslate;
+    }
+    do_drawView();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
