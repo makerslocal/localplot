@@ -2,8 +2,18 @@
 #define HPGLOBJ_H
 
 #include <QTransform>
+#include <QList>
+#include <QLine>
+#include <QTransform>
+#include <QPoint>
+#include <QDebug>
+#include <QString>
 
-#include "hpgl_cmd.h"
+struct hpgl_cmd {
+    QString opcode;
+    QList<QPoint> coordList;
+    int pen;
+};
 
 namespace std {
 class hpgl_obj;
@@ -17,6 +27,7 @@ public:
     ~hpgl_obj();
     QString print();
 //    int printLen();
+    hpgl_cmd initCmd();
     void gen_line_lists();
     void gen_height(QList<QLine> lineList);
     void gen_width(QList<QLine> lineList);
@@ -37,3 +48,19 @@ protected:
 };
 
 #endif // HPGLOBJ_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

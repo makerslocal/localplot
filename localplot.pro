@@ -11,14 +11,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = localplot
 TEMPLATE = app
 
-
 SOURCES += main.cpp\
         mainwindow.cpp \
-    hpgl_cmd.cpp \
     hpgl_obj.cpp
 
 HEADERS  += mainwindow.h \
-    hpgl_cmd.h \
     hpgl_obj.h
 
 FORMS    += mainwindow.ui

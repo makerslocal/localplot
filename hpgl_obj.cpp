@@ -4,6 +4,23 @@
  * Object class
  */
 
+/**
+ * We process the following opcodes:
+ * IN - begin/reset
+ * SP - Select Pen
+ * PU - Move to coord with pen up
+ * PD - Move to coord with pen down
+ */
+
+hpgl_cmd hpgl_obj::initCmd()
+{
+    hpgl_cmd cmd;
+    cmd.pen = 0;
+    cmd.coordList.clear();
+    cmd.opcode = "NA";
+    return cmd;
+}
+
 hpgl_obj::hpgl_obj()
 {
     cmdList.clear();
@@ -19,31 +36,29 @@ hpgl_obj::hpgl_obj(QString text)
     qDebug() << "Object text: " << text;
     for (int i = 0; i < numCmds; i++)
     {
+        hpgl_cmd newCmd = initCmd();
         QString cmdText;
-        QString opCode;
-        int pen;
-        QList<QPoint> coordList;
         cmdText = text.section(';', i, i);
 
         qDebug() << "====\n" << "= Processing command: ";
 
         // Get opcode, first two characters
-        opCode = cmdText.mid(0, 2);
+        newCmd.opcode = cmdText.mid(0, 2);
 
         // Parse opcode
-        if (opCode == "IN")
+        if (newCmd.opcode == "IN")
         {
             // Just opcode
             qDebug() << "= IN";
         }
-        else if (opCode == "SP")
+        else if (newCmd.opcode == "SP")
         {
-            pen = cmdText.mid(2,1).toInt();
-            qDebug() << "= SP[" << QString::number(pen) << "]";
+            newCmd.pen = cmdText.mid(2,1).toInt();
+            qDebug() << "= SP[" << QString::number(newCmd.pen) << "]";
         }
-        else if (opCode == "PU" || opCode == "PD")
+        else if (newCmd.opcode == "PU" || newCmd.opcode == "PD")
         {
-            qDebug() << "= " << opCode;
+            qDebug() << "= " << newCmd.opcode;
             // need coords
             cmdText.remove(0,2);
             int commaCount = cmdText.count(',');
@@ -56,11 +71,10 @@ hpgl_obj::hpgl_obj(QString text)
                 int newY = cmdText.section(',', i, i).toInt();
                 //i++;
                 qDebug() << "= Found x: " << newX << " y: " << newY;
-                coordList.push_back(QPoint(newX, newY));
+                newCmd.coordList.push_back(QPoint(newX, newY));
             }
         }
-
-        cmdList.push_back(hpgl_cmd(opCode, coordList));
+        cmdList.push_back(newCmd);
     }
 }
 
@@ -122,11 +136,11 @@ void hpgl_obj::gen_line_lists()
 
     for (int i = 0; i < cmdList.length(); i++)
     {
-        if (cmdList[i].opcode() != "PU" && cmdList[i].opcode() != "PD")
+        if (cmdList[i].opcode != "PU" && cmdList[i].opcode != "PD")
         {
             continue; // only point based commands, otherwise skip
         }
-        pointList = cmdList[i].point_list();
+        pointList = cmdList[i].coordList;
         tempLineList.clear();
         // First line is always extension of previous last point
         tempLineList.push_back(QLine(lastPoint, pointList[0]));
@@ -147,11 +161,11 @@ void hpgl_obj::gen_line_lists()
 //        }
 
         // Assign to corresponding list
-        if (cmdList[i].opcode() == "PD")
+        if (cmdList[i].opcode == "PD")
         {
             lineListDown += tempLineList;
         }
-        else if (cmdList[i].opcode() == "PU")
+        else if (cmdList[i].opcode == "PU")
         {
             lineListUp += tempLineList;
         }
@@ -303,18 +317,18 @@ QString hpgl_obj::print()
     hpgl_cmd cmd;
     for (int i = 0; i < cmdList.length(); i++)
     {
-        cmd = cmdList.at(i);
+        cmd = cmdList[i];
 
-        retval += cmd.opcode();
-        if (cmd.opcode() == "SP")
+        retval += cmd.opcode;
+        if (cmd.opcode == "SP")
         {
-            retval += QString::number(cmd.get_pen());
+            retval += QString::number(cmd.pen);
         }
         else
         {
-            for (int i = 0; i < cmd.point_list().length(); i++)
+            for (int i = 0; i < cmd.coordList.length(); i++)
             {
-                QPoint point = cmd.point_list().at(i);
+                QPoint point = cmd.coordList.at(i);
 
                 QTransform center, uncenter;
                 center.translate(-width/2, -height/2);
@@ -333,7 +347,7 @@ QString hpgl_obj::print()
                 retval += QString::number(point.x());
                 retval += ",";
                 retval += QString::number(point.y());
-                if (i < (cmd.point_list().length()-1))
+                if (i < (cmd.coordList.length()-1))
                 {
                     retval += ",";
                 }
