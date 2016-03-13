@@ -223,6 +223,9 @@
                </item>
                <item>
                 <widget class="QPushButton" name="pushButton_clearObjects">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
                  <property name="text">
                   <string>Clear All</string>
                  </property>
