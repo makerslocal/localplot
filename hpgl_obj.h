@@ -26,7 +26,7 @@ public:
     hpgl_obj(QString text);
     ~hpgl_obj();
     QString print();
-//    int printLen();
+    int printLen();
     hpgl_cmd initCmd();
     void gen_line_lists();
     void gen_height(QList<QLine> lineList);

@@ -12,15 +12,6 @@
  * PD - Move to coord with pen down
  */
 
-hpgl_cmd hpgl_obj::initCmd()
-{
-    hpgl_cmd cmd;
-    cmd.pen = 0;
-    cmd.coordList.clear();
-    cmd.opcode = "NA";
-    return cmd;
-}
-
 hpgl_obj::hpgl_obj()
 {
     cmdList.clear();
@@ -78,50 +69,18 @@ hpgl_obj::hpgl_obj(QString text)
     }
 }
 
-//hpgl_cmd::hpgl_cmd(QString text)
-//{
-//    // Make sure the pointers are null(?)
-//    hpgl_cmd();
-
-//    qDebug() << "====\n" << "= Processing command: ";
-
-//    // Get opcode, first two characters
-//    _opcode = text.mid(0, 2);
-
-//    // Parse opcode
-//    if (_opcode == "IN")
-//    {
-//        // Just opcode
-//        qDebug() << "= IN";
-//    }
-//    else if (_opcode == "SP")
-//    {
-//        pen = text.mid(2,1).toInt();
-//        qDebug() << "= SP[" << QString::number(pen) << "]";
-//    }
-//    else if (_opcode == "PU" || _opcode == "PD")
-//    {
-//        qDebug() << "= " << _opcode;
-//        // need coords
-//        text.remove(0,2);
-//        int commaCount = text.count(',');
-//        qDebug() << "= Comma count: " << commaCount;
-//        for (int i = 0; i < commaCount; i++)
-//        {
-//            //qDebug() << "processing coord: " << text.at(i) << endl;
-//            int newX = text.section(',', i, i).toInt();
-//            i++;
-//            int newY = text.section(',', i, i).toInt();
-//            //i++;
-//            qDebug() << "= Found x: " << newX << " y: " << newY;
-//            coordList.push_back(QPoint(newX, newY));
-//        }
-//    }
-//}
-
 hpgl_obj::~hpgl_obj()
 {
     //
+}
+
+hpgl_cmd hpgl_obj::initCmd()
+{
+    hpgl_cmd cmd;
+    cmd.pen = 0;
+    cmd.coordList.clear();
+    cmd.opcode = "NA";
+    return cmd;
 }
 
 void hpgl_obj::gen_line_lists()
@@ -299,17 +258,10 @@ void hpgl_obj::gen_height(QList<QLine> lineList)
     //return(maxY - minY);
 }
 
-//int hpgl_obj::printLen()
-//{
-//    int retval = 0;
-//    hpgl_cmd cmd;
-//    for (int i = 0; i < cmdList.length(); i++)
-//    {
-//        cmd = cmdList.at(i);
-//        retval += cmd.printLen();
-//    }
-//    return(retval);
-//}
+int hpgl_obj::printLen()
+{
+    return(print().length());
+}
 
 QString hpgl_obj::print()
 {
@@ -357,33 +309,6 @@ QString hpgl_obj::print()
     }
     return(retval);
 }
-
-//QString hpgl_cmd::print(QTransform transform /*= QTransform()*/)
-//{
-//    QString retval = "";
-//    retval += _opcode;
-//    if (_opcode == "SP")
-//    {
-//        retval += QString::number(pen);
-//    }
-//    else
-//    {
-//        for (int i = 0; i < coordList.length(); i++)
-//        {
-//            QPoint point = coordList[i];
-//            point = transform.map(point);
-//            retval += QString::number(point.x());
-//            retval += ",";
-//            retval += QString::number(point.y());
-//            if (i < (coordList.length()-1))
-//            {
-//                retval += ",";
-//            }
-//        }
-//    }
-//    retval += ";";
-//    return(retval);
-//}
 
 
 
