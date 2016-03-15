@@ -308,11 +308,23 @@ void MainWindow::do_updatePens()
 
 void MainWindow::do_drawView()
 {
-    do_updatePens();
+    // Set up new graphics view.
+    plotScene.clear();
 
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
+
+    // Draw origin
+    QPen originPen;
+    originPen.setColor(QColor(150, 150, 150));
+    originPen.setWidth(2);
+    plotScene.addLine(0, 0, xDpi, 0, originPen);
+    plotScene.addLine(0, 0, 0, -yDpi, originPen);
+
+    do_updatePens();
+
+
     // scale is the value set by our user
     //double scale = ui->doubleSpinBox_objScale->value();
     double scale = 1.0;
@@ -322,15 +334,10 @@ void MainWindow::do_drawView()
 
     penDownDemoScene.clear();
     penUpDemoScene.clear();
-    int demoW = ui->graphicsView_penDownDemo->width();
-    int demoH = ui->graphicsView_penDownDemo->height();
     penDownDemoScene.addLine(0, 0, 28, 0, downPen);
     penUpDemoScene.addLine(0, 0, 28, 0, upPen);
     ui->graphicsView_penDownDemo->show();
     ui->graphicsView_penUpDemo->show();
-
-    // Set up new graphics view.
-    plotScene.clear();
 
     QList<QLine> lines_down;
     lines_down.clear();
@@ -400,13 +407,6 @@ void MainWindow::do_drawView()
     QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
     QRectF scaleTextItemRect = scaleTextItem->boundingRect();
     scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
-
-    // Draw origin
-    QPen originPen;
-    originPen.setColor(QColor(150, 150, 150));
-    originPen.setWidth(2);
-    plotScene.addLine(0, 0, xDpi, 0, originPen);
-    plotScene.addLine(0, 0, 0, -yDpi, originPen);
 
     // Set scene rectangle to match new items
     plotScene.setSceneRect(plotScene.itemsBoundingRect());
