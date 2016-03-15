@@ -60,6 +60,8 @@ private:
     QFile inputFile;
     QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
+    QGraphicsScene penDownDemoScene;
+    QGraphicsScene penUpDemoScene;
     QPen downPen;
     QPen upPen;
 };

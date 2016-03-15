@@ -63,6 +63,9 @@ MainWindow::MainWindow(QWidget *parent) :
     do_refreshSerialList();
 
     ui->graphicsView_view->setScene(&plotScene);
+    ui->graphicsView_penDownDemo->setScene(&penDownDemoScene);
+    ui->graphicsView_penUpDemo->setScene(&penUpDemoScene);
+    do_drawView();
 }
 
 MainWindow::~MainWindow()
@@ -317,6 +320,15 @@ void MainWindow::do_drawView()
     double xFactor = (xDpi / 1016.0 * scale);
     double yFactor = (yDpi / 1016.0 * scale);
 
+    penDownDemoScene.clear();
+    penUpDemoScene.clear();
+    int demoW = ui->graphicsView_penDownDemo->width();
+    int demoH = ui->graphicsView_penDownDemo->height();
+    penDownDemoScene.addLine(0, 0, 28, 0, downPen);
+    penUpDemoScene.addLine(0, 0, 28, 0, upPen);
+    ui->graphicsView_penDownDemo->show();
+    ui->graphicsView_penUpDemo->show();
+
     // Set up new graphics view.
     plotScene.clear();
 
@@ -324,7 +336,6 @@ void MainWindow::do_drawView()
     lines_down.clear();
     QList<QLine> lines_up;
     lines_up.clear();
-
 
     for (int i = 0; i < objList.length(); i++)
     {
