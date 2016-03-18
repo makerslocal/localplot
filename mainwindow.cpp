@@ -24,6 +24,23 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // Instantiate settings object
+    QCoreApplication::setOrganizationName("Makers Local 256");
+    QCoreApplication::setOrganizationDomain("makerslocal.org");
+    QCoreApplication::setApplicationName("localplot");
+    settings = new QSettings();
+
+    // Load saved settings
+    ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", "").toString());
+    ui->spinBox_downPen_size->setValue(settings->value("pen/down/size", 2).toInt());
+    ui->spinBox_downPen_red->setValue(settings->value("pen/down/red", 100).toInt());
+    ui->spinBox_downPen_green->setValue(settings->value("pen/down/green", 150).toInt());
+    ui->spinBox_downPen_blue->setValue(settings->value("pen/down/blue", 200).toInt());
+    ui->spinBox_upPen_size->setValue(settings->value("pen/up/size", 1).toInt());
+    ui->spinBox_upPen_red->setValue(settings->value("pen/up/red", 250).toInt());
+    ui->spinBox_upPen_green->setValue(settings->value("pen/up/green", 150).toInt());
+    ui->spinBox_upPen_blue->setValue(settings->value("pen/up/blue", 150).toInt());
+
     connect(ui->pushButton_serialRefresh, SIGNAL(clicked()), this, SLOT(do_refreshSerialList()));
     connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
@@ -34,15 +51,17 @@ MainWindow::MainWindow(QWidget *parent) :
     upPen.setStyle(Qt::DotLine);
     do_updatePens();
 
-    // Update view on pen parameter change
-    connect(ui->spinBox_downPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_downPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_downPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_downPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_upPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_upPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
-    connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawView()));
+    // Update settings on UI change
+    connect(ui->spinBox_downPen_size, SIGNAL(valueChanged(int)), this, SLOT(update_penDown()));
+    connect(ui->spinBox_downPen_red, SIGNAL(valueChanged(int)), this, SLOT(update_penDown()));
+    connect(ui->spinBox_downPen_green, SIGNAL(valueChanged(int)), this, SLOT(update_penDown()));
+    connect(ui->spinBox_downPen_blue, SIGNAL(valueChanged(int)), this, SLOT(update_penDown()));
+    connect(ui->spinBox_upPen_size, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
+    connect(ui->spinBox_upPen_red, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
+    connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
+    connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
+    connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
+
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
 
     connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
@@ -65,13 +84,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->graphicsView_view->setScene(&plotScene);
     ui->graphicsView_penDownDemo->setScene(&penDownDemoScene);
     ui->graphicsView_penUpDemo->setScene(&penUpDemoScene);
+
     do_drawView();
+    do_drawDemoView();
 }
 
 MainWindow::~MainWindow()
 {
     do_closeSerial();
 
+    delete settings;
     delete ui;
 }
 
@@ -79,6 +101,43 @@ QString MainWindow::timeStamp()
 {
     return(QTime::currentTime().toString("[HH:mm:ss:zzz] "));
 }
+
+void MainWindow::update_penDown()
+{
+    settings->beginGroup("pen/down");
+    settings->setValue("size", ui->spinBox_downPen_size->value());
+    settings->setValue("red", ui->spinBox_downPen_red->value());
+    settings->setValue("green", ui->spinBox_downPen_green->value());
+    settings->setValue("blue", ui->spinBox_downPen_blue->value());
+    settings->endGroup();
+}
+
+void MainWindow::update_penUp()
+{
+    settings->beginGroup("pen/up");
+    settings->setValue("size", ui->spinBox_upPen_size->value());
+    settings->setValue("red", ui->spinBox_upPen_red->value());
+    settings->setValue("green", ui->spinBox_upPen_green->value());
+    settings->setValue("blue", ui->spinBox_upPen_blue->value());
+    settings->endGroup();
+    if (ui->tabWidget->currentIndex() == 0)
+    {
+        do_drawDemoView();
+    }
+    else if (ui->tabWidget->currentIndex() == 1)
+    {
+        do_drawView();
+    }
+}
+
+void MainWindow::update_filePath()
+{
+    settings->beginGroup("mainwindow");
+    settings->setValue("filePath", ui->lineEdit_filePath->text());
+    settings->endGroup();
+}
+
+//void update_serialDevice();
 
 void MainWindow::do_refreshSerialList()
 {
@@ -306,6 +365,17 @@ void MainWindow::do_updatePens()
     upPen.setWidth(penSize);
 }
 
+void MainWindow::do_drawDemoView()
+{
+    do_updatePens();
+    penDownDemoScene.clear();
+    penUpDemoScene.clear();
+    penDownDemoScene.addLine(0, 0, 28, 0, downPen);
+    penUpDemoScene.addLine(0, 0, 28, 0, upPen);
+    ui->graphicsView_penDownDemo->show();
+    ui->graphicsView_penUpDemo->show();
+}
+
 void MainWindow::do_drawView()
 {
     // Set up new graphics view.
@@ -324,20 +394,12 @@ void MainWindow::do_drawView()
 
     do_updatePens();
 
-
     // scale is the value set by our user
     //double scale = ui->doubleSpinBox_objScale->value();
     double scale = 1.0;
     // Factor is the conversion from HP Graphic Unit to pixels
     double xFactor = (xDpi / 1016.0 * scale);
     double yFactor = (yDpi / 1016.0 * scale);
-
-    penDownDemoScene.clear();
-    penUpDemoScene.clear();
-    penDownDemoScene.addLine(0, 0, 28, 0, downPen);
-    penUpDemoScene.addLine(0, 0, 28, 0, upPen);
-    ui->graphicsView_penDownDemo->show();
-    ui->graphicsView_penUpDemo->show();
 
     QList<QLine> lines_down;
     lines_down.clear();
@@ -400,7 +462,6 @@ void MainWindow::do_drawView()
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
     label->setRotation(90);
     QRectF labelRect = label->boundingRect();
-    qDebug() << "label x: " << labelRect.width();
     label->setY(label->y() - labelRect.width());
     plotScene.addText("(0,0)");
     QString scaleText = "Scale: " + QString::number(scale);
@@ -423,7 +484,12 @@ void MainWindow::do_loadFile()
     {
         inputFile.close();
     }
-    inputFile.setFileName(ui->lineEdit_filePath->text());
+    QString filePath = ui->lineEdit_filePath->text();
+    if (filePath.isEmpty())
+    {
+        return;
+    }
+    inputFile.setFileName(filePath);
     inputFile.open(QIODevice::ReadOnly);
     objList.clear();
     //ui->textBrowser_read->clear();
@@ -432,6 +498,8 @@ void MainWindow::do_loadFile()
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
     objList.push_back(hpgl_obj(buffer));
+
+    settings->setValue("MainWindow/filePath", filePath);
 
     do_drawView();
 }

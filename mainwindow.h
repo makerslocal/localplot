@@ -17,6 +17,8 @@
 #include <QGraphicsTextItem>
 #include <QPen>
 #include <QScreen>
+#include <QCoreApplication>
+#include <QSettings>
 
 #include "hpgl_obj.h"
 
@@ -41,7 +43,13 @@ public slots:
     void do_loadFile();
     void do_plot();
     void do_drawView();
+    void do_drawDemoView();
     void do_updatePens();
+
+    void update_penDown();
+    void update_penUp();
+    void update_filePath();
+//    void update_serialDevice();
 
     void handle_serialOpened();
     void handle_serialClosed();
@@ -64,6 +72,7 @@ private:
     QGraphicsScene penUpDemoScene;
     QPen downPen;
     QPen upPen;
+    QSettings * settings;
 };
 
 #endif // MAINWINDOW_H
