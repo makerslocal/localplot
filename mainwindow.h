@@ -19,6 +19,8 @@
 #include <QScreen>
 #include <QCoreApplication>
 #include <QSettings>
+#include <QThread>
+#include <QProcess>
 
 #include "hpgl_obj.h"
 
@@ -49,6 +51,7 @@ public slots:
     void update_penDown();
     void update_penUp();
     void update_filePath();
+    void update_serialDevice();
 //    void update_serialDevice();
 
     void handle_serialOpened();

@@ -30,6 +30,18 @@ MainWindow::MainWindow(QWidget *parent) :
     QCoreApplication::setApplicationName("localplot");
     settings = new QSettings();
 
+    // Initialize interface
+    ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
+    ui->comboBox_baud->setCurrentIndex(2);
+    //ui->comboBox_bytesize->insertItems(0, QStringList() << "8" << "7" << "6" << "5");
+    ui->comboBox_bytesize->addItem("8", 8);
+    ui->comboBox_bytesize->addItem("7", 7);
+    ui->comboBox_bytesize->addItem("6", 6);
+    ui->comboBox_bytesize->addItem("5", 5);
+    ui->comboBox_parity->insertItems(0, QStringList() << "None" << "Odd" << "Even" << "Mark" << "Space");
+    ui->comboBox_stopbits->insertItems(0, QStringList() << "1" << "1.5" << "2");
+    do_refreshSerialList();
+
     // Load saved settings
     ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", "").toString());
     ui->spinBox_downPen_size->setValue(settings->value("pen/down/size", 2).toInt());
@@ -41,13 +53,32 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->spinBox_upPen_green->setValue(settings->value("pen/up/green", 150).toInt());
     ui->spinBox_upPen_blue->setValue(settings->value("pen/up/blue", 150).toInt());
 
+    for (int i = 0; i < ui->comboBox_serialPort->count(); i++)
+    {
+        if (settings->value("serial/port") == ui->comboBox_serialPort->itemData(i))
+        {
+            ui->comboBox_serialPort->setCurrentIndex(i);
+            break;
+        }
+    }
+
+//    settings->setValue("port", ui->comboBox_serialPort->currentData());
+//    settings->setValue("parity", ui->comboBox_parity->currentData());
+//    settings->setValue("baud", ui->comboBox_baud->currentData());
+//    settings->setValue("bytesize", ui->comboBox_bytesize->currentData());
+//    settings->setValue("stopbits", ui->comboBox_stopbits->currentData());
+//    settings->setValue("xonxoff", ui->radioButton_XonXoff->isChecked());
+//    settings->setValue("ischecked", ui->radioButton_RtsCts->isChecked());
+//    settings->setValue("dsrdtr", ui->radioButton_DsrDtr->isChecked());
+
+    // Connect actions
     connect(ui->pushButton_serialRefresh, SIGNAL(clicked()), this, SLOT(do_refreshSerialList()));
     connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->pushButton_fileLoad, SIGNAL(clicked()), this, SLOT(do_loadFile()));
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 
-    // Set up the two drawing pens
+    // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
     do_updatePens();
 
@@ -61,25 +92,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
     connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
     connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
+    connect(ui->comboBox_serialPort, SIGNAL(currentIndexChanged(int)), this, SLOT(update_serialDevice()));
 
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
+
 
     connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
     connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
     connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
     connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
-
-    // Initialize interface
-    ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
-    ui->comboBox_baud->setCurrentIndex(2);
-    //ui->comboBox_bytesize->insertItems(0, QStringList() << "8" << "7" << "6" << "5");
-    ui->comboBox_bytesize->addItem("8", 8);
-    ui->comboBox_bytesize->addItem("7", 7);
-    ui->comboBox_bytesize->addItem("6", 6);
-    ui->comboBox_bytesize->addItem("5", 5);
-    ui->comboBox_parity->insertItems(0, QStringList() << "None" << "Odd" << "Even" << "Mark" << "Space");
-    ui->comboBox_stopbits->insertItems(0, QStringList() << "1" << "1.5" << "2");
-    do_refreshSerialList();
 
     ui->graphicsView_view->setScene(&plotScene);
     ui->graphicsView_penDownDemo->setScene(&penDownDemoScene);
@@ -137,7 +158,19 @@ void MainWindow::update_filePath()
     settings->endGroup();
 }
 
-//void update_serialDevice();
+void MainWindow::update_serialDevice()
+{
+    settings->beginGroup("serial");
+    settings->setValue("port", ui->comboBox_serialPort->currentData());
+    settings->setValue("parity", ui->comboBox_parity->currentData());
+    settings->setValue("baud", ui->comboBox_baud->currentData());
+    settings->setValue("bytesize", ui->comboBox_bytesize->currentData());
+    settings->setValue("stopbits", ui->comboBox_stopbits->currentData());
+    settings->setValue("xonxoff", ui->radioButton_XonXoff->isChecked());
+    settings->setValue("ischecked", ui->radioButton_RtsCts->isChecked());
+    settings->setValue("dsrdtr", ui->radioButton_DsrDtr->isChecked());
+    settings->endGroup();
+}
 
 void MainWindow::do_refreshSerialList()
 {
@@ -506,6 +539,7 @@ void MainWindow::do_loadFile()
 
 void MainWindow::do_plot()
 {
+    int cutterSpeed = ui->spinBox_cutterSpeed->value(); // in mm/s
     qDebug() << "Plotting file!";
     if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
     {
@@ -515,17 +549,31 @@ void MainWindow::do_plot()
     for (int i = 0; i < objList.count(); i++)
     {
         hpgl_obj obj = objList.at(i);
-//        int size = obj.printLen();
-        QString printThis = obj.print();
-        if (printThis == "OOB")
+        int cmdCount = obj.cmdCount();
+        for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
         {
-            ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-            //ui->textBrowser_console->append("(try the auto translation button)");
-            ui->textBrowser_console->append("(An X or Y value is less than zero)");
-            return;
+            QString printThis = obj.cmdPrint(cmd_index);
+            if (printThis == "OOB")
+            {
+                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
+                //ui->textBrowser_console->append("(try the auto translation button)");
+                ui->textBrowser_console->append("(An X or Y value is less than zero)");
+                return;
+            }
+            serialBuffer->write(printThis.toStdString().c_str());
+            serialBuffer->flush();
+            QString command = "sleep ";
+            double time = obj.cmdMM(cmd_index) / cutterSpeed;
+            if (time == 0)
+                continue;
+            command += QString::number(time);
+            QProcess process;
+            qDebug() << "Starting sleep command. Sleep: " << time;
+            process.start(command);
+            process.waitForFinished();
+            qDebug() << "Done with sleep command";
         }
-//        serialBuffer->write(cmdList.at(i).toStdString().c_str(), size);
-        serialBuffer->write(printThis.toStdString().c_str());
+        qDebug() << "Done plotting.";
     }
 }
 

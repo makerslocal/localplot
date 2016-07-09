@@ -258,6 +258,109 @@ void hpgl_obj::gen_height(QList<QLine> lineList)
     //return(maxY - minY);
 }
 
+double hpgl_obj::cmdMM(int cmd_index)
+{
+    QPoint prev;
+    QPoint curr;
+    hpgl_cmd cmd;
+    double mm = 0;
+    prev.setX(0);
+    prev.setY(0);
+    cmd = cmdList[cmd_index];
+    if (cmd.opcode != "SP")
+    {
+        for (int i = 0; i < cmd.coordList.length(); i++)
+        {
+            int x, y;
+            curr = cmd.coordList.at(i);
+            x = abs(curr.x() - prev.x());
+            y = abs(curr.y() - prev.y());
+            mm += sqrt(x*x + y*y);
+            prev.setX(curr.x());
+            prev.setY(curr.y());
+        }
+    }
+    mm = mm * 0.025; // convert graphics units to mm
+    return(mm);
+}
+
+QString hpgl_obj::cmdPrint(int cmd_index)
+{
+    QString retval = "";
+    hpgl_cmd cmd;
+    cmd = cmdList[cmd_index];
+
+    retval += cmd.opcode;
+    if (cmd.opcode == "SP")
+    {
+        retval += QString::number(cmd.pen);
+    }
+    else
+    {
+        for (int i = 0; i < cmd.coordList.length(); i++)
+        {
+            QPoint point = cmd.coordList.at(i);
+
+            QTransform center, uncenter;
+            center.translate(-width/2, -height/2);
+            uncenter.translate(width/2, height/2);
+
+            point = cmdTransformScale.map(point);
+            point = cmdTransformRotate.map(point);
+            point = cmdTransformTranslate.map(point);
+
+            if (point.x() < 0 || point.y() < 0)
+            {
+                retval = "OOB"; // Out of Bounds
+                return retval;
+            }
+
+            retval += QString::number(point.x());
+            retval += ",";
+            retval += QString::number(point.y());
+            if (i < (cmd.coordList.length()-1))
+            {
+                retval += ",";
+            }
+        }
+    }
+    retval += ";";
+    return(retval);
+}
+
+int hpgl_obj::cmdCount()
+{
+    return(cmdList.length());
+}
+
+int hpgl_obj::totalMM()
+{
+    QPoint prev;
+    QPoint curr;
+    hpgl_cmd cmd;
+    int mm;
+    prev.setX(0);
+    prev.setY(0);
+    for (int idx = 0; idx < cmdList.length(); idx++)
+    {
+        cmd = cmdList[idx];
+        if (cmd.opcode != "SP")
+        {
+            for (int i = 0; i < cmd.coordList.length(); i++)
+            {
+                int x, y;
+                curr = cmd.coordList.at(i);
+                x = curr.x() - prev.x();
+                y = curr.y() - prev.y();
+                mm += sqrt(x*x + y*y);
+            }
+        }
+
+    }
+    mm = mm * 0.025; // convert graphics units to mm
+    return(mm);
+}
+
 int hpgl_obj::printLen()
 {
     return(print().length());
@@ -267,9 +370,9 @@ QString hpgl_obj::print()
 {
     QString retval = "";
     hpgl_cmd cmd;
-    for (int i = 0; i < cmdList.length(); i++)
+    for (int idx = 0; idx < cmdList.length(); idx++)
     {
-        cmd = cmdList[i];
+        cmd = cmdList[idx];
 
         retval += cmd.opcode;
         if (cmd.opcode == "SP")

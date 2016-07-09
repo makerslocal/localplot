@@ -1,6 +1,8 @@
 #ifndef HPGLOBJ_H
 #define HPGLOBJ_H
 
+#include <math.h>
+
 #include <QTransform>
 #include <QList>
 #include <QLine>
@@ -27,6 +29,10 @@ public:
     ~hpgl_obj();
     QString print();
     int printLen();
+    int totalMM();
+    double cmdMM(int cmd_index);
+    QString cmdPrint(int cmd_index);
+    int cmdCount();
     hpgl_cmd initCmd();
     void gen_line_lists();
     void gen_height(QList<QLine> lineList);
