@@ -20,6 +20,7 @@
 
 * Flexible
 	* Have basic transformations working. Translate, scale, rotate. All via methods available in the classes that handle hpgl.
+	* Be able to create a box (with variable margin) around objects, to make removing from the vinyl reel easier.
 
 #### v0.4
 
