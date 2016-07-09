@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Instantiate settings object
     QCoreApplication::setOrganizationName("Makers Local 256");
-    QCoreApplication::setOrganizationDomain("makerslocal.org");
+    QCoreApplication::setOrganizationDomain("256.makerslocal.org");
     QCoreApplication::setApplicationName("localplot");
     settings = new QSettings();
 
