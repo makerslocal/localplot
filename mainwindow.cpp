@@ -93,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(update_penUp()));
     connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
     connect(ui->comboBox_serialPort, SIGNAL(currentIndexChanged(int)), this, SLOT(update_serialDevice()));
+    connect(ui->checkBox_cutterSpeed, SIGNAL(toggled(bool)), this, SLOT(update_cutterSpeed(bool)));
 
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
 
@@ -294,6 +295,11 @@ void MainWindow::do_closeSerial()
         serialBuffer.clear();
     }
     handle_serialClosed();
+}
+
+void MainWindow::update_cutterSpeed(bool checked)
+{
+    ui->spinBox_cutterSpeed->setEnabled(checked);
 }
 
 void MainWindow::handle_serialConnectBtn()
@@ -539,7 +545,15 @@ void MainWindow::do_loadFile()
 
 void MainWindow::do_plot()
 {
+    // Variables
     int cutterSpeed = ui->spinBox_cutterSpeed->value(); // in mm/s
+    hpgl_obj obj;
+    QString printThis;
+    int cmdCount;
+    QString command;
+    double time;
+    QProcess process;
+
     qDebug() << "Plotting file!";
     if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
     {
@@ -548,11 +562,11 @@ void MainWindow::do_plot()
     }
     for (int i = 0; i < objList.count(); i++)
     {
-        hpgl_obj obj = objList.at(i);
-        int cmdCount = obj.cmdCount();
+        obj = objList.at(i);
+        cmdCount = obj.cmdCount();
         for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
         {
-            QString printThis = obj.cmdPrint(cmd_index);
+            printThis = obj.cmdPrint(cmd_index);
             if (printThis == "OOB")
             {
                 ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
@@ -561,20 +575,22 @@ void MainWindow::do_plot()
                 return;
             }
             serialBuffer->write(printThis.toStdString().c_str());
-            serialBuffer->flush();
-            QString command = "sleep ";
-            double time = obj.cmdMM(cmd_index) / cutterSpeed;
-            if (time == 0)
-                continue;
-            command += QString::number(time);
-            QProcess process;
-            qDebug() << "Starting sleep command. Sleep: " << time;
-            process.start(command);
-            process.waitForFinished();
-            qDebug() << "Done with sleep command";
+            if (ui->checkBox_cutterSpeed->isChecked())
+            {
+                serialBuffer->flush();
+                command = "sleep ";
+                time = obj.cmdMM(cmd_index) / cutterSpeed;
+                if (time == 0)
+                    continue;
+                command += QString::number(time);
+                qDebug() << "Starting sleep command: sleep " << time;
+                process.start(command);
+                process.waitForFinished(60000); // Waits for up to 60s
+                qDebug() << "Done with sleep command";
+            }
         }
-        qDebug() << "Done plotting.";
     }
+    qDebug() << "Done plotting.";
 }
 
 void MainWindow::handle_objectTransform()

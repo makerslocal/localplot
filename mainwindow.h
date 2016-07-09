@@ -59,6 +59,7 @@ public slots:
     void handle_serialConnectBtn();
     void handle_selectFileBtn();
     void handle_objectTransform();
+    void update_cutterSpeed(bool checked);
 //    void handle_autoTranslateBtn();
 
 signals:
