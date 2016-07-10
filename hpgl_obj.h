@@ -27,6 +27,7 @@ public:
     hpgl_obj();
     hpgl_obj(QString text);
     ~hpgl_obj();
+    void parseHPGL(QString hpgl_text);
     QString print();
     int printLen();
     int totalMM();

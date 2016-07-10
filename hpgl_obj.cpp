@@ -17,19 +17,29 @@ hpgl_obj::hpgl_obj()
     cmdList.clear();
 }
 
-hpgl_obj::hpgl_obj(QString text)
+hpgl_obj::hpgl_obj(QString hpgl_text)
 {
     // Initialize
     hpgl_obj();
 
-    text.remove('\n');
-    int numCmds = text.count(';');
-    qDebug() << "Object text: " << text;
+    parseHPGL(hpgl_text);
+}
+
+hpgl_obj::~hpgl_obj()
+{
+    //
+}
+
+void hpgl_obj::parseHPGL(QString hpgl_text)
+{
+    hpgl_text.remove('\n');
+    int numCmds = hpgl_text.count(';');
+    qDebug() << "Object text: " << hpgl_text;
     for (int i = 0; i < numCmds; i++)
     {
         hpgl_cmd newCmd = initCmd();
         QString cmdText;
-        cmdText = text.section(';', i, i);
+        cmdText = hpgl_text.section(';', i, i);
 
         qDebug() << "====\n" << "= Processing command: ";
 
@@ -67,11 +77,6 @@ hpgl_obj::hpgl_obj(QString text)
         }
         cmdList.push_back(newCmd);
     }
-}
-
-hpgl_obj::~hpgl_obj()
-{
-    //
 }
 
 hpgl_cmd hpgl_obj::initCmd()
