@@ -6,7 +6,8 @@
  *
  * Language Structure:
  * Using Inkscape's default format -> XXy1,y1,y2,y2;
- * Two uppercase characters followed by a CSV list and terminated with a semicolon.
+ * Two uppercase characters followed by a CSV list
+ * and terminated with a semicolon.
  *
  * Path Vertex Object:
  * State: up or down
@@ -31,13 +32,12 @@ MainWindow::MainWindow(QWidget *parent) :
     settings = new QSettings();
 
     // Initialize interface
-    ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200");
+    ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800"
+                                   << "9600" << "19200" << "38400"
+                                   << "57600" << "115200");
     ui->comboBox_baud->setCurrentIndex(2);
-    //ui->comboBox_bytesize->insertItems(0, QStringList() << "8" << "7" << "6" << "5");
-    ui->comboBox_bytesize->addItem("8", 8);
-    ui->comboBox_bytesize->addItem("7", 7);
-    ui->comboBox_bytesize->addItem("6", 6);
-    ui->comboBox_bytesize->addItem("5", 5);
+    ui->comboBox_bytesize->insertItems(0, QStringList() << "8" << "7"
+                                       << "6" << "5");
     ui->comboBox_parity->insertItems(0, QStringList() << "None" << "Odd" << "Even" << "Mark" << "Space");
     ui->comboBox_stopbits->insertItems(0, QStringList() << "1" << "1.5" << "2");
     do_refreshSerialList();
@@ -96,13 +96,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->comboBox_serialPort, SIGNAL(currentIndexChanged(int)), this, SLOT(update_serialDevice()));
     connect(ui->checkBox_cutterSpeed, SIGNAL(toggled(bool)), this, SLOT(update_cutterSpeed(bool)));
 
-    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)), this, SLOT(do_drawView())); // Update view if the pixel DPI changes
+    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)),
+            this, SLOT(do_drawView())); // Update view if the pixel DPI changes
 
-
-    connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)), this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)),
+            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)),
+            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)),
+            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)),
+            this, SLOT(handle_objectTransform())); // Update view if the scale changes
 
     ui->graphicsView_view->setScene(&plotScene);
     ui->graphicsView_penDownDemo->setScene(&penDownDemoScene);
@@ -208,7 +212,7 @@ void MainWindow::do_openSerial()
     serialBuffer = new QSerialPort(_device);
     serialBuffer->setBaudRate(atoi(ui->comboBox_baud->currentText().toStdString().c_str()));
 
-    int dataBits = ui->comboBox_bytesize->currentData().toInt();
+    int dataBits = atoi(ui->comboBox_bytesize->currentText().toStdString().c_str());
     if (dataBits == 8)
     {
         serialBuffer->setDataBits(QSerialPort::Data8);
