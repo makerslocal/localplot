@@ -75,8 +75,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_serialRefresh, SIGNAL(clicked()), this, SLOT(do_refreshSerialList()));
     connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
-    connect(ui->pushButton_fileLoad, SIGNAL(clicked()), this, SLOT(do_loadFile()));
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
+    connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -352,6 +353,7 @@ void MainWindow::handle_selectFileBtn()
         tr("Open File"), "", tr("HPGL Files (*.hpgl *.HPGL)"));
 
     ui->lineEdit_filePath->setText(fileName);
+    do_loadFile();
 }
 
 //void MainWindow::handle_autoTranslateBtn()

@@ -65,6 +65,9 @@ public slots:
 signals:
     //
 
+private slots:
+//    void open();
+
 private:
     Ui::MainWindow *ui;
     QSerialPortInfo serialPorts;
