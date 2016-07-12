@@ -15,12 +15,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     hpgl_obj.cpp \
     dialogabout.cpp \
-    dialogsettings.cpp
+    dialogsettings.cpp \
+    settings.cpp
 
 HEADERS  += mainwindow.h \
     hpgl_obj.h \
     dialogabout.h \
-    dialogsettings.h
+    dialogsettings.h \
+    settings.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \

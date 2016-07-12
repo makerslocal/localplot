@@ -23,6 +23,7 @@
 #include <QProcess>
 
 #include "hpgl_obj.h"
+#include "settings.h"
 
 namespace Ui {
 class MainWindow;

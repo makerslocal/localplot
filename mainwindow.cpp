@@ -32,9 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // Instantiate settings object
-    QCoreApplication::setOrganizationName("Makers Local 256");
-    QCoreApplication::setOrganizationDomain("256.makerslocal.org");
-    QCoreApplication::setApplicationName("localplot");
+    init_localplot_settings();
     settings = new QSettings();
 
     // Connect actions
@@ -126,14 +124,7 @@ void MainWindow::update_penUp()
     settings->setValue("green", settings->value("pen/up/green", 150).toInt());
     settings->setValue("blue", settings->value("pen/up/blue", 150).toInt());
     settings->endGroup();
-//    if (ui->tabWidget->currentIndex() == 0)
-//    {
-//        do_drawDemoView();
-//    }
-    if (ui->tabWidget->currentIndex() == 1)
-    {
-        do_drawView();
-    }
+    do_drawView();
 }
 
 void MainWindow::update_filePath()

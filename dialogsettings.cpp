@@ -8,9 +8,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->setupUi(this);
 
     // Instantiate settings object
-    QCoreApplication::setOrganizationName("Makers Local 256");
-    QCoreApplication::setOrganizationDomain("256.makerslocal.org");
-    QCoreApplication::setApplicationName("localplot");
+    init_localplot_settings();
     settings = new QSettings();
 
     // Initialize interface

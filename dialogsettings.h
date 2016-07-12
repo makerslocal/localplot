@@ -9,6 +9,8 @@
 #include <QGraphicsScene>
 #include <QPen>
 
+#include "settings.h"
+
 namespace Ui {
 class DialogSettings;
 }
