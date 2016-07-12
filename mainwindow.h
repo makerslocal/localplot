@@ -37,21 +37,22 @@ public:
     ~MainWindow();
     QString timeStamp();
     int get_nextInt(QString input, int *index);
+    QGraphicsScene penDownDemoScene;
+    QGraphicsScene penUpDemoScene;
+    QPen downPen;
+    QPen upPen;
 
 public slots:
-    void do_refreshSerialList();
     void do_openSerial();
     void do_closeSerial();
     void do_loadFile();
     void do_plot();
     void do_drawView();
-    void do_drawDemoView();
     void do_updatePens();
 
     void update_penDown();
     void update_penUp();
     void update_filePath();
-    void update_serialDevice();
 //    void update_serialDevice();
 
     void handle_serialOpened();
@@ -59,7 +60,6 @@ public slots:
     void handle_serialConnectBtn();
     void handle_selectFileBtn();
     void handle_objectTransform();
-    void update_cutterSpeed(bool checked);
 //    void handle_autoTranslateBtn();
 
 signals:
@@ -67,6 +67,8 @@ signals:
 
 private slots:
 //    void open();
+    void open_dialogAbout();
+    void open_dialogSettings();
 
 private:
     Ui::MainWindow *ui;
@@ -75,10 +77,6 @@ private:
     QFile inputFile;
     QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
-    QGraphicsScene penDownDemoScene;
-    QGraphicsScene penUpDemoScene;
-    QPen downPen;
-    QPen upPen;
     QSettings * settings;
 };
 
