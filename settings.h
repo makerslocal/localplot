@@ -18,6 +18,19 @@ void init_localplot_settings();
 #define SETDEF_PEN_UP_GREEN   150
 #define SETDEF_PEN_UP_BLUE    150
 
+#define SETDEF_CUTTER_INCREMENTAL true
+#define SETDEF_CUTTER_SPEED 80
+
+#define SETDEF_MAINWINDOW_FILEPATH ""
+
+#define SETDEF_SERIAL_PORT ""
+#define SETDEF_SERIAL_BAUD 9600
+#define SETDEF_SERIAL_BYTESIZE 8
+#define SETDEF_SERIAL_PARITY "none"
+#define SETDEF_SERIAL_STOPBITS 1
+#define SETDEF_SERIAL_XONOFF false
+#define SETDEF_SERIAL_RTSCTS false
+
 /*
  * Current Settings Paths:
  *
@@ -28,9 +41,7 @@ void init_localplot_settings();
  * - - size, red, green, blue (int)
  *
  * serial
- * - port
- * - - name (string)
- * - - index (int)
+ * - port (string)
  * - parity (string)
  * - baud (int)
  * - bytesize (int)
