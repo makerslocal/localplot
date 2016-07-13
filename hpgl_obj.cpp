@@ -263,7 +263,8 @@ void hpgl_obj::gen_height(QList<QLine> lineList)
     //return(maxY - minY);
 }
 
-double hpgl_obj::cmdMM(int cmd_index)
+// Returns the mm length of the hypotenuse of a line
+double hpgl_obj::cmdLenHyp(int cmd_index)
 {
     QPoint prev;
     QPoint curr;
@@ -282,6 +283,50 @@ double hpgl_obj::cmdMM(int cmd_index)
             y = abs(curr.y() - prev.y());
             mm += sqrt(x*x + y*y);
             prev.setX(curr.x());
+            prev.setY(curr.y());
+        }
+    }
+    mm = mm * 0.025; // convert graphics units to mm
+    return(mm);
+}
+
+double hpgl_obj::cmdLenX(int cmd_index)
+{
+    QPoint prev;
+    QPoint curr;
+    hpgl_cmd cmd;
+    double mm = 0;
+    prev.setX(0);
+    prev.setY(0);
+    cmd = cmdList[cmd_index];
+    if (cmd.opcode != "SP")
+    {
+        for (int i = 0; i < cmd.coordList.length(); i++)
+        {
+            curr = cmd.coordList.at(i);
+            mm += abs(curr.x() - prev.x());
+            prev.setX(curr.x());
+        }
+    }
+    mm = mm * 0.025; // convert graphics units to mm
+    return(mm);
+}
+
+double hpgl_obj::cmdLenY(int cmd_index)
+{
+    QPoint prev;
+    QPoint curr;
+    hpgl_cmd cmd;
+    double mm = 0;
+    prev.setX(0);
+    prev.setY(0);
+    cmd = cmdList[cmd_index];
+    if (cmd.opcode != "SP")
+    {
+        for (int i = 0; i < cmd.coordList.length(); i++)
+        {
+            curr = cmd.coordList.at(i);
+            mm += abs(curr.y() - prev.y());
             prev.setY(curr.y());
         }
     }

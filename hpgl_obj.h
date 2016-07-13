@@ -31,7 +31,9 @@ public:
     QString print();
     int printLen();
     int totalMM();
-    double cmdMM(int cmd_index);
+    double cmdLenHyp(int cmd_index);
+    double cmdLenX(int cmd_index);
+    double cmdLenY(int cmd_index);
     QString cmdPrint(int cmd_index);
     int cmdCount();
     hpgl_cmd initCmd();

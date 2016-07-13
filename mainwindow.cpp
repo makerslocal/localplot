@@ -477,16 +477,32 @@ void MainWindow::do_plot()
             serialBuffer->write(printThis.toStdString().c_str());
             if (settings->value("cutter/incremental", SETDEF_CUTTER_INCREMENTAL).toBool())
             {
-                serialBuffer->flush();
-                command = "sleep ";
-                time = obj.cmdMM(cmd_index) / cutterSpeed;
-                if (time == 0)
-                    continue;
-                command += QString::number(time);
-                qDebug() << "Starting sleep command: sleep " << time;
-                process.start(command);
-                process.waitForFinished(60000); // Waits for up to 60s
-                qDebug() << "Done with sleep command";
+                if (settings->value("cutter/axis", SETDEF_CUTTER_SPEED_AXIS).toBool())
+                {
+                    serialBuffer->flush();
+                    command = "sleep ";
+                    time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index)) / cutterSpeed;
+                    if (time == 0)
+                        continue;
+                    command += QString::number(time);
+                    qDebug() << "Starting sleep command: sleep " << time;
+                    process.start(command);
+                    process.waitForFinished(60000); // Waits for up to 60s
+                    qDebug() << "Done with sleep command";
+                }
+                else
+                {
+                    serialBuffer->flush();
+                    command = "sleep ";
+                    time = obj.cmdLenHyp(cmd_index) / cutterSpeed;
+                    if (time == 0)
+                        continue;
+                    command += QString::number(time);
+                    qDebug() << "Starting sleep command: sleep " << time;
+                    process.start(command);
+                    process.waitForFinished(60000); // Waits for up to 60s
+                    qDebug() << "Done with sleep command";
+                }
             }
         }
     }

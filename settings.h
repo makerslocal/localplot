@@ -20,6 +20,7 @@ void init_localplot_settings();
 
 #define SETDEF_CUTTER_INCREMENTAL true
 #define SETDEF_CUTTER_SPEED 80
+#define SETDEF_CUTTER_SPEED_AXIS true
 
 #define SETDEF_MAINWINDOW_FILEPATH ""
 
@@ -53,6 +54,7 @@ void init_localplot_settings();
  * cutter
  * - incremental (bool)
  * - speed (int)
+ * - - axis (bool)
  *
  * mainwindow
  * - filePath (string)
