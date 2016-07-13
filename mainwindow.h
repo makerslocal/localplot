@@ -51,10 +51,7 @@ public slots:
     void do_drawView();
     void do_updatePens();
 
-    void update_penDown();
-    void update_penUp();
     void update_filePath();
-//    void update_serialDevice();
 
     void handle_serialOpened();
     void handle_serialClosed();

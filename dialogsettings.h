@@ -24,11 +24,11 @@ public:
     ~DialogSettings();
 
 public slots:
-    void update_serialDevice();
     void do_refreshSerialList();
-    void update_cutter();
+    void do_updateUi();
     void do_drawDemoView();
     void do_updatePens();
+    void do_saveAndClose();
 
 private:
     Ui::DialogSettings *ui;

@@ -42,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
     connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(open_dialogAbout()));
+    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(open_dialogSettings()));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -63,10 +64,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->graphicsView_view->setScene(&plotScene);
 
-    ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", "").toString());
+    ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", SETDEF_MAINWINDOW_FILEPATH).toString());
 
     do_drawView();
-//    do_drawDemoView();
 }
 
 MainWindow::~MainWindow()
@@ -106,27 +106,6 @@ void MainWindow::open_dialogSettings()
     newwindow->exec();
 }
 
-void MainWindow::update_penDown()
-{
-    settings->beginGroup("pen/down");
-    settings->setValue("size", settings->value("pen/down/size", 2).toInt());
-    settings->setValue("red", settings->value("pen/down/red", 100).toInt());
-    settings->setValue("green", settings->value("pen/down/green", 150).toInt());
-    settings->setValue("blue", settings->value("pen/down/blue", 200).toInt());
-    settings->endGroup();
-}
-
-void MainWindow::update_penUp()
-{
-    settings->beginGroup("pen/up");
-    settings->setValue("size", settings->value("pen/up/size", 1).toInt());
-    settings->setValue("red", settings->value("pen/up/red", 250).toInt());
-    settings->setValue("green", settings->value("pen/up/green", 150).toInt());
-    settings->setValue("blue", settings->value("pen/up/blue", 150).toInt());
-    settings->endGroup();
-    do_drawView();
-}
-
 void MainWindow::update_filePath()
 {
     settings->beginGroup("mainwindow");
@@ -136,26 +115,33 @@ void MainWindow::update_filePath()
 
 void MainWindow::do_openSerial()
 {
-    int _portIndex = settings->value("serial/port", 0).toInt(); //ui->comboBox_serialPort->currentIndex();
+    QString _portLocation = settings->value("serial/port", SETDEF_SERIAL_PORT).toString();
     QSerialPortInfo _device;
 
-    if (_portIndex >= 0 && serialPorts.availablePorts().count() > _portIndex)
-        _device = serialPorts.availablePorts().at(_portIndex);
-    else
+    for (int i = 0; i < serialPorts.availablePorts().count(); i++)
+    {
+        if (_portLocation == serialPorts.availablePorts().at(i).systemLocation())
+        {
+            _device = serialPorts.availablePorts().at(i);
+        }
+    }
+
+    if (_device.isNull())
     {
         qDebug() << "Serial list needs to be refreshed or something";
         do_closeSerial();
         return;
     }
+
     if (!serialBuffer.isNull())
     {
         serialBuffer.clear();
         handle_serialClosed();
     }
     serialBuffer = new QSerialPort(_device);
-    serialBuffer->setBaudRate(atoi(settings->value("serial/baud", 9600).toString().toStdString().c_str()));
+    serialBuffer->setBaudRate(settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
 
-    int dataBits = atoi(settings->value("serial/bytesize", "").toString().toStdString().c_str());
+    int dataBits = settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
     if (dataBits == 8)
     {
         serialBuffer->setDataBits(QSerialPort::Data8);
@@ -173,47 +159,47 @@ void MainWindow::do_openSerial()
         serialBuffer->setDataBits(QSerialPort::Data5);
     }
 
-    QString parity = settings->value("serial/parity").toString();
-    if (parity == "None")
+    QString parity = settings->value("serial/parity", SETDEF_SERIAL_PARITY).toString();
+    if (parity == "none")
     {
         serialBuffer->setParity(QSerialPort::NoParity);
     }
-    else if (parity == "Odd")
+    else if (parity == "odd")
     {
         serialBuffer->setParity(QSerialPort::OddParity);
     }
-    else if (parity == "Even")
+    else if (parity == "even")
     {
         serialBuffer->setParity(QSerialPort::EvenParity);
     }
-    else if (parity == "Mark")
+    else if (parity == "mark")
     {
         serialBuffer->setParity(QSerialPort::MarkParity);
     }
-    else if (parity == "Space")
+    else if (parity == "space")
     {
         serialBuffer->setParity(QSerialPort::SpaceParity);
     }
 
-    QString stopBits = settings->value("serial/stopbits", 0).toString();
-    if (stopBits == "1")
+    int stopBits = settings->value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
+    if (stopBits == 1)
     {
         serialBuffer->setStopBits(QSerialPort::OneStop);
     }
-    else if (stopBits == "1.5")
+    else if (stopBits == 3)
     {
         serialBuffer->setStopBits(QSerialPort::OneAndHalfStop);
     }
-    else if (stopBits == "2")
+    else if (stopBits == 2)
     {
         serialBuffer->setStopBits(QSerialPort::TwoStop);
     }
 
-    if (settings->value("serial/xonxoff", false).toBool())
+    if (settings->value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         serialBuffer->setFlowControl(QSerialPort::SoftwareControl);
     }
-    else if (settings->value("serial/rtscts", false).toBool())
+    else if (settings->value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
     {
         serialBuffer->setFlowControl(QSerialPort::HardwareControl);
     }
@@ -232,7 +218,6 @@ void MainWindow::do_openSerial()
         ui->textBrowser_console->append(timeStamp() + "Serial port didn't open? :'(");
         do_closeSerial();
     }
-
 }
 
 void MainWindow::do_closeSerial()
@@ -312,19 +297,19 @@ void MainWindow::do_updatePens()
     QColor penColor;
 
     // Set downPen
-    penSize = settings->value("pen/down/size", 2).toInt(); //ui->spinBox_downPen_size->value();
-    rgbColor[0] = settings->value("pen/down/red", 0).toInt(); //ui->spinBox_downPen_red->value();
-    rgbColor[1] = settings->value("pen/down/green", 0).toInt(); //ui->spinBox_downPen_green->value();
-    rgbColor[2] = settings->value("pen/down/blue", 0).toInt(); //ui->spinBox_downPen_blue->value();
+    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt(); //ui->spinBox_downPen_size->value();
+    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt(); //ui->spinBox_downPen_red->value();
+    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt(); //ui->spinBox_downPen_green->value();
+    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt(); //ui->spinBox_downPen_blue->value();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     downPen.setColor(penColor);
     downPen.setWidth(penSize);
 
     // Set upPen
-    penSize = settings->value("pen/up/size", 1).toInt(); //ui->spinBox_upPen_size->value();
-    rgbColor[0] = settings->value("pen/up/red", 1).toInt(); //ui->spinBox_upPen_red->value();
-    rgbColor[1] = settings->value("pen/up/green", 1).toInt(); //ui->spinBox_upPen_green->value();
-    rgbColor[2] = settings->value("pen/up/blue", 1).toInt(); //ui->spinBox_upPen_blue->value();
+    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt(); //ui->spinBox_upPen_size->value();
+    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt(); //ui->spinBox_upPen_red->value();
+    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt(); //ui->spinBox_upPen_green->value();
+    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt(); //ui->spinBox_upPen_blue->value();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     upPen.setColor(penColor);
     upPen.setWidth(penSize);
@@ -461,7 +446,7 @@ void MainWindow::do_loadFile()
 void MainWindow::do_plot()
 {
     // Variables
-    int cutterSpeed = settings->value("cutter/speed", 80).toInt(); //ui->spinBox_cutterSpeed->value(); // in mm/s
+    int cutterSpeed = settings->value("cutter/speed", SETDEF_CUTTER_SPEED).toInt(); //ui->spinBox_cutterSpeed->value(); // in mm/s
     hpgl_obj obj;
     QString printThis;
     int cmdCount;
@@ -490,7 +475,7 @@ void MainWindow::do_plot()
                 return;
             }
             serialBuffer->write(printThis.toStdString().c_str());
-            if (settings->value("cutter/incremental", 1).toInt())
+            if (settings->value("cutter/incremental", SETDEF_CUTTER_INCREMENTAL).toBool())
             {
                 serialBuffer->flush();
                 command = "sleep ";
