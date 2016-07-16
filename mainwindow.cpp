@@ -295,19 +295,19 @@ void MainWindow::do_updatePens()
     QColor penColor;
 
     // Set downPen
-    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt(); //ui->spinBox_downPen_size->value();
-    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt(); //ui->spinBox_downPen_red->value();
-    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt(); //ui->spinBox_downPen_green->value();
-    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt(); //ui->spinBox_downPen_blue->value();
+    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
+    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
+    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
+    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     downPen.setColor(penColor);
     downPen.setWidth(penSize);
 
     // Set upPen
-    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt(); //ui->spinBox_upPen_size->value();
-    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt(); //ui->spinBox_upPen_red->value();
-    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt(); //ui->spinBox_upPen_green->value();
-    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt(); //ui->spinBox_upPen_blue->value();
+    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
+    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
+    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
+    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     upPen.setColor(penColor);
     upPen.setWidth(penSize);
@@ -332,7 +332,6 @@ void MainWindow::do_drawView()
     do_updatePens();
 
     // scale is the value set by our user
-    //double scale = ui->doubleSpinBox_objScale->value();
     double scale = 1.0;
     // Factor is the conversion from HP Graphic Unit to pixels
     double xFactor = (xDpi / 1016.0 * scale);
