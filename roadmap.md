@@ -10,11 +10,18 @@
 
 ### Future
 
+#### TODO - unassigned
+
+* run perimeter command
+* pause active cuts
+* Set size of vinyl
+
 #### v0.2
 
 * Classy
 	* Program at this stage should read AND parse hpgl code. The opcodes that can be accepted are based on those most commonly output by Inkscape (example: Inkscape exports all circles as line segments, even though hpgl as a standard has an arc opcode).
 	* The classes for working with hpgl should be 'kinda' robust.
+	* Incremental serial output for USCutter MH871-MK2.
 
 #### v0.3
 
