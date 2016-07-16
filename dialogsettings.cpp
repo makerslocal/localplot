@@ -16,9 +16,6 @@ DialogSettings::DialogSettings(QWidget *parent) :
     do_updatePens();
 
     // Initialize interface
-//    ui->comboBox_baud->insertItems(0, QStringList() << "2400" << "4800"
-//                                   << "9600" << "19200" << "38400"
-//                                   << "57600" << "115200");
     ui->comboBox_baud->clear();
     ui->comboBox_baud->insertItem(0, "2400", 2400);
     ui->comboBox_baud->insertItem(1, "4800", 4800);
@@ -29,8 +26,6 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->comboBox_baud->insertItem(6, "115200", 115200);
     ui->comboBox_baud->setCurrentIndex(2);
 
-//    ui->comboBox_bytesize->insertItems(0, QStringList() << "8" << "7"
-//                                       << "6" << "5");
     ui->comboBox_bytesize->clear();
     ui->comboBox_bytesize->insertItem(0, "8", 8);
     ui->comboBox_bytesize->insertItem(1, "7", 7);
@@ -38,8 +33,6 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->comboBox_bytesize->insertItem(3, "5", 5);
     ui->comboBox_bytesize->setCurrentIndex(0);
 
-//    ui->comboBox_parity->insertItems(0, QStringList() << "None" << "Odd"
-//                                     << "Even" << "Mark" << "Space");
     ui->comboBox_parity->clear();
     ui->comboBox_parity->insertItem(0, "None", "none");
     ui->comboBox_parity->insertItem(1, "Odd", "odd");
@@ -48,7 +41,6 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->comboBox_parity->insertItem(4, "Space", "space");
     ui->comboBox_parity->setCurrentIndex(0);
 
-//    ui->comboBox_stopbits->insertItems(0, QStringList() << "1" << "1.5" << "2");
     ui->comboBox_stopbits->clear();
     ui->comboBox_stopbits->insertItem(0, "1", 1);
     ui->comboBox_stopbits->insertItem(1, "1.5", 3);
@@ -88,11 +80,11 @@ DialogSettings::DialogSettings(QWidget *parent) :
     connect(ui->spinBox_upPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawDemoView()));
     connect(ui->spinBox_upPen_blue, SIGNAL(valueChanged(int)), this, SLOT(do_drawDemoView()));
 
-    connect(ui->checkBox_cutterSpeed, SIGNAL(stateChanged(int)), this, SLOT(do_updateUi()));
-    connect(ui->spinBox_cutterSpeed, SIGNAL(valueChanged(int)), this, SLOT(do_updateUi()));
-
     ui->graphicsView_penDownDemo->setScene(&penDownDemoScene);
     ui->graphicsView_penUpDemo->setScene(&penUpDemoScene);
+
+    connect(ui->pushButton_settingsClear, SIGNAL(clicked(bool)), this, SLOT(do_settingsClear()));
+    connect(ui->pushButton_settingsPrint, SIGNAL(clicked(bool)), this, SLOT(do_settingsPrint()));
 
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(do_saveAndClose())); // Save settings
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(close())); // Discard settings
@@ -104,6 +96,24 @@ DialogSettings::~DialogSettings()
 {
     delete settings;
     delete ui;
+}
+
+void DialogSettings::do_settingsClear()
+{
+    qDebug() << "Clearing all settings.";
+    do_settingsPrint();
+    settings->clear();
+    qDebug() << "... Done.";
+}
+
+void DialogSettings::do_settingsPrint()
+{
+    qDebug() << "Printing all settings: ";
+    QStringList allKeys = settings->allKeys();
+    for (int index = 0; index < allKeys.size(); index++)
+    {
+        qDebug() << allKeys.at(index) << ":\t" << settings->value(allKeys.at(index));
+    }
 }
 
 void DialogSettings::do_saveAndClose()
@@ -134,23 +144,15 @@ void DialogSettings::do_saveAndClose()
     }
     settings->endGroup();
 
-    settings->beginGroup("cutter");
+    settings->beginGroup("device");
     {
-        settings->setValue("incremental", ui->checkBox_cutterSpeed->isChecked());
-        settings->setValue("speed", ui->spinBox_cutterSpeed->value());
-        settings->setValue("speed/axis", ui->radioButton_cutterAxisSpeed->isChecked());
+        settings->setValue("incremental", ui->checkBox_deviceIncrementalOutput->isChecked());
+        settings->setValue("speed/cut", ui->spinBox_deviceCutSpeed->value());
+        settings->setValue("speed/travel", ui->spinBox_deviceTravelSpeed->value());
     }
     settings->endGroup();
 
     close();
-}
-
-void DialogSettings::do_updateUi()
-{
-    // Enable/disable cutter settings
-    ui->spinBox_cutterSpeed->setEnabled(ui->checkBox_cutterSpeed->isChecked());
-    ui->radioButton_cutterAxisSpeed->setEnabled(ui->checkBox_cutterSpeed->isChecked());
-    ui->radioButton_cutterSpeedAbsolute->setEnabled(ui->checkBox_cutterSpeed->isChecked());
 }
 
 void DialogSettings::do_refreshSerialList()

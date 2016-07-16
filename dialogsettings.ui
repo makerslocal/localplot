@@ -532,28 +532,8 @@
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
         <layout class="QFormLayout" name="formLayout_15">
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_23">
-           <property name="text">
-            <string>Speed (mm/s)</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="spinBox_cutterSpeed">
-           <property name="minimum">
-            <number>1</number>
-           </property>
-           <property name="maximum">
-            <number>999</number>
-           </property>
-           <property name="value">
-            <number>80</number>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
-          <widget class="QCheckBox" name="checkBox_cutterSpeed">
+          <widget class="QCheckBox" name="checkBox_deviceIncrementalOutput">
            <property name="toolTip">
             <string extracomment="Use this if sending all of the serial data at once overwhelms the cutter and causes it to crash."/>
            </property>
@@ -566,19 +546,48 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QRadioButton" name="radioButton_cutterSpeedAbsolute">
+          <widget class="QLabel" name="label_23">
            <property name="text">
-            <string>Absolute speed</string>
+            <string>Cut Speed (mm/s)</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QRadioButton" name="radioButton_cutterAxisSpeed">
-           <property name="text">
-            <string>Axis speed</string>
+          <widget class="QSpinBox" name="spinBox_deviceCutSpeed">
+           <property name="minimum">
+            <number>10</number>
            </property>
-           <property name="checked">
-            <bool>true</bool>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+           <property name="singleStep">
+            <number>10</number>
+           </property>
+           <property name="value">
+            <number>80</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Travel Speed (mm/s)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="spinBox_deviceTravelSpeed">
+           <property name="minimum">
+            <number>10</number>
+           </property>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+           <property name="singleStep">
+            <number>10</number>
+           </property>
+           <property name="value">
+            <number>150</number>
            </property>
           </widget>
          </item>
@@ -596,6 +605,39 @@
           </size>
          </property>
         </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_4">
+      <attribute name="title">
+       <string>Misc</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QPushButton" name="pushButton_settingsClear">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Reset All Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="pushButton_settingsPrint">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Print All Settings</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

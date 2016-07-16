@@ -18,9 +18,9 @@ void init_localplot_settings();
 #define SETDEF_PEN_UP_GREEN   150
 #define SETDEF_PEN_UP_BLUE    150
 
-#define SETDEF_CUTTER_INCREMENTAL true
-#define SETDEF_CUTTER_SPEED 80
-#define SETDEF_CUTTER_SPEED_AXIS true
+#define SETDEF_DEVICE_INCREMENTAL true
+#define SETDEF_DEVICE_SPEED_CUT 80
+#define SETDEF_DEVICE_SPEED_TRAVEL 150
 
 #define SETDEF_MAINWINDOW_FILEPATH ""
 
@@ -51,10 +51,11 @@ void init_localplot_settings();
  * - rtscts (bool)
  * - dsrdtr (bool)
  *
- * cutter
+ * device
  * - incremental (bool)
- * - speed (int)
- * - - axis (bool)
+ * - speed
+ * - - cut (int)
+ * - - travel (int)
  *
  * mainwindow
  * - filePath (string)

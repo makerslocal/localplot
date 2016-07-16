@@ -378,6 +378,11 @@ QString hpgl_obj::cmdPrint(int cmd_index)
     return(retval);
 }
 
+hpgl_cmd hpgl_obj::cmdGet(int cmd_index)
+{
+    return(cmdList.at(cmd_index));
+}
+
 int hpgl_obj::cmdCount()
 {
     return(cmdList.length());

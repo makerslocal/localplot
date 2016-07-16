@@ -8,6 +8,7 @@
 #include <QSerialPortInfo>
 #include <QGraphicsScene>
 #include <QPen>
+#include <QDebug>
 
 #include "settings.h"
 
@@ -25,10 +26,11 @@ public:
 
 public slots:
     void do_refreshSerialList();
-    void do_updateUi();
     void do_drawDemoView();
     void do_updatePens();
     void do_saveAndClose();
+    void do_settingsClear();
+    void do_settingsPrint();
 
 private:
     Ui::DialogSettings *ui;

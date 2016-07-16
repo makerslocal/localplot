@@ -108,9 +108,7 @@ void MainWindow::open_dialogSettings()
 
 void MainWindow::update_filePath()
 {
-    settings->beginGroup("mainwindow");
-    settings->setValue("filePath", ui->lineEdit_filePath->text());
-    settings->endGroup();
+    settings->setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
 }
 
 void MainWindow::do_openSerial()
@@ -438,7 +436,7 @@ void MainWindow::do_loadFile()
     buffer = fstream.readAll();
     objList.push_back(hpgl_obj(buffer));
 
-    settings->setValue("MainWindow/filePath", filePath);
+    settings->setValue("mainwindow/filePath", filePath);
 
     do_drawView();
 }
@@ -446,7 +444,9 @@ void MainWindow::do_loadFile()
 void MainWindow::do_plot()
 {
     // Variables
-    int cutterSpeed = settings->value("cutter/speed", SETDEF_CUTTER_SPEED).toInt(); //ui->spinBox_cutterSpeed->value(); // in mm/s
+    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
+    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
+
     hpgl_obj obj;
     QString printThis;
     int cmdCount;
@@ -460,6 +460,18 @@ void MainWindow::do_plot()
         ui->textBrowser_console->append(timeStamp() + "Can't plot!");
         return;
     }
+
+    // explain the situation
+    if (settings->value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
+    {
+        qDebug() << "Cutting with axis speed delay";
+    }
+    else
+    {
+        qDebug() << "Cutting with absolute speed delay";
+    }
+    qDebug() << "Cutter speed: " << cutSpeed;
+
     for (int i = 0; i < objList.count(); i++)
     {
         obj = objList.at(i);
@@ -475,34 +487,30 @@ void MainWindow::do_plot()
                 return;
             }
             serialBuffer->write(printThis.toStdString().c_str());
-            if (settings->value("cutter/incremental", SETDEF_CUTTER_INCREMENTAL).toBool())
+            if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
             {
-                if (settings->value("cutter/axis", SETDEF_CUTTER_SPEED_AXIS).toBool())
+                serialBuffer->flush();
+                command = "sleep ";
+                time = obj.cmdLenHyp(cmd_index) / cutSpeed;
+                qDebug() << "- absolute time: " << time;
+                //time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index)) / cutterSpeed;
+                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+                if (obj.cmdGet(cmd_index).opcode == "PD")
                 {
-                    serialBuffer->flush();
-                    command = "sleep ";
-                    time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index)) / cutterSpeed;
-                    if (time == 0)
-                        continue;
-                    command += QString::number(time);
-                    qDebug() << "Starting sleep command: sleep " << time;
-                    process.start(command);
-                    process.waitForFinished(60000); // Waits for up to 60s
-                    qDebug() << "Done with sleep command";
+                    time = time / cutSpeed;
                 }
-                else
+                else if (obj.cmdGet(cmd_index).opcode == "PU")
                 {
-                    serialBuffer->flush();
-                    command = "sleep ";
-                    time = obj.cmdLenHyp(cmd_index) / cutterSpeed;
-                    if (time == 0)
-                        continue;
-                    command += QString::number(time);
-                    qDebug() << "Starting sleep command: sleep " << time;
-                    process.start(command);
-                    process.waitForFinished(60000); // Waits for up to 60s
-                    qDebug() << "Done with sleep command";
+                    time = time / travelSpeed;
                 }
+                qDebug() << "- sleep time: " << time;
+                if (time == 0)
+                    continue;
+                command += QString::number(time);
+                qDebug() << "Starting sleep command: sleep " << time;
+                process.start(command);
+                process.waitForFinished(60000); // Waits for up to 60s
+                qDebug() << "Done with sleep command";
             }
         }
     }
