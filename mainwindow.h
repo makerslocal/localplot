@@ -42,6 +42,7 @@ public:
     QGraphicsScene penUpDemoScene;
     QPen downPen;
     QPen upPen;
+    double speedTranslate(int setting_speed);
 
 public slots:
     void do_openSerial();

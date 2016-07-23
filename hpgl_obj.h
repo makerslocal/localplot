@@ -27,7 +27,6 @@ public:
     hpgl_obj();
     hpgl_obj(QString text);
     ~hpgl_obj();
-    void parseHPGL(QString hpgl_text);
     QString print();
     int printLen();
     int totalMM();
@@ -37,7 +36,6 @@ public:
     hpgl_cmd cmdGet(int cmd_index);
     QString cmdPrint(int cmd_index);
     int cmdCount();
-    hpgl_cmd initCmd();
     void gen_line_lists();
     void gen_height(QList<QLine> lineList);
     void gen_width(QList<QLine> lineList);
@@ -48,10 +46,10 @@ public:
     QList<QLine> lineListUp;
     QList<QLine> lineListDown;
 
-public slots:
-    //
-
 protected:
+    void parseHPGL(QString hpgl_text);
+    hpgl_cmd initCmd();
+
     QList<hpgl_cmd> cmdList;
     int width;
     int height;

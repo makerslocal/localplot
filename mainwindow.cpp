@@ -255,9 +255,10 @@ void MainWindow::handle_serialClosed()
 void MainWindow::handle_selectFileBtn()
 {
     QString fileName;
+    QString startDir = settings->value("mainwindow/filePath", "").toString();
 
     fileName = QFileDialog::getOpenFileName(this,
-        tr("Open File"), "", tr("HPGL Files (*.hpgl *.HPGL)"));
+        tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
 
     ui->lineEdit_filePath->setText(fileName);
     do_loadFile();
@@ -496,11 +497,11 @@ void MainWindow::do_plot()
                 time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
                 if (obj.cmdGet(cmd_index).opcode == "PD")
                 {
-                    time = time / cutSpeed;
+                    time = time / speedTranslate(cutSpeed);
                 }
                 else if (obj.cmdGet(cmd_index).opcode == "PU")
                 {
-                    time = time / travelSpeed;
+                    time = time / speedTranslate(travelSpeed);
                 }
                 qDebug() << "- sleep time: " << time;
                 if (time == 0)
@@ -514,6 +515,11 @@ void MainWindow::do_plot()
         }
     }
     qDebug() << "Done plotting.";
+}
+
+double MainWindow::speedTranslate(int setting_speed)
+{
+    return((0.52*setting_speed) + 24.8);
 }
 
 void MainWindow::handle_objectTransform()

@@ -22,8 +22,9 @@
 
 Some bugfixes and minor features:
 
-* run perimeter command
-* pause active cuts
+* General UI cleaning.
+* Run perimeter command.
+* Cancel/Pause active cuts.
 * Incremental serial output for USCutter MH871-MK2.
 
 #### v0.4 - "Social"
