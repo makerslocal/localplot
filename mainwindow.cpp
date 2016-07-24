@@ -209,6 +209,7 @@ void MainWindow::do_openSerial()
     serialBuffer->open(QIODevice::WriteOnly);
     if (serialBuffer->isOpen())
     {
+        qDebug() << "Flow control: " << serialBuffer->flowControl();
         handle_serialOpened();
     }
     else
@@ -447,6 +448,9 @@ void MainWindow::do_plot()
     int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
     int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
 
+    qDebug() << "Cut speed: " << cutSpeed;
+    qDebug() << "Travel speed: " << travelSpeed;
+
     hpgl_obj obj;
     QString printThis;
     int cmdCount;
@@ -491,17 +495,19 @@ void MainWindow::do_plot()
             {
                 serialBuffer->flush();
                 command = "sleep ";
-                time = obj.cmdLenHyp(cmd_index) / cutSpeed;
-                qDebug() << "- absolute time: " << time;
-                //time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index)) / cutterSpeed;
-                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+                time = obj.cmdLenHyp(cmd_index);
+//                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+//                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+                qDebug() << "- distance: " << time;
                 if (obj.cmdGet(cmd_index).opcode == "PD")
                 {
                     time = time / speedTranslate(cutSpeed);
+                    qDebug() << "- PD, speedTranslate: " << speedTranslate(cutSpeed);
                 }
                 else if (obj.cmdGet(cmd_index).opcode == "PU")
                 {
                     time = time / speedTranslate(travelSpeed);
+                    qDebug() << "- PU, speedTranslate: " << speedTranslate(travelSpeed);
                 }
                 qDebug() << "- sleep time: " << time;
                 if (time == 0)
@@ -519,7 +525,10 @@ void MainWindow::do_plot()
 
 double MainWindow::speedTranslate(int setting_speed)
 {
-    return((0.52*setting_speed) + 24.8);
+    // I will never be a real engineer
+//    return((0.5*setting_speed) + 30);
+    return((0.3*setting_speed) + 70);
+    //return((0.52*setting_speed) + 24.8);
 }
 
 void MainWindow::handle_objectTransform()
