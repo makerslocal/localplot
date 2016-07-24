@@ -3,6 +3,12 @@
 
 ### Past
 
+#### v0.3.1
+
+Some bugfixes and minor features:
+* General UI cleaning.
+* Incremental serial output for USCutter MH871-MK2.
+
 #### v0.3 - "Flexible"
 
 * Have basic transformations working. Translate, scale, rotate. All via methods available in the classes that handle hpgl.
@@ -18,14 +24,10 @@
 
 ### Future
 
-#### v0.3-1
+#### v0.3.2
 
-Some bugfixes and minor features:
-
-* General UI cleaning.
 * Run perimeter command.
 * Cancel/Pause active cuts.
-* Incremental serial output for USCutter MH871-MK2.
 
 #### v0.4 - "Social"
 

@@ -402,7 +402,7 @@ void MainWindow::do_drawView()
     QRectF labelRect = label->boundingRect();
     label->setY(label->y() - labelRect.width());
     plotScene.addText("(0,0)");
-    QString scaleText = "Scale: " + QString::number(scale);
+    QString scaleText = "View Scale: " + QString::number(scale);
     QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
     QRectF scaleTextItemRect = scaleTextItem->boundingRect();
     scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());

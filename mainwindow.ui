@@ -392,6 +392,9 @@
          <height>100</height>
         </size>
        </property>
+       <property name="renderHints">
+        <set>QPainter::Antialiasing|QPainter::TextAntialiasing</set>
+       </property>
        <property name="resizeAnchor">
         <enum>QGraphicsView::AnchorUnderMouse</enum>
        </property>
