@@ -126,7 +126,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QRadioButton" name="radioButton_DsrDtr">
+            <widget class="QRadioButton" name="radioButton_flowControlNone">
              <property name="statusTip">
               <string>No Flow Control</string>
              </property>

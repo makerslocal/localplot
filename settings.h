@@ -49,7 +49,6 @@ void init_localplot_settings();
  * - stopbits (int)
  * - xonxoff (bool)
  * - rtscts (bool)
- * - dsrdtr (bool)
  *
  * device
  * - incremental (bool)

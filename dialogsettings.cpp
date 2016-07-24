@@ -58,12 +58,69 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->spinBox_upPen_red->setValue(settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt());
     ui->spinBox_upPen_green->setValue(settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt());
     ui->spinBox_upPen_blue->setValue(settings->value("pen/up/blue", SETDEF_PEN_DOWN_BLUE).toInt());
-
-    for (int i = 0; i < ui->comboBox_serialPort->count(); i++)
+    ui->checkBox_deviceIncrementalOutput->setChecked(settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool());
+    ui->spinBox_deviceCutSpeed->setValue(settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
+    ui->spinBox_deviceTravelSpeed->setValue(settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
+    if (settings->value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
-        if (settings->value("serial/port") == ui->comboBox_serialPort->itemData(i))
+        ui->radioButton_XonXoff->setChecked(true);
+        ui->radioButton_RtsCts->setChecked(false);
+        ui->radioButton_flowControlNone->setChecked(false);
+    }
+    else if (settings->value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
+    {
+        ui->radioButton_XonXoff->setChecked(false);
+        ui->radioButton_RtsCts->setChecked(true);
+        ui->radioButton_flowControlNone->setChecked(false);
+    }
+    else
+    {
+        ui->radioButton_XonXoff->setChecked(false);
+        ui->radioButton_RtsCts->setChecked(false);
+        ui->radioButton_flowControlNone->setChecked(true);
+    }
+    for (int index = 0; index < ui->comboBox_baud->count(); index++)
+    {
+        int value = ui->comboBox_baud->itemData(index).toInt();
+        if (value == settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt())
         {
-            ui->comboBox_serialPort->setCurrentIndex(i);
+            ui->comboBox_baud->setCurrentIndex(index);
+            break;
+        }
+    }
+    for (int index = 0; index < ui->comboBox_bytesize->count(); index++)
+    {
+        int value = ui->comboBox_bytesize->itemData(index).toInt();
+        if (value == settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt())
+        {
+            ui->comboBox_bytesize->setCurrentIndex(index);
+            break;
+        }
+    }
+    for (int index = 0; index < ui->comboBox_stopbits->count(); index++)
+    {
+        int value = ui->comboBox_stopbits->itemData(index).toInt();
+        if (value == settings->value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt())
+        {
+            ui->comboBox_stopbits->setCurrentIndex(index);
+            break;
+        }
+    }
+    for (int index = 0; index < ui->comboBox_parity->count(); index++)
+    {
+        QString value = ui->comboBox_parity->itemData(index).toString();
+        if (value == settings->value("serial/parity", SETDEF_SERIAL_PARITY).toString())
+        {
+            ui->comboBox_parity->setCurrentIndex(index);
+            break;
+        }
+    }
+    for (int index = 0; index < ui->comboBox_serialPort->count(); index++)
+    {
+        QString value = ui->comboBox_serialPort->itemData(index).toString();
+        if (value == settings->value("serial/port", SETDEF_SERIAL_STOPBITS).toString())
+        {
+            ui->comboBox_serialPort->setCurrentIndex(index);
             break;
         }
     }
@@ -140,7 +197,6 @@ void DialogSettings::do_saveAndClose()
         settings->setValue("stopbits", ui->comboBox_stopbits->currentData());
         settings->setValue("xonxoff", ui->radioButton_XonXoff->isChecked());
         settings->setValue("rtscts", ui->radioButton_RtsCts->isChecked());
-        settings->setValue("dsrdtr", ui->radioButton_DsrDtr->isChecked());
     }
     settings->endGroup();
 
