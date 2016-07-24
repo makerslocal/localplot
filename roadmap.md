@@ -6,7 +6,9 @@
 #### v0.3.1
 
 Some bugfixes and minor features:
+
 * General UI cleaning.
+	* Better support for Qt settings construct.
 * Incremental serial output for USCutter MH871-MK2.
 
 #### v0.3 - "Flexible"
