@@ -73,6 +73,13 @@ void hpgl_obj::parseHPGL(QString hpgl_text)
                 //i++;
                 qDebug() << "= Found x: " << newX << " y: " << newY;
                 newCmd.coordList.push_back(QPoint(newX, newY));
+                if (i < (commaCount-2) && ((i+1) % 500) == 0)
+                {
+                    qDebug() << "Breaking line";
+                    cmdList.push_back(newCmd);
+                    newCmd.coordList.clear();
+//                    newCmd.coordList.push_back(QPoint(newX, newY));
+                }
             }
         }
         cmdList.push_back(newCmd);
