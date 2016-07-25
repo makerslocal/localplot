@@ -26,10 +26,11 @@ Some bugfixes and minor features:
 
 ### Future
 
-#### v0.3.2
+#### v0.3.git-good-2
 
 * Run perimeter command.
 * Cancel/Pause active cuts.
+* Progress bar.
 
 #### v0.4 - "Social"
 
