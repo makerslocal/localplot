@@ -31,6 +31,7 @@ Some bugfixes and minor features:
 * Run perimeter command.
 * Cancel/Pause active cuts.
 * Progress bar.
+* Salience for serial connection status.
 
 #### v0.4 - "Social"
 
