@@ -243,12 +243,14 @@ void MainWindow::handle_serialConnectBtn()
 
 void MainWindow::handle_serialOpened()
 {
+    ui->pushButton_doPlot->setEnabled(true);
     ui->textBrowser_console->append(timeStamp() + "Serial port opened x)");
     ui->pushButton_serialConnect->setText("Disconnect");
 }
 
 void MainWindow::handle_serialClosed()
 {
+    ui->pushButton_doPlot->setEnabled(false);
     ui->textBrowser_console->append(timeStamp() + "Serial port closed :D");
     ui->pushButton_serialConnect->setText("Connect");
 }
