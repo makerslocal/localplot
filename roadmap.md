@@ -30,8 +30,11 @@ Some bugfixes and minor features:
 
 * Run perimeter command.
 * Cancel/Pause active cuts.
-* Progress bar.
+* Progress bar (seperate UI thread).
 * Salience for serial connection status.
+* Alert when done.
+* ETA (cut time estimation).
+* Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
 
 #### v0.4 - "Social"
 
