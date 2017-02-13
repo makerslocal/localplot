@@ -40,8 +40,6 @@ MainWindow::MainWindow(QWidget *parent) :
     settings = new QSettings();
 
     // Connect actions
-//    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(handle_serialConnectBtn()));
-//    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
@@ -67,11 +65,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)),
             this, SLOT(handle_objectTransform())); // Update view if the scale changes
     connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+            this, SLOT(handle_objectTransform())); // Update view if the rotation changes
     connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+            this, SLOT(handle_objectTransform())); // Update view if the translation-X changes
     connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+            this, SLOT(handle_objectTransform())); // Update view if the translation-Y changes
 
     ui->graphicsView_view->setScene(&plotScene);
 
