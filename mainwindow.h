@@ -3,8 +3,6 @@
 
 #include <QMainWindow>
 #include <QDebug>
-#include <QSerialPort>
-#include <QSerialPortInfo>
 #include <QVector>
 #include <QList>
 #include <QPointer>
@@ -24,6 +22,7 @@
 
 #include "hpgl_obj.h"
 #include "settings.h"
+#include "plotter.h"
 
 namespace Ui {
 class MainWindow;
@@ -42,15 +41,31 @@ public:
     QGraphicsScene penUpDemoScene;
     QPen downPen;
     QPen upPen;
-    double speedTranslate(int setting_speed);
 
-public slots:
-    void do_openSerial();
-    void do_closeSerial();
+/*
+ * please_  for signals to threads
+ */
+signals:
+    void please_plotter_openSerial();
+    void please_plotter_closeSerial();
+    void please_plotter_doPlot(QList<hpgl_obj> _objList);
+
+/*
+ * do_      for ui action
+ * update_  for settings change
+ * handle_  for ui update
+ */
+private slots:
     void do_loadFile();
-    void do_plot();
     void do_drawView();
     void do_updatePens();
+    void do_openDialogAbout();
+    void do_openDialogSettings();
+
+    // plotter thread
+//    void do_openSerial();
+//    void do_closeSerial();
+    void do_plot();
 
     void update_filePath();
 
@@ -61,22 +76,14 @@ public slots:
     void handle_objectTransform();
 //    void handle_autoTranslateBtn();
 
-signals:
-    //
-
-private slots:
-//    void open();
-    void open_dialogAbout();
-    void open_dialogSettings();
-
 private:
     Ui::MainWindow *ui;
-    QSerialPortInfo serialPorts;
-    QPointer<QSerialPort> serialBuffer;
     QFile inputFile;
     QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
     QSettings * settings;
+    Plotter * plotter;
+    QThread threadPlotter;
 };
 
 #endif // MAINWINDOW_H

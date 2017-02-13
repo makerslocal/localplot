@@ -31,18 +31,29 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // Declare threads
+    plotter = new Plotter;
+    plotter->moveToThread(&threadPlotter);
+
     // Instantiate settings object
     init_localplot_settings();
     settings = new QSettings();
 
     // Connect actions
-    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
+//    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(handle_serialConnectBtn()));
+//    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
-    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(open_dialogAbout()));
-    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(open_dialogSettings()));
+    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
+    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
+
+    // Connect threads
+    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(do_openSerial()));
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    connect(plotter, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
+    connect(plotter, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
+    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl_obj>)), plotter, SLOT(do_plot(QList<hpgl_obj>)));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -67,11 +78,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", SETDEF_MAINWINDOW_FILEPATH).toString());
 
     do_drawView();
+
+    // Kickstart threads
+    threadPlotter.start();
+    plotter->do_run(); // Auto start plotter
 }
 
 MainWindow::~MainWindow()
 {
-    do_closeSerial();
+    plotter->do_closeSerial();
+
+    threadPlotter.quit();
+    threadPlotter.wait();
 
     delete settings;
     delete ui;
@@ -82,7 +100,7 @@ QString MainWindow::timeStamp()
     return(QTime::currentTime().toString("[HH:mm:ss:zzz] "));
 }
 
-void MainWindow::open_dialogAbout()
+void MainWindow::do_openDialogAbout()
 {
     // This way of doing things will allow the QDialog to be reused. (?)
 //    QDialog * widget = new QDialog;
@@ -98,7 +116,7 @@ void MainWindow::open_dialogAbout()
     newwindow->exec();
 }
 
-void MainWindow::open_dialogSettings()
+void MainWindow::do_openDialogSettings()
 {
     DialogSettings * newwindow;
     newwindow = new DialogSettings(this);
@@ -111,133 +129,15 @@ void MainWindow::update_filePath()
     settings->setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
 }
 
-void MainWindow::do_openSerial()
-{
-    QString _portLocation = settings->value("serial/port", SETDEF_SERIAL_PORT).toString();
-    QSerialPortInfo _device;
-
-    for (int i = 0; i < serialPorts.availablePorts().count(); i++)
-    {
-        if (_portLocation == serialPorts.availablePorts().at(i).systemLocation())
-        {
-            _device = serialPorts.availablePorts().at(i);
-        }
-    }
-
-    if (_device.isNull())
-    {
-        qDebug() << "Serial list needs to be refreshed or something";
-        do_closeSerial();
-        return;
-    }
-
-    if (!serialBuffer.isNull())
-    {
-        serialBuffer.clear();
-        handle_serialClosed();
-    }
-    serialBuffer = new QSerialPort(_device);
-    serialBuffer->setBaudRate(settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
-
-    int dataBits = settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
-    if (dataBits == 8)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data8);
-    }
-    else if (dataBits == 7)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data7);
-    }
-    else if (dataBits == 6)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data6);
-    }
-    else if (dataBits == 5)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data5);
-    }
-
-    QString parity = settings->value("serial/parity", SETDEF_SERIAL_PARITY).toString();
-    if (parity == "none")
-    {
-        serialBuffer->setParity(QSerialPort::NoParity);
-    }
-    else if (parity == "odd")
-    {
-        serialBuffer->setParity(QSerialPort::OddParity);
-    }
-    else if (parity == "even")
-    {
-        serialBuffer->setParity(QSerialPort::EvenParity);
-    }
-    else if (parity == "mark")
-    {
-        serialBuffer->setParity(QSerialPort::MarkParity);
-    }
-    else if (parity == "space")
-    {
-        serialBuffer->setParity(QSerialPort::SpaceParity);
-    }
-
-    int stopBits = settings->value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
-    if (stopBits == 1)
-    {
-        serialBuffer->setStopBits(QSerialPort::OneStop);
-    }
-    else if (stopBits == 3)
-    {
-        serialBuffer->setStopBits(QSerialPort::OneAndHalfStop);
-    }
-    else if (stopBits == 2)
-    {
-        serialBuffer->setStopBits(QSerialPort::TwoStop);
-    }
-
-    if (settings->value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
-    {
-        serialBuffer->setFlowControl(QSerialPort::SoftwareControl);
-    }
-    else if (settings->value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
-    {
-        serialBuffer->setFlowControl(QSerialPort::HardwareControl);
-    }
-    else
-    {
-        serialBuffer->setFlowControl(QSerialPort::NoFlowControl);
-    }
-
-    serialBuffer->open(QIODevice::WriteOnly);
-    if (serialBuffer->isOpen())
-    {
-        qDebug() << "Flow control: " << serialBuffer->flowControl();
-        handle_serialOpened();
-    }
-    else
-    {
-        ui->textBrowser_console->append(timeStamp() + "Serial port didn't open? :'(");
-        do_closeSerial();
-    }
-}
-
-void MainWindow::do_closeSerial()
-{
-    if (!serialBuffer.isNull())
-    {
-        serialBuffer->close();
-        serialBuffer.clear();
-    }
-    handle_serialClosed();
-}
-
 void MainWindow::handle_serialConnectBtn()
 {
     if (ui->pushButton_serialConnect->text() == "Connect")
     {
-        do_openSerial();
+        emit please_plotter_openSerial(); //do_openSerial();
     }
     else
     {
-        do_closeSerial();
+        emit please_plotter_closeSerial(); //do_closeSerial();
     }
 }
 
@@ -253,6 +153,12 @@ void MainWindow::handle_serialClosed()
     ui->pushButton_doPlot->setEnabled(false);
     ui->textBrowser_console->append(timeStamp() + "Serial port closed :D");
     ui->pushButton_serialConnect->setText("Connect");
+}
+
+void MainWindow::do_plot()
+{
+    qDebug() << "trying to plot?";
+    emit please_plotter_doPlot(objList);
 }
 
 void MainWindow::handle_selectFileBtn()
@@ -278,6 +184,9 @@ void MainWindow::handle_selectFileBtn()
 //    }
 //}
 
+/*
+ * Returns integer from section of string.
+ */
 int MainWindow::get_nextInt(QString input, int * index)
 {
     QChar tmp = input[*index];
@@ -442,95 +351,6 @@ void MainWindow::do_loadFile()
     settings->setValue("mainwindow/filePath", filePath);
 
     do_drawView();
-}
-
-void MainWindow::do_plot()
-{
-    // Variables
-    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
-    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
-
-    qDebug() << "Cut speed: " << cutSpeed;
-    qDebug() << "Travel speed: " << travelSpeed;
-
-    hpgl_obj obj;
-    QString printThis;
-    int cmdCount;
-    QString command;
-    double time;
-    QProcess process;
-
-    qDebug() << "Plotting file!";
-    if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
-    {
-        ui->textBrowser_console->append(timeStamp() + "Can't plot!");
-        return;
-    }
-
-    // explain the situation
-    if (settings->value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
-    {
-        qDebug() << "Cutting with axis speed delay";
-    }
-    else
-    {
-        qDebug() << "Cutting with absolute speed delay";
-    }
-    qDebug() << "Cutter speed: " << cutSpeed;
-
-    for (int i = 0; i < objList.count(); i++)
-    {
-        obj = objList.at(i);
-        cmdCount = obj.cmdCount();
-        for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
-        {
-            printThis = obj.cmdPrint(cmd_index);
-            if (printThis == "OOB")
-            {
-                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-                //ui->textBrowser_console->append("(try the auto translation button)");
-                ui->textBrowser_console->append("(An X or Y value is less than zero)");
-                return;
-            }
-            serialBuffer->write(printThis.toStdString().c_str());
-            if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
-            {
-                serialBuffer->flush();
-                command = "sleep ";
-                time = obj.cmdLenHyp(cmd_index);
-//                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-                qDebug() << "- distance: " << time;
-                if (obj.cmdGet(cmd_index).opcode == "PD")
-                {
-                    time = time / speedTranslate(cutSpeed);
-                    qDebug() << "- PD, speedTranslate: " << speedTranslate(cutSpeed);
-                }
-                else if (obj.cmdGet(cmd_index).opcode == "PU")
-                {
-                    time = time / speedTranslate(travelSpeed);
-                    qDebug() << "- PU, speedTranslate: " << speedTranslate(travelSpeed);
-                }
-                qDebug() << "- sleep time: " << time;
-                if (time == 0)
-                    continue;
-                command += QString::number(time);
-                qDebug() << "Starting sleep command: sleep " << time;
-                process.start(command);
-                process.waitForFinished(60000); // Waits for up to 60s
-                qDebug() << "Done with sleep command";
-            }
-        }
-    }
-    qDebug() << "Done plotting.";
-}
-
-double MainWindow::speedTranslate(int setting_speed)
-{
-    // I will never be a real engineer
-//    return((0.5*setting_speed) + 30);
-    return((0.3*setting_speed) + 70);
-    //return((0.52*setting_speed) + 24.8);
 }
 
 void MainWindow::handle_objectTransform()
