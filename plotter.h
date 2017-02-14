@@ -35,6 +35,7 @@ public slots:
     void do_closeSerial();
     void do_beginPlot(QList<hpgl_obj> _objList);
     void do_cancelPlot();
+    void do_plotNext();
 
 signals:
     void donePlotting();
@@ -47,7 +48,6 @@ private:
     QSettings * settings;
     volatile int state;
     QList<hpgl_obj> objList;
-    void do_plotNext();
 
     // plotting
     int index_obj;

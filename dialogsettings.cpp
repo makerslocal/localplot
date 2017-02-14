@@ -126,6 +126,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     }
 
     connect(ui->pushButton_serialRefresh, SIGNAL(clicked()), this, SLOT(do_refreshSerialList()));
+    connect(ui->comboBox_serialPort, SIGNAL(activated(int)), this, SLOT(do_writeLineEditSerialPort()));
 
     // Update settings on UI change
     connect(ui->spinBox_downPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawDemoView()));
@@ -190,7 +191,14 @@ void DialogSettings::do_saveAndClose()
 
     settings->beginGroup("serial");
     {
-        settings->setValue("port", ui->comboBox_serialPort->currentData());
+        if (ui->comboBox_serialPort->currentData().toString() == ui->lineEdit_serialPort->text())
+        {
+            settings->setValue("port", ui->comboBox_serialPort->currentData());
+        }
+        else
+        {
+            settings->setValue("port", ui->lineEdit_serialPort->text());
+        }
         settings->setValue("parity", ui->comboBox_parity->currentData());
         settings->setValue("baud", ui->comboBox_baud->currentData());
         settings->setValue("bytesize", ui->comboBox_bytesize->currentData());
@@ -216,10 +224,21 @@ void DialogSettings::do_refreshSerialList()
     QList<QSerialPortInfo> _ports = serialPorts.availablePorts();
     ui->comboBox_serialPort->clear();
 
+    ui->lineEdit_serialPort->setText(settings->value("serial/port", SETDEF_SERIAL_PORT).toString());
+
     for (int i = 0; i < _ports.count(); ++i)
     {
         ui->comboBox_serialPort->insertItem(i, _ports.at(i).portName(), _ports.at(i).systemLocation());
+        if (_ports.at(i).systemLocation() == settings->value("serial/port", SETDEF_SERIAL_PORT).toString())
+        {
+            ui->comboBox_baud->setCurrentIndex(i);
+        }
     }
+}
+
+void DialogSettings::do_writeLineEditSerialPort()
+{
+    ui->lineEdit_serialPort->setText(ui->comboBox_serialPort->currentData().toString());
 }
 
 void DialogSettings::do_updatePens()

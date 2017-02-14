@@ -37,19 +37,21 @@ void Plotter::do_openSerial()
         }
     }
 
-    if (_device.isNull())
-    {
-        qDebug() << "Serial list needs to be refreshed or something";
-        do_closeSerial();
-        return;
-    }
-
     if (!serialBuffer.isNull())
     {
         serialBuffer.clear();
         emit serialClosed(); //handle_serialClosed();
     }
-    serialBuffer = new QSerialPort(_device);
+
+    if (_device.isNull())
+    {
+        serialBuffer = new QSerialPort(_portLocation);
+    }
+    else
+    {
+        serialBuffer = new QSerialPort(_device);
+    }
+
     serialBuffer->setBaudRate(settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
 
     int dataBits = settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
@@ -192,6 +194,8 @@ void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
     obj = objList.at(0);
     cmdCount = obj.cmdCount();
 
+    do_plotNext();
+
 //    for (int i = 0; i < objList.count(); i++)
 //    {
 //        obj = objList.at(i);
@@ -289,7 +293,7 @@ void Plotter::do_plotNext()
             qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
         }
         qDebug() << "- sleep time: " << time;
-        QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
+        QTimer::singleShot(time*1000 || 0.1, this, SLOT(do_plotNext()));
     }
 
 }

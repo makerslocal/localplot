@@ -9,6 +9,8 @@
 #include <QGraphicsScene>
 #include <QPen>
 #include <QDebug>
+#include <QComboBox>
+#include <QLineEdit>
 
 #include "settings.h"
 
@@ -31,6 +33,7 @@ public slots:
     void do_saveAndClose();
     void do_settingsClear();
     void do_settingsPrint();
+    void do_writeLineEditSerialPort();
 
 private:
     Ui::DialogSettings *ui;

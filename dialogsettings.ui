@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>408</width>
-    <height>296</height>
+    <width>1242</width>
+    <height>706</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,8 +41,18 @@
          </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="comboBox_serialPort">
+           <property name="toolTip">
+            <string>Serial device (automatically found)</string>
+           </property>
            <property name="editable">
             <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEdit_serialPort">
+           <property name="toolTip">
+            <string>Path to serial device; overrides dropdown menu</string>
            </property>
           </widget>
          </item>
@@ -53,8 +63,8 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
-          <widget class="QComboBox" name="comboBox_parity"/>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="comboBox_baud"/>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_2">
@@ -63,11 +73,8 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="comboBox_baud"/>
-         </item>
-         <item row="4" column="1">
-          <widget class="QComboBox" name="comboBox_bytesize"/>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="comboBox_parity"/>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_3">
@@ -76,8 +83,8 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
-          <widget class="QComboBox" name="comboBox_stopbits"/>
+         <item row="4" column="1">
+          <widget class="QComboBox" name="comboBox_bytesize"/>
          </item>
          <item row="5" column="0">
           <widget class="QLabel" name="label_4">
@@ -86,18 +93,8 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QPushButton" name="pushButton_serialRefresh">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Refresh List</string>
-           </property>
-          </widget>
+         <item row="5" column="1">
+          <widget class="QComboBox" name="comboBox_stopbits"/>
          </item>
         </layout>
        </item>
@@ -106,12 +103,25 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
+            <widget class="QPushButton" name="pushButton_serialRefresh">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Refresh List</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QRadioButton" name="radioButton_XonXoff">
              <property name="toolTip">
               <string>Software Flow Control</string>
              </property>
              <property name="text">
-              <string>XON/XOFF</string>
+              <string>&amp;XON/XOFF</string>
              </property>
             </widget>
            </item>
@@ -131,7 +141,7 @@
               <string>No Flow Control</string>
              </property>
              <property name="text">
-              <string>None</string>
+              <string>&amp;None</string>
              </property>
             </widget>
            </item>
@@ -141,9 +151,6 @@
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Minimum</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
