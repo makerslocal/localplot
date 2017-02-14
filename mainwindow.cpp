@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(plotter, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
     connect(plotter, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
-    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl_obj>)), plotter, SLOT(do_plot(QList<hpgl_obj>)));
+    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl_obj>)), plotter, SLOT(do_beginPlot(QList<hpgl_obj>)));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -157,6 +157,18 @@ void MainWindow::do_plot()
 {
     qDebug() << "trying to plot?";
     emit please_plotter_doPlot(objList);
+    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    ui->pushButton_doPlot->setText("Cancel");
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
+}
+
+void MainWindow::do_cancelPlot()
+{
+    qDebug() << "Trying to cancel plot?";
+    emit please_plotter_cancelPlot();
+    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
+    ui->pushButton_doPlot->setText("Plot");
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
 }
 
 void MainWindow::handle_selectFileBtn()

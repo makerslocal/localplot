@@ -7,9 +7,14 @@
 #include <QPointer>
 #include <QSettings>
 #include <QProcess>
+#include <QTimer>
+#include <QString>
 
 #include "hpgl_obj.h"
 #include "settings.h"
+
+#define CUTSPEED settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt()
+#define TRAVELSPEED settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt()
 
 namespace std {
 class Plotter;
@@ -28,7 +33,8 @@ public slots:
     void do_run();
     void do_openSerial();
     void do_closeSerial();
-    void do_plot(QList<hpgl_obj> _objList);
+    void do_beginPlot(QList<hpgl_obj> _objList);
+    void do_cancelPlot();
 
 signals:
     void donePlotting();
@@ -39,6 +45,17 @@ private:
     QSerialPortInfo serialPorts;
     QPointer<QSerialPort> serialBuffer;
     QSettings * settings;
+    volatile int state;
+    QList<hpgl_obj> objList;
+    void do_plotNext();
+
+    // plotting
+    int index_obj;
+    int index_cmd;
+    hpgl_obj obj;
+    QString printThis;
+    int cmdCount;
+    double time;
 };
 
 #endif // PLOTTER_H

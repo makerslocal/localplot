@@ -19,6 +19,9 @@ void Plotter::do_run()
     // Instantiate settings object
     init_localplot_settings();
     settings = new QSettings();
+
+    // Set initial state
+    state = 0; // 0->stopped 1->plotting 2->cancelled
 }
 
 void Plotter::do_openSerial()
@@ -139,24 +142,34 @@ void Plotter::do_closeSerial()
     emit serialClosed(); //handle_serialClosed();
 }
 
-void Plotter::do_plot(QList<hpgl_obj> _objList)
+void Plotter::do_cancelPlot()
+{
+    state = 2;
+}
+
+void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
 {
     // Variables
-    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
-    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
+//    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
+//    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
 
-    qDebug() << "Cut speed: " << cutSpeed;
-    qDebug() << "Travel speed: " << travelSpeed;
+    objList = _objList;
 
-    hpgl_obj obj;
-    QString printThis;
-    int cmdCount;
-    QString command;
-    double time;
-    QProcess process;
+    // Set state
+    state = 1;
+
+    qDebug() << "Cut speed: " << CUTSPEED;
+    qDebug() << "Travel speed: " << TRAVELSPEED;
+
+//    hpgl_obj obj;
+//    QString printThis;
+//    int cmdCount;
+//    QString command;
+//    double time;
+//    QProcess process;
 
     qDebug() << "Plotting file!";
-    if (serialBuffer.isNull() || !serialBuffer->isOpen() || _objList.isEmpty())
+    if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
     {
 //        ui->textBrowser_console->append(timeStamp() + "Can't plot!");
         return;
@@ -171,53 +184,114 @@ void Plotter::do_plot(QList<hpgl_obj> _objList)
     {
         qDebug() << "Cutting with absolute speed delay";
     }
-    qDebug() << "Cutter speed: " << cutSpeed;
+    qDebug() << "Cutter speed: " << CUTSPEED;
 
-    for (int i = 0; i < _objList.count(); i++)
+    // Initialize plotting loop
+    index_obj = 0;
+    index_cmd = 0;
+    obj = objList.at(0);
+    cmdCount = obj.cmdCount();
+
+//    for (int i = 0; i < objList.count(); i++)
+//    {
+//        obj = objList.at(i);
+//        cmdCount = obj.cmdCount();
+//        for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
+//        {
+//            if (state != 1)
+//            {
+//                qDebug() << "Bailing out of plot, cancelled!";
+//                break;
+//            }
+//            printThis = obj.cmdPrint(cmd_index);
+//            if (printThis == "OOB")
+//            {
+////                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
+//                //ui->textBrowser_console->append("(try the auto translation button)");
+////                ui->textBrowser_console->append("(An X or Y value is less than zero)");
+//                return;
+//            }
+//            serialBuffer->write(printThis.toStdString().c_str());
+//            if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
+//            {
+//                serialBuffer->flush();
+//                command = "sleep ";
+//                time = obj.cmdLenHyp(cmd_index);
+////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+//                qDebug() << "- distance: " << time;
+//                if (obj.cmdGet(cmd_index).opcode == "PD")
+//                {
+//                    time = time / speedTranslate(cutSpeed);
+//                    qDebug() << "- PD, speedTranslate: " << speedTranslate(cutSpeed);
+//                }
+//                else if (obj.cmdGet(cmd_index).opcode == "PU")
+//                {
+//                    time = time / speedTranslate(travelSpeed);
+//                    qDebug() << "- PU, speedTranslate: " << speedTranslate(travelSpeed);
+//                }
+//                qDebug() << "- sleep time: " << time;
+//                if (time == 0)
+//                    continue;
+//                command += QString::number(time);
+//                qDebug() << "Starting sleep command: sleep " << time;
+//                process.start(command);
+//                process.waitForFinished(60000); // Waits for up to 60s
+//                qDebug() << "Done with sleep command";
+//            }
+//        }
+//    }
+//    qDebug() << "Done plotting.";
+}
+
+void Plotter::do_plotNext()
+{
+    if (index_cmd >= cmdCount)
     {
-        obj = _objList.at(i);
-        cmdCount = obj.cmdCount();
-        for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
+        index_cmd = 0;
+        index_obj++;
+        if (index_obj >= objList.count())
         {
-            printThis = obj.cmdPrint(cmd_index);
-            if (printThis == "OOB")
-            {
+            // end
+        }
+        obj = objList.at(index_obj);
+        cmdCount = obj.cmdCount();
+    }
+    if (state != 1)
+    {
+        qDebug() << "Bailing out of plot, cancelled!";
+        // end
+    }
+    printThis = obj.cmdPrint(index_cmd);
+    if (printThis == "OOB")
+    {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-                //ui->textBrowser_console->append("(try the auto translation button)");
+        //ui->textBrowser_console->append("(try the auto translation button)");
 //                ui->textBrowser_console->append("(An X or Y value is less than zero)");
-                return;
-            }
-            serialBuffer->write(printThis.toStdString().c_str());
-            if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
-            {
-                serialBuffer->flush();
-                command = "sleep ";
-                time = obj.cmdLenHyp(cmd_index);
+        return;
+    }
+    serialBuffer->write(printThis.toStdString().c_str());
+    if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
+    {
+        serialBuffer->flush();
+        time = obj.cmdLenHyp(index_cmd);
 //                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
 //                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-                qDebug() << "- distance: " << time;
-                if (obj.cmdGet(cmd_index).opcode == "PD")
-                {
-                    time = time / speedTranslate(cutSpeed);
-                    qDebug() << "- PD, speedTranslate: " << speedTranslate(cutSpeed);
-                }
-                else if (obj.cmdGet(cmd_index).opcode == "PU")
-                {
-                    time = time / speedTranslate(travelSpeed);
-                    qDebug() << "- PU, speedTranslate: " << speedTranslate(travelSpeed);
-                }
-                qDebug() << "- sleep time: " << time;
-                if (time == 0)
-                    continue;
-                command += QString::number(time);
-                qDebug() << "Starting sleep command: sleep " << time;
-                process.start(command);
-                process.waitForFinished(60000); // Waits for up to 60s
-                qDebug() << "Done with sleep command";
-            }
+        qDebug() << "- distance: " << time;
+        if (obj.cmdGet(index_cmd).opcode == "PD")
+        {
+            time = time / speedTranslate(CUTSPEED);
+            qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
         }
+        else if (obj.cmdGet(index_cmd).opcode == "PU")
+        {
+            time = time / speedTranslate(TRAVELSPEED);
+            qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
+        }
+        qDebug() << "- sleep time: " << time;
+        QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
     }
-    qDebug() << "Done plotting.";
+
 }
 
 double Plotter::speedTranslate(int setting_speed)

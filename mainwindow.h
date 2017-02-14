@@ -49,6 +49,7 @@ signals:
     void please_plotter_openSerial();
     void please_plotter_closeSerial();
     void please_plotter_doPlot(QList<hpgl_obj> _objList);
+    void please_plotter_cancelPlot();
 
 /*
  * do_      for ui action
@@ -66,6 +67,7 @@ private slots:
 //    void do_openSerial();
 //    void do_closeSerial();
     void do_plot();
+    void do_cancelPlot();
 
     void update_filePath();
 
