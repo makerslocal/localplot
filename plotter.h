@@ -38,6 +38,7 @@ public slots:
     void do_plotNext();
 
 signals:
+    void startedPlotting();
     void donePlotting();
     void serialOpened();
     void serialClosed();

@@ -39,8 +39,8 @@ void Plotter::do_openSerial()
 
     if (!serialBuffer.isNull())
     {
-        serialBuffer.clear();
-        emit serialClosed(); //handle_serialClosed();
+        qDebug() << "Serial wasn't closed..? Trying to close it.";
+        do_closeSerial();
     }
 
     if (_device.isNull())
@@ -141,6 +141,7 @@ void Plotter::do_closeSerial()
         serialBuffer->close();
         serialBuffer.clear();
     }
+    delete serialBuffer;
     emit serialClosed(); //handle_serialClosed();
 }
 
@@ -193,6 +194,8 @@ void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
     index_cmd = 0;
     obj = objList.at(0);
     cmdCount = obj.cmdCount();
+
+    emit startedPlotting();
 
     do_plotNext();
 
@@ -254,9 +257,12 @@ void Plotter::do_plotNext()
     {
         index_cmd = 0;
         index_obj++;
+        qDebug() << "Moving on to the next object: " << index_obj;
         if (index_obj >= objList.count())
         {
-            // end
+            qDebug() << "No more objects left.";
+            emit donePlotting();
+            return;
         }
         obj = objList.at(index_obj);
         cmdCount = obj.cmdCount();
@@ -264,14 +270,17 @@ void Plotter::do_plotNext()
     if (state != 1)
     {
         qDebug() << "Bailing out of plot, cancelled!";
-        // end
+        emit donePlotting();
+        return;
     }
+    qDebug() << "Plotting command number: " << index_cmd;
     printThis = obj.cmdPrint(index_cmd);
     if (printThis == "OOB")
     {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
         //ui->textBrowser_console->append("(try the auto translation button)");
 //                ui->textBrowser_console->append("(An X or Y value is less than zero)");
+        emit donePlotting();
         return;
     }
     serialBuffer->write(printThis.toStdString().c_str());
@@ -293,9 +302,13 @@ void Plotter::do_plotNext()
             qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
         }
         qDebug() << "- sleep time: " << time;
-        QTimer::singleShot(time*1000 || 0.1, this, SLOT(do_plotNext()));
     }
-
+    else
+    {
+        //
+    }
+    index_cmd++;
+    QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
 }
 
 double Plotter::speedTranslate(int setting_speed)

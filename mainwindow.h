@@ -76,6 +76,8 @@ private slots:
     void handle_serialConnectBtn();
     void handle_selectFileBtn();
     void handle_objectTransform();
+    void handle_plotStarted();
+    void handle_plotCancelled();
 //    void handle_autoTranslateBtn();
 
 private:

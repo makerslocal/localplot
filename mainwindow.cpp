@@ -47,11 +47,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
 
     // Connect threads
-    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(do_openSerial()));
+    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(plotter, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
     connect(plotter, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
+    connect(this, SIGNAL(please_plotter_openSerial()), plotter, SLOT(do_openSerial()));
+    connect(this, SIGNAL(please_plotter_closeSerial()), plotter, SLOT(do_closeSerial()));
     connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl_obj>)), plotter, SLOT(do_beginPlot(QList<hpgl_obj>)));
+    connect(this, SIGNAL(please_plotter_cancelPlot()), plotter, SLOT(do_cancelPlot()));
+    connect(plotter, SIGNAL(donePlotting()), this, SLOT(handle_plotCancelled()));
+    connect(plotter, SIGNAL(startedPlotting()), this, SLOT(handle_plotStarted()));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -141,34 +146,46 @@ void MainWindow::handle_serialConnectBtn()
 
 void MainWindow::handle_serialOpened()
 {
+//    disconnect(ui->pushButton_serialConnect, 0, 0, 0);
     ui->pushButton_doPlot->setEnabled(true);
     ui->textBrowser_console->append(timeStamp() + "Serial port opened x)");
     ui->pushButton_serialConnect->setText("Disconnect");
+//    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(do_closeSerial()));
 }
 
 void MainWindow::handle_serialClosed()
 {
+//    disconnect(ui->pushButton_serialConnect, 0, 0, 0);
     ui->pushButton_doPlot->setEnabled(false);
     ui->textBrowser_console->append(timeStamp() + "Serial port closed :D");
     ui->pushButton_serialConnect->setText("Connect");
+//    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(do_openSerial()));
 }
 
 void MainWindow::do_plot()
 {
     qDebug() << "trying to plot?";
     emit please_plotter_doPlot(objList);
-    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
-    ui->pushButton_doPlot->setText("Cancel");
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
 }
 
 void MainWindow::do_cancelPlot()
 {
     qDebug() << "Trying to cancel plot?";
     emit please_plotter_cancelPlot();
+}
+
+void MainWindow::handle_plotStarted()
+{
+    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    ui->pushButton_doPlot->setText("Cancel");
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
+}
+
+void MainWindow::handle_plotCancelled()
+{
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
     ui->pushButton_doPlot->setText("Plot");
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 }
 
 void MainWindow::handle_selectFileBtn()
