@@ -2,8 +2,16 @@
 #define SETTINGS_H
 
 #include <QCoreApplication>
+#include <QDebug>
 
 void init_localplot_settings();
+
+/**
+ * Settings Identifiers
+ */
+#define ORGANIZATION_NAME   ("Makers Local 256")
+#define ORGANIZATION_DOMAIN ("256.makerslocal.org")
+#define APPLICATION_NAME    ("localplot")
 
 /**
  * Settings Defaults
@@ -31,6 +39,12 @@ void init_localplot_settings();
 #define SETDEF_SERIAL_STOPBITS 1
 #define SETDEF_SERIAL_XONOFF false
 #define SETDEF_SERIAL_RTSCTS false
+
+/**
+ * Macros
+ */
+#define CUTSPEED settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt()
+#define TRAVELSPEED settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt()
 
 /*
  * Current Settings Paths:

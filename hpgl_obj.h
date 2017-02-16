@@ -10,6 +10,10 @@
 #include <QPoint>
 #include <QDebug>
 #include <QString>
+#include <QSettings>
+#include <QPointer>
+
+#include "settings.h"
 
 struct hpgl_cmd {
     QString opcode;
@@ -39,6 +43,8 @@ public:
     void gen_line_lists();
     void gen_height(QList<QLine> lineList);
     void gen_width(QList<QLine> lineList);
+    double time(int command_index);
+    double speedTranslate(int setting_speed);
 
     QTransform cmdTransformScale;
     QTransform cmdTransformRotate;
@@ -46,9 +52,13 @@ public:
     QList<QLine> lineListUp;
     QList<QLine> lineListDown;
 
-protected:
     void parseHPGL(QString hpgl_text);
+
+private:
+//    void parseHPGL(QString hpgl_text);
     hpgl_cmd initCmd();
+//    QPointer<QSettings> settings;
+    QSettings * settings;
 
     QList<hpgl_cmd> cmdList;
     int width;

@@ -80,6 +80,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", SETDEF_MAINWINDOW_FILEPATH).toString());
 
+//    hpgl_obj obj_tmp("IN;SP0;PD10,10;PU100,100;IN");
+//    QList<hpgl_obj> list_tmp;
+//    list_tmp.push_back(hpgl_obj("IN;SP0;PD10,10;PU100,100;IN"));
+//    qDebug() << "Time: " << list_tmp[0].time(3);
+
     do_drawView();
 
     // Kickstart threads
@@ -164,13 +169,13 @@ void MainWindow::handle_serialClosed()
 
 void MainWindow::do_plot()
 {
-    qDebug() << "trying to plot?";
+    qDebug() << "trying to plot.";
     emit please_plotter_doPlot(objList);
 }
 
 void MainWindow::do_cancelPlot()
 {
-    qDebug() << "Trying to cancel plot?";
+    qDebug() << "Trying to cancel plot.";
     emit please_plotter_cancelPlot();
 }
 
@@ -184,7 +189,7 @@ void MainWindow::handle_plotStarted()
 void MainWindow::handle_plotCancelled()
 {
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
-    ui->pushButton_doPlot->setText("Plot");
+    ui->pushButton_doPlot->setText("Plot!");
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 }
 
@@ -282,46 +287,57 @@ void MainWindow::do_drawView()
     QList<QLine> lines_up;
     lines_up.clear();
 
+    double time = 0;
+
     for (int i = 0; i < objList.length(); i++)
     {
+        // Build ETA
+        for (int i_cmd = 0; i_cmd < objList[i].cmdCount(); i_cmd++)
+        {
+            qDebug() << "debug: " << i << i_cmd;
+            time += objList[i].time(i_cmd);
+            qDebug() << "test time: " << time;
+        }
+        ui->textBrowser_console->append("Estimated cut time: "+QString::number(time)+" seconds.");
+
         // Get a list of qlines
         objList[i].gen_line_lists();
         lines_down = objList[i].lineListDown;
         lines_up = objList[i].lineListUp;
 
         // Transform qlines to be upright
-        for (int i = 0; i < lines_down.length(); i++)
+        for (int i_down = 0; i_down < lines_down.length(); i_down++)
         {
             int x, y;
-            x = lines_down[i].x1();
-            y = lines_down[i].y1();
+            x = lines_down[i_down].x1();
+            y = lines_down[i_down].y1();
             x = x*xFactor;
             y = y*(-1)*yFactor;
-            lines_down[i].setP1(QPoint(x, y));
-            x = lines_down[i].x2();
+            lines_down[i_down].setP1(QPoint(x, y));
+            x = lines_down[i_down].x2();
             x = x*xFactor;
-            y = lines_down[i].y2();
+            y = lines_down[i_down].y2();
             y = y*(-1)*yFactor;
-            lines_down[i].setP2(QPoint(x, y));
+            lines_down[i_down].setP2(QPoint(x, y));
         }
 
-        for (int i = 0; i < lines_up.length(); i++)
+        for (int i_up = 0; i_up < lines_up.length(); i_up++)
         {
             int x, y;
-            x = lines_up[i].x1();
+            x = lines_up[i_up].x1();
             x = x*xFactor;
-            y = lines_up[i].y1();
+            y = lines_up[i_up].y1();
             y = y*(-1)*yFactor;
-            lines_up[i].setP1(QPoint(x, y));
-            x = lines_up[i].x2();
+            lines_up[i_up].setP1(QPoint(x, y));
+            x = lines_up[i_up].x2();
             x = x*xFactor;
-            y = lines_up[i].y2();
+            y = lines_up[i_up].y2();
             y = y*(-1)*yFactor;
-            lines_up[i].setP2(QPoint(x, y));
+            lines_up[i_up].setP2(QPoint(x, y));
         }
 
         // Write qlines to the scene
-        for (int i = 0; i < objList.length(); i++)
+        for (int i_write = 0; i_write < objList.length(); i_write++)
         {
             for (int l = 0; l < lines_down.length(); l++)
             {
@@ -373,7 +389,8 @@ void MainWindow::do_loadFile()
     QString buffer = "";
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
-    objList.push_back(hpgl_obj(buffer));
+    hpgl_obj tmp(buffer);
+    objList.push_back(tmp);
 
     settings->setValue("mainwindow/filePath", filePath);
 

@@ -19,6 +19,7 @@
 #include <QSettings>
 #include <QThread>
 #include <QProcess>
+#include <QTextBrowser>
 
 #include "hpgl_obj.h"
 #include "settings.h"
@@ -85,7 +86,7 @@ private:
     QFile inputFile;
     QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
-    QSettings * settings;
+    QPointer<QSettings> settings;
     Plotter * plotter;
     QThread threadPlotter;
 };

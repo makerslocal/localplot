@@ -13,9 +13,6 @@
 #include "hpgl_obj.h"
 #include "settings.h"
 
-#define CUTSPEED settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt()
-#define TRAVELSPEED settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt()
-
 namespace std {
 class Plotter;
 }

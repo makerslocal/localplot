@@ -14,6 +14,12 @@
 
 hpgl_obj::hpgl_obj()
 {
+    // Instantiate settings object
+    init_localplot_settings();
+    settings = new QSettings();
+
+//    qDebug() << "All keys? " << settings->allKeys();
+
     cmdList.clear();
 }
 
@@ -27,7 +33,7 @@ hpgl_obj::hpgl_obj(QString hpgl_text)
 
 hpgl_obj::~hpgl_obj()
 {
-    //
+//    delete settings;
 }
 
 void hpgl_obj::parseHPGL(QString hpgl_text)
@@ -475,6 +481,42 @@ QString hpgl_obj::print()
     return(retval);
 }
 
+// Returns the estimated time to execute command in seconds
+double hpgl_obj::time(int command_index)
+{
+    double retval = 0;
+    QSettings this_settings;
+
+    retval = cmdLenHyp(command_index);
+//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+    qDebug() << "- distance: " << retval;
+    if (retval <= 0)
+    {
+        return(retval);
+    }
+    if (cmdGet(command_index).opcode == "PD")
+    {
+//        qDebug() << "Is null: " << settings.isNull();
+        retval = retval / speedTranslate(this_settings.value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
+//        qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
+    }
+    else if (cmdGet(command_index).opcode == "PU")
+    {
+        retval = retval / speedTranslate(this_settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
+//        qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
+    }
+    qDebug() << "- sleep time: " << retval;
+
+    return(retval);
+}
+
+double hpgl_obj::speedTranslate(int setting_speed)
+{
+//    return((0.5*setting_speed) + 30);
+    return((0.3*setting_speed) + 70);
+//    return((0.52*setting_speed) + 24.8);
+}
 
 
 

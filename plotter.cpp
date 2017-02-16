@@ -287,21 +287,22 @@ void Plotter::do_plotNext()
     if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         serialBuffer->flush();
-        time = obj.cmdLenHyp(index_cmd);
-//                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-        qDebug() << "- distance: " << time;
-        if (obj.cmdGet(index_cmd).opcode == "PD")
-        {
-            time = time / speedTranslate(CUTSPEED);
-            qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
-        }
-        else if (obj.cmdGet(index_cmd).opcode == "PU")
-        {
-            time = time / speedTranslate(TRAVELSPEED);
-            qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
-        }
-        qDebug() << "- sleep time: " << time;
+        time = obj.time(index_cmd);
+//        time = obj.cmdLenHyp(index_cmd);
+////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+//        qDebug() << "- distance: " << time;
+//        if (obj.cmdGet(index_cmd).opcode == "PD")
+//        {
+//            time = time / speedTranslate(CUTSPEED);
+//            qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
+//        }
+//        else if (obj.cmdGet(index_cmd).opcode == "PU")
+//        {
+//            time = time / speedTranslate(TRAVELSPEED);
+//            qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
+//        }
+//        qDebug() << "- sleep time: " << time;
     }
     else
     {
@@ -309,11 +310,4 @@ void Plotter::do_plotNext()
     }
     index_cmd++;
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
-}
-
-double Plotter::speedTranslate(int setting_speed)
-{
-//    return((0.5*setting_speed) + 30);
-    return((0.3*setting_speed) + 70);
-//    return((0.52*setting_speed) + 24.8);
 }
