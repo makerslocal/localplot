@@ -1,3 +1,7 @@
+/**
+ * DialogAbout - About window header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef DIALOGABOUT_H
 #define DIALOGABOUT_H
 

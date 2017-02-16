@@ -1,3 +1,7 @@
+/**
+ * HPGL_OBJ - header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef HPGLOBJ_H
 #define HPGLOBJ_H
 

@@ -1,3 +1,8 @@
+/**
+ * Localplot - Almost useful!
+ * Christopher Bero <bigbero@gmail.com>
+ */
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -8,7 +13,7 @@
 #include "ui_dialogsettings.h"
 
 /**
- * Reference: http://cstep.luberth.com/HPGL.pdf
+ * HPGL reference: http://cstep.luberth.com/HPGL.pdf
  *
  * Language Structure:
  * Using Inkscape's default format -> XXy1,y1,y2,y2;

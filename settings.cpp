@@ -1,3 +1,7 @@
+/**
+ * Settings - helper code for using QSettings
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #include "settings.h"
 
 void init_localplot_settings()

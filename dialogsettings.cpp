@@ -1,3 +1,7 @@
+/**
+ * DialogSettings - Configure localplot
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #include "dialogsettings.h"
 #include "ui_dialogsettings.h"
 

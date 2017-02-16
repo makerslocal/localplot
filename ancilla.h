@@ -1,3 +1,7 @@
+/**
+ * Ancilla - worker thread header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef PLOTTER_H
 #define PLOTTER_H
 

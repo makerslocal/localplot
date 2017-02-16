@@ -1,8 +1,8 @@
-#include "hpgl_obj.h"
-
 /**
- * Object class
+ * HPGL_OBJ - Data structure for plotter
+ * Christopher Bero <bigbero@gmail.com>
  */
+#include "hpgl_obj.h"
 
 /**
  * We process the following opcodes:

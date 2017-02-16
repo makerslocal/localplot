@@ -1,3 +1,7 @@
+/**
+ * Localplot - Main UI thread header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -24,7 +28,7 @@
 
 #include "hpgl_obj.h"
 #include "settings.h"
-#include "plotter.h"
+#include "ancilla.h"
 
 namespace Ui {
 class MainWindow;

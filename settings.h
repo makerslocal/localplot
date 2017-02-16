@@ -1,3 +1,7 @@
+/**
+ * Settings - helper code for using QSettings
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef SETTINGS_H
 #define SETTINGS_H
 

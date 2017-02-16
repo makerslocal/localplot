@@ -1,3 +1,7 @@
+/**
+ * DialogSettings - header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef DIALOGSETTINGS_H
 #define DIALOGSETTINGS_H
 

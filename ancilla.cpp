@@ -1,8 +1,8 @@
-#include "plotter.h"
-
-/*
- * Plotter thread
+/**
+ * Ancilla - worker thread
+ * Christopher Bero <bigbero@gmail.com>
  */
+#include "ancilla.h"
 
 Plotter::Plotter()
 {

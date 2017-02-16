@@ -17,14 +17,14 @@ SOURCES += main.cpp\
     dialogabout.cpp \
     dialogsettings.cpp \
     settings.cpp \
-    plotter.cpp
+    ancilla.cpp
 
 HEADERS  += mainwindow.h \
     hpgl_obj.h \
     dialogabout.h \
     dialogsettings.h \
     settings.h \
-    plotter.h
+    ancilla.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \
