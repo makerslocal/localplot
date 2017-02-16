@@ -57,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(please_plotter_cancelPlot()), plotter, SLOT(do_cancelPlot()));
     connect(plotter, SIGNAL(donePlotting()), this, SLOT(handle_plotCancelled()));
     connect(plotter, SIGNAL(startedPlotting()), this, SLOT(handle_plotStarted()));
+    connect(plotter, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -256,6 +257,11 @@ void MainWindow::do_updatePens()
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     upPen.setColor(penColor);
     upPen.setWidth(penSize);
+}
+
+void MainWindow::handle_plottingPercent(int percent)
+{
+    ui->textBrowser_console->append(QString::number(percent)+"% complete.");
 }
 
 void MainWindow::do_drawView()

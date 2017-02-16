@@ -80,6 +80,7 @@ private slots:
     void handle_plotStarted();
     void handle_plotCancelled();
 //    void handle_autoTranslateBtn();
+    void handle_plottingPercent(int percent);
 
 private:
     Ui::MainWindow *ui;

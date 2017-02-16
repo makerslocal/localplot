@@ -39,6 +39,7 @@ signals:
     void donePlotting();
     void serialOpened();
     void serialClosed();
+    void plottingProgress(int percent);
 
 private:
     QSerialPortInfo serialPorts;
