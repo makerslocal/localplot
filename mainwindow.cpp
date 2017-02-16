@@ -184,7 +184,7 @@ void MainWindow::handle_plotStarted()
 {
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     ui->pushButton_doPlot->setText("Cancel");
-    ui->progressBar_plotting->setEnabled(true);
+    ui->progressBar_plotting->setValue(0);
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
 }
 
@@ -192,8 +192,6 @@ void MainWindow::handle_plotCancelled()
 {
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
     ui->pushButton_doPlot->setText("Plot!");
-    ui->progressBar_plotting->setValue(0);
-    ui->progressBar_plotting->setEnabled(false);
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 }
 
