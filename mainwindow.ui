@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>876</width>
-    <height>493</height>
+    <width>1368</width>
+    <height>1265</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -359,6 +359,25 @@
          </property>
         </spacer>
        </item>
+       <item>
+        <widget class="QProgressBar" name="progressBar_plotting">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+         <property name="textVisible">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
@@ -428,13 +447,13 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>876</width>
-     <height>19</height>
+     <width>1368</width>
+     <height>44</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuWhat_is_this">
     <property name="title">
-     <string>File</string>
+     <string>Fi&amp;le</string>
     </property>
     <addaction name="actionLoad_File"/>
     <addaction name="actionSave_File"/>
@@ -454,27 +473,27 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionLoad_File">
    <property name="text">
-    <string>Load File</string>
+    <string>&amp;Load File</string>
    </property>
   </action>
   <action name="actionSave_File">
    <property name="text">
-    <string>Save File</string>
+    <string>&amp;Save File</string>
    </property>
   </action>
   <action name="actionExit">
    <property name="text">
-    <string>Exit</string>
+    <string>&amp;Exit</string>
    </property>
   </action>
   <action name="actionSettings">
    <property name="text">
-    <string>Settings</string>
+    <string>Sett&amp;ings</string>
    </property>
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About</string>
+    <string>&amp;About</string>
    </property>
   </action>
  </widget>

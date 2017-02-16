@@ -274,9 +274,10 @@ void Plotter::do_plotNext()
         return;
     }
     qDebug() << "Plotting command number: " << index_cmd;
+
     int progress = ((double)index_cmd/(cmdCount-1))*100;
-    qDebug() << "progress: " << progress;
     emit plottingProgress(progress);
+
     printThis = obj.cmdPrint(index_cmd);
     if (printThis == "OOB")
     {

@@ -184,6 +184,7 @@ void MainWindow::handle_plotStarted()
 {
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     ui->pushButton_doPlot->setText("Cancel");
+    ui->progressBar_plotting->setEnabled(true);
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
 }
 
@@ -191,6 +192,8 @@ void MainWindow::handle_plotCancelled()
 {
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
     ui->pushButton_doPlot->setText("Plot!");
+    ui->progressBar_plotting->setValue(0);
+    ui->progressBar_plotting->setEnabled(false);
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
 }
 
@@ -261,7 +264,8 @@ void MainWindow::do_updatePens()
 
 void MainWindow::handle_plottingPercent(int percent)
 {
-    ui->textBrowser_console->append(QString::number(percent)+"% complete.");
+//    ui->textBrowser_console->append(QString::number(percent)+"% complete.");
+    ui->progressBar_plotting->setValue(percent);
 }
 
 void MainWindow::do_drawView()

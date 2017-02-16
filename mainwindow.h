@@ -20,6 +20,7 @@
 #include <QThread>
 #include <QProcess>
 #include <QTextBrowser>
+#include <QProgressBar>
 
 #include "hpgl_obj.h"
 #include "settings.h"
