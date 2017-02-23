@@ -13,30 +13,31 @@
 #include <QProcess>
 #include <QTimer>
 #include <QString>
+#include <QThread>
 
-#include "hpgl_obj.h"
+#include "hpgl.h"
 #include "settings.h"
 
 namespace std {
-class Plotter;
+class AncillaryThread;
 }
 
-class Plotter : public QObject
+class AncillaryThread : public QThread
 {
     Q_OBJECT
 
 public:
-    Plotter();
-    ~Plotter();
+    AncillaryThread();
+    ~AncillaryThread();
     double speedTranslate(int setting_speed);
 
 public slots:
-    void do_run();
+//    void do_run();
     void do_openSerial();
     void do_closeSerial();
-    void do_beginPlot(QList<hpgl_obj> _objList);
+    void do_beginPlot(QList<hpgl> * _objList);
     void do_cancelPlot();
-    void do_plotNext();
+    void do_plotNext(QList<hpgl> *_objList);
 
 signals:
     void startedPlotting();
@@ -46,16 +47,16 @@ signals:
     void plottingProgress(int percent);
 
 private:
+    void run() override; // Reimplement from QThread
     QSerialPortInfo serialPorts;
     QPointer<QSerialPort> serialBuffer;
-    QSettings * settings;
     volatile int state;
-    QList<hpgl_obj> objList;
+    QList<hpgl> objList;
 
     // plotting
     int index_obj;
     int index_cmd;
-    hpgl_obj obj;
+    hpgl obj;
     QString printThis;
     int cmdCount;
     double time;

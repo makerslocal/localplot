@@ -30,6 +30,11 @@
  *             properties and transformations.
  */
 
+/**
+ * @brief MainWindow::MainWindow
+ * Instantiate main UI window.
+ * @param parent - Qt specific
+ */
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -37,11 +42,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // Declare threads
-    plotter = new Plotter;
-    plotter->moveToThread(&threadPlotter);
+    ancilla = new AncillaryThread;
 
     // Instantiate settings object
-    init_localplot_settings();
     settings = new QSettings();
 
     // Connect actions
@@ -54,15 +57,17 @@ MainWindow::MainWindow(QWidget *parent) :
     // Connect threads
     connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
-    connect(plotter, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
-    connect(plotter, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
-    connect(this, SIGNAL(please_plotter_openSerial()), plotter, SLOT(do_openSerial()));
-    connect(this, SIGNAL(please_plotter_closeSerial()), plotter, SLOT(do_closeSerial()));
-    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl_obj>)), plotter, SLOT(do_beginPlot(QList<hpgl_obj>)));
-    connect(this, SIGNAL(please_plotter_cancelPlot()), plotter, SLOT(do_cancelPlot()));
-    connect(plotter, SIGNAL(donePlotting()), this, SLOT(handle_plotCancelled()));
-    connect(plotter, SIGNAL(startedPlotting()), this, SLOT(handle_plotStarted()));
-    connect(plotter, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
+    connect(ancilla, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
+    connect(ancilla, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
+    connect(this, SIGNAL(please_plotter_openSerial()), ancilla, SLOT(do_openSerial()));
+    connect(this, SIGNAL(please_plotter_closeSerial()), ancilla, SLOT(do_closeSerial()));
+    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl>*)), ancilla, SLOT(do_beginPlot(QList<hpgl>*)));
+    connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
+    connect(ancilla, SIGNAL(donePlotting()), this, SLOT(handle_plotCancelled()));
+    connect(ancilla, SIGNAL(startedPlotting()), this, SLOT(handle_plotStarted()));
+    connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
+    connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
+    connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -84,26 +89,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->graphicsView_view->setScene(&plotScene);
 
-    ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", SETDEF_MAINWINDOW_FILEPATH).toString());
-
-//    hpgl_obj obj_tmp("IN;SP0;PD10,10;PU100,100;IN");
-//    QList<hpgl_obj> list_tmp;
-//    list_tmp.push_back(hpgl_obj("IN;SP0;PD10,10;PU100,100;IN"));
-//    qDebug() << "Time: " << list_tmp[0].time(3);
+    ui->lineEdit_filePath->setText(
+                settings->value("mainwindow/filePath",
+                                SETDEF_MAINWINDOW_FILEPATH).toString());
 
     do_drawView();
 
     // Kickstart threads
-    threadPlotter.start();
-    plotter->do_run(); // Auto start plotter
+    ancilla->start();
 }
 
 MainWindow::~MainWindow()
 {
-    plotter->do_closeSerial();
-
-    threadPlotter.quit();
-    threadPlotter.wait();
+    ancilla->do_closeSerial();
+    ancilla->quit();
+    ancilla->wait();
 
     delete settings;
     delete ui;
@@ -111,9 +111,17 @@ MainWindow::~MainWindow()
 
 QString MainWindow::timeStamp()
 {
-    return(QTime::currentTime().toString("[HH:mm:ss:zzz] "));
+    return(QTime::currentTime().toString("[HH:mm ss.zzz] "));
 }
 
+/*******************************************************************************
+ * Child windows
+ ******************************************************************************/
+
+/**
+ * @brief MainWindow::do_openDialogAbout
+ * Creates a window with information about the program and authors.
+ */
 void MainWindow::do_openDialogAbout()
 {
     // This way of doing things will allow the QDialog to be reused. (?)
@@ -130,6 +138,10 @@ void MainWindow::do_openDialogAbout()
     newwindow->exec();
 }
 
+/**
+ * @brief MainWindow::do_openDialogSettings
+ * Creates a window to modify QSettings
+ */
 void MainWindow::do_openDialogSettings()
 {
     DialogSettings * newwindow;
@@ -138,9 +150,57 @@ void MainWindow::do_openDialogSettings()
     newwindow->exec();
 }
 
+/*******************************************************************************
+ * UI Slots
+ ******************************************************************************/
+
+/**
+ * @brief MainWindow::update_filePath
+ * Stores the current file in QSettings
+ */
 void MainWindow::update_filePath()
 {
     settings->setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
+}
+
+void MainWindow::do_updatePens()
+{
+    // Variables
+    int rgbColor[3];
+    int penSize;
+    QColor penColor;
+
+    // Set downPen
+    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
+    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
+    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
+    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
+    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+    downPen.setColor(penColor);
+    downPen.setWidth(penSize);
+
+    // Set upPen
+    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
+    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
+    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
+    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
+    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+    upPen.setColor(penColor);
+    upPen.setWidth(penSize);
+}
+
+/*******************************************************************************
+ * Worker thread slots
+ ******************************************************************************/
+
+void MainWindow::handle_ancillaThreadStart()
+{
+    ui->textBrowser_console->append("Ancillary thread started.");
+}
+
+void MainWindow::handle_ancillaThreadQuit()
+{
+    ui->textBrowser_console->append("Ancillary thread stopped.");
 }
 
 void MainWindow::handle_serialConnectBtn()
@@ -157,31 +217,25 @@ void MainWindow::handle_serialConnectBtn()
 
 void MainWindow::handle_serialOpened()
 {
-//    disconnect(ui->pushButton_serialConnect, 0, 0, 0);
     ui->pushButton_doPlot->setEnabled(true);
     ui->textBrowser_console->append(timeStamp() + "Serial port opened x)");
     ui->pushButton_serialConnect->setText("Disconnect");
-//    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(do_closeSerial()));
 }
 
 void MainWindow::handle_serialClosed()
 {
-//    disconnect(ui->pushButton_serialConnect, 0, 0, 0);
     ui->pushButton_doPlot->setEnabled(false);
     ui->textBrowser_console->append(timeStamp() + "Serial port closed :D");
     ui->pushButton_serialConnect->setText("Connect");
-//    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), plotter, SLOT(do_openSerial()));
 }
 
 void MainWindow::do_plot()
 {
-    qDebug() << "trying to plot.";
-    emit please_plotter_doPlot(objList);
+    emit please_plotter_doPlot(&objList);
 }
 
 void MainWindow::do_cancelPlot()
 {
-    qDebug() << "Trying to cancel plot.";
     emit please_plotter_cancelPlot();
 }
 
@@ -212,6 +266,11 @@ void MainWindow::handle_selectFileBtn()
     do_loadFile();
 }
 
+void MainWindow::handle_plottingPercent(int percent)
+{
+    ui->progressBar_plotting->setValue(percent);
+}
+
 //void MainWindow::handle_autoTranslateBtn()
 //{
 //    for (int i = 0; i < objList.count(); i++)
@@ -223,8 +282,17 @@ void MainWindow::handle_selectFileBtn()
 //    }
 //}
 
-/*
+/*******************************************************************************
+ * Etcetera methods
+ ******************************************************************************/
+
+/**
+ * @brief MainWindow::get_nextInt
  * Returns integer from section of string.
+ *
+ * @param input
+ * @param index
+ * @return
  */
 int MainWindow::get_nextInt(QString input, int * index)
 {
@@ -239,37 +307,6 @@ int MainWindow::get_nextInt(QString input, int * index)
     return(atoi(buffer.toStdString().c_str()));
 }
 
-void MainWindow::do_updatePens()
-{
-    // Variables
-    int rgbColor[3];
-    int penSize;
-    QColor penColor;
-
-    // Set downPen
-    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
-    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
-    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
-    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    downPen.setColor(penColor);
-    downPen.setWidth(penSize);
-
-    // Set upPen
-    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
-    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
-    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
-    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    upPen.setColor(penColor);
-    upPen.setWidth(penSize);
-}
-
-void MainWindow::handle_plottingPercent(int percent)
-{
-//    ui->textBrowser_console->append(QString::number(percent)+"% complete.");
-    ui->progressBar_plotting->setValue(percent);
-}
 
 void MainWindow::do_drawView()
 {
@@ -385,53 +422,33 @@ void MainWindow::do_drawView()
 
 void MainWindow::do_loadFile()
 {
-    if (inputFile.isOpen())
-    {
-        inputFile.close();
-    }
-    QString filePath = ui->lineEdit_filePath->text();
-    if (filePath.isEmpty())
-    {
-        return;
-    }
-    inputFile.setFileName(filePath);
-    inputFile.open(QIODevice::ReadOnly);
-    objList.clear();
-    //ui->textBrowser_read->clear();
-
-    QString buffer = "";
-    QTextStream fstream(&inputFile);
-    buffer = fstream.readAll();
-    hpgl_obj tmp(buffer);
-    objList.push_back(tmp);
-
     settings->setValue("mainwindow/filePath", filePath);
 
     do_drawView();
 }
 
-void MainWindow::handle_objectTransform()
-{
-    QTransform Tscale, Trotate, Ttranslate;
-    double scale = ui->doubleSpinBox_objScale->value();
-    double rotation = ui->doubleSpinBox_objRotation->value();
-    int translateX = ui->spinBox_objTranslationX->value();
-    int translateY = ui->spinBox_objTranslationY->value();
+//void MainWindow::handle_objectTransform()
+//{
+//    QTransform Tscale, Trotate, Ttranslate;
+//    double scale = ui->doubleSpinBox_objScale->value();
+//    double rotation = ui->doubleSpinBox_objRotation->value();
+//    int translateX = ui->spinBox_objTranslationX->value();
+//    int translateY = ui->spinBox_objTranslationY->value();
 
-    Tscale.scale(scale, scale);
-    Trotate.rotate(rotation);
-    Ttranslate.translate(translateX, translateY);
+//    Tscale.scale(scale, scale);
+//    Trotate.rotate(rotation);
+//    Ttranslate.translate(translateX, translateY);
 
-    //qDebug() << "MATRIX: " << transform;
+//    //qDebug() << "MATRIX: " << transform;
 
-    for (int i = 0; i < objList.count(); i++)
-    {
-        objList[i].cmdTransformScale = Tscale;
-        objList[i].cmdTransformRotate = Trotate;
-        objList[i].cmdTransformTranslate = Ttranslate;
-    }
-    do_drawView();
-}
+//    for (int i = 0; i < objList.count(); i++)
+//    {
+//        objList[i].cmdTransformScale = Tscale;
+//        objList[i].cmdTransformRotate = Trotate;
+//        objList[i].cmdTransformTranslate = Ttranslate;
+//    }
+//    do_drawView();
+//}
 
 
 

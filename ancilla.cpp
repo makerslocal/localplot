@@ -4,29 +4,28 @@
  */
 #include "ancilla.h"
 
-Plotter::Plotter()
+AncillaryThread::AncillaryThread()
 {
     // Instantiation happens on thread start (do_run).
 }
 
-Plotter::~Plotter()
+AncillaryThread::~AncillaryThread()
 {
     //
 }
 
-void Plotter::do_run()
+void AncillaryThread::run()
 {
-    // Instantiate settings object
-    init_localplot_settings();
-    settings = new QSettings();
-
     // Set initial state
     state = 0; // 0->stopped 1->plotting 2->cancelled
+
+    exec();
 }
 
-void Plotter::do_openSerial()
+void AncillaryThread::do_openSerial()
 {
-    QString _portLocation = settings->value("serial/port", SETDEF_SERIAL_PORT).toString();
+    QSettings settings;
+    QString _portLocation = settings.value("serial/port", SETDEF_SERIAL_PORT).toString();
     QSerialPortInfo _device;
 
     for (int i = 0; i < serialPorts.availablePorts().count(); i++)
@@ -52,9 +51,9 @@ void Plotter::do_openSerial()
         serialBuffer = new QSerialPort(_device);
     }
 
-    serialBuffer->setBaudRate(settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
+    serialBuffer->setBaudRate(settings.value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
 
-    int dataBits = settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
+    int dataBits = settings.value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
     if (dataBits == 8)
     {
         serialBuffer->setDataBits(QSerialPort::Data8);
@@ -72,7 +71,7 @@ void Plotter::do_openSerial()
         serialBuffer->setDataBits(QSerialPort::Data5);
     }
 
-    QString parity = settings->value("serial/parity", SETDEF_SERIAL_PARITY).toString();
+    QString parity = settings.value("serial/parity", SETDEF_SERIAL_PARITY).toString();
     if (parity == "none")
     {
         serialBuffer->setParity(QSerialPort::NoParity);
@@ -94,7 +93,7 @@ void Plotter::do_openSerial()
         serialBuffer->setParity(QSerialPort::SpaceParity);
     }
 
-    int stopBits = settings->value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
+    int stopBits = settings.value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
     if (stopBits == 1)
     {
         serialBuffer->setStopBits(QSerialPort::OneStop);
@@ -108,11 +107,11 @@ void Plotter::do_openSerial()
         serialBuffer->setStopBits(QSerialPort::TwoStop);
     }
 
-    if (settings->value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
+    if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         serialBuffer->setFlowControl(QSerialPort::SoftwareControl);
     }
-    else if (settings->value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
+    else if (settings.value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
     {
         serialBuffer->setFlowControl(QSerialPort::HardwareControl);
     }
@@ -134,7 +133,7 @@ void Plotter::do_openSerial()
     }
 }
 
-void Plotter::do_closeSerial()
+void AncillaryThread::do_closeSerial()
 {
     if (!serialBuffer.isNull())
     {
@@ -145,24 +144,23 @@ void Plotter::do_closeSerial()
     emit serialClosed(); //handle_serialClosed();
 }
 
-void Plotter::do_cancelPlot()
+void AncillaryThread::do_cancelPlot()
 {
     state = 2;
 }
 
-void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
+void AncillaryThread::do_beginPlot(QList<hpgl> * _objList)
 {
     // Variables
 //    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
 //    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
-
-    objList = _objList;
+    QSettings settings;
 
     // Set state
     state = 1;
 
-    qDebug() << "Cut speed: " << CUTSPEED;
-    qDebug() << "Travel speed: " << TRAVELSPEED;
+//    qDebug() << "Cut speed: " << CUTSPEED;
+//    qDebug() << "Travel speed: " << TRAVELSPEED;
 
 //    hpgl_obj obj;
 //    QString printThis;
@@ -179,7 +177,7 @@ void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
     }
 
     // explain the situation
-    if (settings->value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
+    if (settings.value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
     {
         qDebug() << "Cutting with axis speed delay";
     }
@@ -187,17 +185,17 @@ void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
     {
         qDebug() << "Cutting with absolute speed delay";
     }
-    qDebug() << "Cutter speed: " << CUTSPEED;
+//    qDebug() << "Cutter speed: " << CUTSPEED;
 
     // Initialize plotting loop
     index_obj = 0;
     index_cmd = 0;
-    obj = objList.at(0);
+    obj = _objList->at(0);
     cmdCount = obj.cmdCount();
 
     emit startedPlotting();
 
-    do_plotNext();
+    do_plotNext(_objList);
 
 //    for (int i = 0; i < objList.count(); i++)
 //    {
@@ -251,8 +249,9 @@ void Plotter::do_beginPlot(QList<hpgl_obj> _objList)
 //    qDebug() << "Done plotting.";
 }
 
-void Plotter::do_plotNext()
+void AncillaryThread::do_plotNext(QList<hpgl> * _objList)
 {
+    QSettings settings;
     if (index_cmd >= cmdCount)
     {
         index_cmd = 0;
@@ -288,7 +287,7 @@ void Plotter::do_plotNext()
         return;
     }
     serialBuffer->write(printThis.toStdString().c_str());
-    if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
+    if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         serialBuffer->flush();
         time = obj.time(index_cmd);
@@ -313,5 +312,5 @@ void Plotter::do_plotNext()
         //
     }
     index_cmd++;
-    QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
+    QTimer::singleShot(time*1000, this, SLOT(do_plotNext(_objList)));
 }

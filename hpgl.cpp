@@ -2,7 +2,7 @@
  * HPGL_OBJ - Data structure for plotter
  * Christopher Bero <bigbero@gmail.com>
  */
-#include "hpgl_obj.h"
+#include "hpgl.h"
 
 /**
  * We process the following opcodes:
@@ -12,96 +12,25 @@
  * PD - Move to coord with pen down
  */
 
-hpgl_obj::hpgl_obj()
+hpgl::hpgl()
 {
-    // Instantiate settings object
-    init_localplot_settings();
-    settings = new QSettings();
-
-//    qDebug() << "All keys? " << settings->allKeys();
-
-    cmdList.clear();
+    //
 }
 
-hpgl_obj::hpgl_obj(QString hpgl_text)
+hpgl::hpgl(QString hpgl_text)
 {
     // Initialize
-    hpgl_obj();
+    hpgl();
 
     parseHPGL(hpgl_text);
 }
 
-hpgl_obj::~hpgl_obj()
+hpgl::~hpgl()
 {
-//    delete settings;
+    //
 }
 
-void hpgl_obj::parseHPGL(QString hpgl_text)
-{
-    hpgl_text.remove('\n');
-    int numCmds = hpgl_text.count(';');
-    qDebug() << "Object text: " << hpgl_text;
-    for (int i = 0; i < numCmds; i++)
-    {
-        hpgl_cmd newCmd = initCmd();
-        QString cmdText;
-        cmdText = hpgl_text.section(';', i, i);
-
-        qDebug() << "====\n" << "= Processing command: ";
-
-        // Get opcode, first two characters
-        newCmd.opcode = cmdText.mid(0, 2);
-
-        // Parse opcode
-        if (newCmd.opcode == "IN")
-        {
-            // Just opcode
-            qDebug() << "= IN";
-        }
-        else if (newCmd.opcode == "SP")
-        {
-            newCmd.pen = cmdText.mid(2,1).toInt();
-            qDebug() << "= SP[" << QString::number(newCmd.pen) << "]";
-        }
-        else if (newCmd.opcode == "PU" || newCmd.opcode == "PD")
-        {
-            qDebug() << "= " << newCmd.opcode;
-            // need coords
-            cmdText.remove(0,2);
-            int commaCount = cmdText.count(',');
-            qDebug() << "= Comma count: " << commaCount;
-            for (int i = 0; i < commaCount; i++)
-            {
-                //qDebug() << "processing coord: " << text.at(i) << endl;
-                int newX = cmdText.section(',', i, i).toInt();
-                i++;
-                int newY = cmdText.section(',', i, i).toInt();
-                //i++;
-                qDebug() << "= Found x: " << newX << " y: " << newY;
-                newCmd.coordList.push_back(QPoint(newX, newY));
-                if (i < (commaCount-2) && ((i+1) % 500) == 0)
-                {
-                    qDebug() << "Breaking line";
-                    cmdList.push_back(newCmd);
-                    newCmd.coordList.clear();
-//                    newCmd.coordList.push_back(QPoint(newX, newY));
-                }
-            }
-        }
-        cmdList.push_back(newCmd);
-    }
-}
-
-hpgl_cmd hpgl_obj::initCmd()
-{
-    hpgl_cmd cmd;
-    cmd.pen = 0;
-    cmd.coordList.clear();
-    cmd.opcode = "NA";
-    return cmd;
-}
-
-void hpgl_obj::gen_line_lists()
+void hpgl::gen_line_lists()
 {
     lineListUp.clear();
     lineListDown.clear();
@@ -214,7 +143,7 @@ void hpgl_obj::gen_line_lists()
     }
 }
 
-void hpgl_obj::gen_width(QList<QLine> lineList)
+void hpgl::gen_width(QList<QLine> lineList)
 {
     int maxX = 0;
     int minX = INT_MAX;
@@ -245,7 +174,7 @@ void hpgl_obj::gen_width(QList<QLine> lineList)
     //return(maxX - minX);
 }
 
-void hpgl_obj::gen_height(QList<QLine> lineList)
+void hpgl::gen_height(QList<QLine> lineList)
 {
     int maxY = 0;
     int minY = INT_MAX;
@@ -276,132 +205,17 @@ void hpgl_obj::gen_height(QList<QLine> lineList)
     //return(maxY - minY);
 }
 
-// Returns the mm length of the hypotenuse of a line
-double hpgl_obj::cmdLenHyp(int cmd_index)
-{
-    QPoint prev;
-    QPoint curr;
-    hpgl_cmd cmd;
-    double mm = 0;
-    prev.setX(0);
-    prev.setY(0);
-    cmd = cmdList[cmd_index];
-    if (cmd.opcode != "SP")
-    {
-        for (int i = 0; i < cmd.coordList.length(); i++)
-        {
-            int x, y;
-            curr = cmd.coordList.at(i);
-            x = abs(curr.x() - prev.x());
-            y = abs(curr.y() - prev.y());
-            mm += sqrt(x*x + y*y);
-            prev.setX(curr.x());
-            prev.setY(curr.y());
-        }
-    }
-    mm = mm * 0.025; // convert graphics units to mm
-    return(mm);
-}
-
-double hpgl_obj::cmdLenX(int cmd_index)
-{
-    QPoint prev;
-    QPoint curr;
-    hpgl_cmd cmd;
-    double mm = 0;
-    prev.setX(0);
-    prev.setY(0);
-    cmd = cmdList[cmd_index];
-    if (cmd.opcode != "SP")
-    {
-        for (int i = 0; i < cmd.coordList.length(); i++)
-        {
-            curr = cmd.coordList.at(i);
-            mm += abs(curr.x() - prev.x());
-            prev.setX(curr.x());
-        }
-    }
-    mm = mm * 0.025; // convert graphics units to mm
-    return(mm);
-}
-
-double hpgl_obj::cmdLenY(int cmd_index)
-{
-    QPoint prev;
-    QPoint curr;
-    hpgl_cmd cmd;
-    double mm = 0;
-    prev.setX(0);
-    prev.setY(0);
-    cmd = cmdList[cmd_index];
-    if (cmd.opcode != "SP")
-    {
-        for (int i = 0; i < cmd.coordList.length(); i++)
-        {
-            curr = cmd.coordList.at(i);
-            mm += abs(curr.y() - prev.y());
-            prev.setY(curr.y());
-        }
-    }
-    mm = mm * 0.025; // convert graphics units to mm
-    return(mm);
-}
-
-QString hpgl_obj::cmdPrint(int cmd_index)
-{
-    QString retval = "";
-    hpgl_cmd cmd;
-    cmd = cmdList[cmd_index];
-
-    retval += cmd.opcode;
-    if (cmd.opcode == "SP")
-    {
-        retval += QString::number(cmd.pen);
-    }
-    else
-    {
-        for (int i = 0; i < cmd.coordList.length(); i++)
-        {
-            QPoint point = cmd.coordList.at(i);
-
-            QTransform center, uncenter;
-            center.translate(-width/2, -height/2);
-            uncenter.translate(width/2, height/2);
-
-            point = cmdTransformScale.map(point);
-            point = cmdTransformRotate.map(point);
-            point = cmdTransformTranslate.map(point);
-
-            if (point.x() < 0 || point.y() < 0)
-            {
-                retval = "OOB"; // Out of Bounds
-                return retval;
-            }
-
-            retval += QString::number(point.x());
-            retval += ",";
-            retval += QString::number(point.y());
-            if (i < (cmd.coordList.length()-1))
-            {
-                retval += ",";
-            }
-        }
-    }
-    retval += ";";
-    return(retval);
-}
-
-hpgl_cmd hpgl_obj::cmdGet(int cmd_index)
+hpgl_cmd hpgl::cmdGet(int cmd_index)
 {
     return(cmdList.at(cmd_index));
 }
 
-int hpgl_obj::cmdCount()
+int hpgl::cmdCount()
 {
     return(cmdList.length());
 }
 
-int hpgl_obj::totalMM()
+int hpgl::totalMM()
 {
     QPoint prev;
     QPoint curr;
@@ -429,12 +243,12 @@ int hpgl_obj::totalMM()
     return(mm);
 }
 
-int hpgl_obj::printLen()
+int hpgl::printLen()
 {
     return(print().length());
 }
 
-QString hpgl_obj::print()
+QString hpgl::print()
 {
     QString retval = "";
     hpgl_cmd cmd;
@@ -481,42 +295,100 @@ QString hpgl_obj::print()
     return(retval);
 }
 
-// Returns the estimated time to execute command in seconds
-double hpgl_obj::time(int command_index)
+int hpgl::load_file(QString _filepath)
 {
-    double retval = 0;
-    QSettings this_settings;
+    QFile inputFile;
+    QString buffer;
 
-    retval = cmdLenHyp(command_index);
-//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-    qDebug() << "- distance: " << retval;
-    if (retval <= 0)
+    if (_filepath.isEmpty())
     {
-        return(retval);
+        return;
     }
-    if (cmdGet(command_index).opcode == "PD")
-    {
-//        qDebug() << "Is null: " << settings.isNull();
-        retval = retval / speedTranslate(this_settings.value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
-//        qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
-    }
-    else if (cmdGet(command_index).opcode == "PU")
-    {
-        retval = retval / speedTranslate(this_settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
-//        qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
-    }
-    qDebug() << "- sleep time: " << retval;
+    inputFile.setFileName(_filepath);
+    inputFile.open(QIODevice::ReadOnly);
+    clear_cmds();
 
-    return(retval);
+    QTextStream fstream(&inputFile);
+    buffer = fstream.readAll();
+
+    parseHPGL(buffer);
+    inputFile.close();
 }
 
-double hpgl_obj::speedTranslate(int setting_speed)
+void hpgl::parseHPGL(QString hpgl_text)
 {
-//    return((0.5*setting_speed) + 30);
-    return((0.3*setting_speed) + 70);
-//    return((0.52*setting_speed) + 24.8);
+    hpgl_text.remove('\n');
+    int numCmds = hpgl_text.count(';');
+    for (int i = 0; i < numCmds; i++)
+    {
+        QPointer<hpgl_cmd> newCmd;
+        newCmd = new hpgl_cmd();
+        QString cmdText;
+        cmdText = hpgl_text.section(';', i, i);
+
+        qDebug() << "====\n" << "= Processing command: ";
+
+        // Get opcode, first two characters
+        newCmd->set_opcode(cmdText.mid(0, 2));
+
+        // Parse opcode
+        if (newCmd->get_opcode() == "IN")
+        {
+            // Just opcode
+            qDebug() << "= IN";
+        }
+        else if (newCmd->get_opcode() == "SP")
+        {
+            newCmd->set_pen(cmdText.mid(2,1).toInt());
+            qDebug() << "= SP[" << QString::number(newCmd.pen) << "]";
+        }
+        else if (newCmd->get_opcode() == "PU" || newCmd->get_opcode() == "PD")
+        {
+            qDebug() << "= " << newCmd->get_opcode();
+            // need coords
+            cmdText.remove(0,2);
+            int commaCount = cmdText.count(',');
+            qDebug() << "= Comma count: " << commaCount;
+            for (int i = 0; i < commaCount; i++)
+            {
+                //qDebug() << "processing coord: " << text.at(i) << endl;
+                int newX = cmdText.section(',', i, i).toInt();
+                i++;
+                int newY = cmdText.section(',', i, i).toInt();
+                //i++;
+                qDebug() << "= Found x: " << newX << " y: " << newY;
+                newCmd->add_coord(QPoint(newX, newY));
+//                if (i < (commaCount-2) && ((i+1) % 500) == 0)
+//                {
+//                    qDebug() << "Breaking line";
+//                    cmdList.push_back(newCmd);
+//                    newCmd.coordList.clear();
+////                    newCmd.coordList.push_back(QPoint(newX, newY));
+//                }
+            }
+        }
+        cmdList.push_back(newCmd);
+    }
 }
+
+void hpgl::clear_cmds()
+{
+    for (int i = 0; i < cmdList.count(); i++)
+    {
+        delete cmdList[i];
+    }
+    cmdList.clear();
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

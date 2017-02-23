@@ -5,28 +5,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QDebug>
-#include <QVector>
-#include <QList>
-#include <QPointer>
-#include <QString>
-#include <QTimer>
-#include <QTime>
-#include <QFile>
-#include <QFileDialog>
+#include <QtCore>
+#include <QGraphicsView>
 #include <QGraphicsScene>
-#include <QGraphicsTextItem>
-#include <QPen>
-#include <QScreen>
-#include <QCoreApplication>
-#include <QSettings>
-#include <QThread>
-#include <QProcess>
-#include <QTextBrowser>
-#include <QProgressBar>
 
-#include "hpgl_obj.h"
+#include "hpgl.h"
 #include "settings.h"
 #include "ancilla.h"
 
@@ -54,7 +37,7 @@ public:
 signals:
     void please_plotter_openSerial();
     void please_plotter_closeSerial();
-    void please_plotter_doPlot(QList<hpgl_obj> _objList);
+    void please_plotter_doPlot(QList<hpgl> * _objList);
     void please_plotter_cancelPlot();
 
 /*
@@ -74,6 +57,8 @@ private slots:
 //    void do_closeSerial();
     void do_plot();
     void do_cancelPlot();
+    void handle_ancillaThreadStart();
+    void handle_ancillaThreadQuit();
 
     void update_filePath();
 
@@ -89,12 +74,10 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QFile inputFile;
-    QList<hpgl_obj> objList;
+    QList<hpgl> objList;
     QGraphicsScene plotScene;
     QPointer<QSettings> settings;
-    Plotter * plotter;
-    QThread threadPlotter;
+    AncillaryThread * ancilla;
 };
 
 #endif // MAINWINDOW_H
