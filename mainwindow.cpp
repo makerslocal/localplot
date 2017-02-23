@@ -39,13 +39,12 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    QSettings settings;
+
     ui->setupUi(this);
 
     // Declare threads
     ancilla = new AncillaryThread;
-
-    // Instantiate settings object
-    settings = new QSettings();
 
     // Connect actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
@@ -69,13 +68,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
     connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
 
+    connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
+    connect(this, SIGNAL(please_plotter_loadFile(QString)), ancilla, SLOT(load_file(QString)));
+
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
     do_updatePens();
 
     connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
 
-    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)),
+    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
             this, SLOT(do_drawView())); // Update view if the pixel DPI changes
 
     connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)),
@@ -90,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->graphicsView_view->setScene(&plotScene);
 
     ui->lineEdit_filePath->setText(
-                settings->value("mainwindow/filePath",
+                settings.value("mainwindow/filePath",
                                 SETDEF_MAINWINDOW_FILEPATH).toString());
 
     do_drawView();
@@ -101,17 +103,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    ancilla->do_closeSerial();
     ancilla->quit();
     ancilla->wait();
 
-    delete settings;
     delete ui;
-}
-
-QString MainWindow::timeStamp()
-{
-    return(QTime::currentTime().toString("[HH:mm ss.zzz] "));
 }
 
 /*******************************************************************************
@@ -160,30 +155,32 @@ void MainWindow::do_openDialogSettings()
  */
 void MainWindow::update_filePath()
 {
-    settings->setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
+    QSettings settings;
+    settings.setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
 }
 
 void MainWindow::do_updatePens()
 {
     // Variables
+    QSettings settings;
     int rgbColor[3];
     int penSize;
     QColor penColor;
 
     // Set downPen
-    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
-    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
-    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
-    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
+    penSize = settings.value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
+    rgbColor[0] = settings.value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
+    rgbColor[1] = settings.value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
+    rgbColor[2] = settings.value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     downPen.setColor(penColor);
     downPen.setWidth(penSize);
 
     // Set upPen
-    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
-    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
-    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
-    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
+    penSize = settings.value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
+    rgbColor[0] = settings.value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
+    rgbColor[1] = settings.value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
+    rgbColor[2] = settings.value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     upPen.setColor(penColor);
     upPen.setWidth(penSize);
@@ -231,7 +228,7 @@ void MainWindow::handle_serialClosed()
 
 void MainWindow::do_plot()
 {
-    emit please_plotter_doPlot(&objList);
+    emit please_plotter_doPlot();
 }
 
 void MainWindow::do_cancelPlot()
@@ -256,14 +253,15 @@ void MainWindow::handle_plotCancelled()
 
 void MainWindow::handle_selectFileBtn()
 {
-    QString fileName;
-    QString startDir = settings->value("mainwindow/filePath", "").toString();
+    QSettings settings;
+    QString filePath;
+    QString startDir = settings.value("mainwindow/filePath", "").toString();
 
-    fileName = QFileDialog::getOpenFileName(this,
+    filePath = QFileDialog::getOpenFileName(this,
         tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
 
-    ui->lineEdit_filePath->setText(fileName);
-    do_loadFile();
+    ui->lineEdit_filePath->setText(filePath);
+    do_loadFile(filePath);
 }
 
 void MainWindow::handle_plottingPercent(int percent)
@@ -286,149 +284,130 @@ void MainWindow::handle_plottingPercent(int percent)
  * Etcetera methods
  ******************************************************************************/
 
-/**
- * @brief MainWindow::get_nextInt
- * Returns integer from section of string.
- *
- * @param input
- * @param index
- * @return
- */
-int MainWindow::get_nextInt(QString input, int * index)
-{
-    QChar tmp = input[*index];
-    QString buffer = "";
-
-    while (tmp != ',' && tmp != ';')
-    {
-        buffer.append(tmp);
-        tmp = input[++*index];
-    }
-    return(atoi(buffer.toStdString().c_str()));
-}
-
-
 void MainWindow::do_drawView()
 {
     // Set up new graphics view.
     plotScene.clear();
 
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
+//    // physicalDpi is the number of pixels in an inch
+//    int xDpi = ui->graphicsView_view->physicalDpiX();
+//    int yDpi = ui->graphicsView_view->physicalDpiY();
 
-    // Draw origin
-    QPen originPen;
-    originPen.setColor(QColor(150, 150, 150));
-    originPen.setWidth(2);
-    plotScene.addLine(0, 0, xDpi, 0, originPen);
-    plotScene.addLine(0, 0, 0, -yDpi, originPen);
+//    // Draw origin
+//    QPen originPen;
+//    originPen.setColor(QColor(150, 150, 150));
+//    originPen.setWidth(2);
+//    plotScene.addLine(0, 0, xDpi, 0, originPen);
+//    plotScene.addLine(0, 0, 0, -yDpi, originPen);
 
-    do_updatePens();
+//    do_updatePens();
 
-    // scale is the value set by our user
-    double scale = 1.0;
-    // Factor is the conversion from HP Graphic Unit to pixels
-    double xFactor = (xDpi / 1016.0 * scale);
-    double yFactor = (yDpi / 1016.0 * scale);
+//    // scale is the value set by our user
+//    double scale = 1.0;
+//    // Factor is the conversion from HP Graphic Unit to pixels
+//    double xFactor = (xDpi / 1016.0 * scale);
+//    double yFactor = (yDpi / 1016.0 * scale);
 
-    QList<QLine> lines_down;
-    lines_down.clear();
-    QList<QLine> lines_up;
-    lines_up.clear();
+//    QList<QLine> lines_down;
+//    lines_down.clear();
+//    QList<QLine> lines_up;
+//    lines_up.clear();
 
-    double time = 0;
+//    double time = 0;
 
-    for (int i = 0; i < objList.length(); i++)
-    {
-        // Build ETA
-        for (int i_cmd = 0; i_cmd < objList[i].cmdCount(); i_cmd++)
-        {
-            qDebug() << "debug: " << i << i_cmd;
-            time += objList[i].time(i_cmd);
-            qDebug() << "test time: " << time;
-        }
-        ui->textBrowser_console->append("Estimated cut time: "+QString::number(time)+" seconds.");
+//    for (int i = 0; i < objList.length(); i++)
+//    {
+//        // Build ETA
+//        for (int i_cmd = 0; i_cmd < objList[i].cmdCount(); i_cmd++)
+//        {
+//            qDebug() << "debug: " << i << i_cmd;
+//            time += objList[i].time(i_cmd);
+//            qDebug() << "test time: " << time;
+//        }
+//        ui->textBrowser_console->append("Estimated cut time: "+QString::number(time)+" seconds.");
 
-        // Get a list of qlines
-        objList[i].gen_line_lists();
-        lines_down = objList[i].lineListDown;
-        lines_up = objList[i].lineListUp;
+//        // Get a list of qlines
+//        objList[i].gen_line_lists();
+//        lines_down = objList[i].lineListDown;
+//        lines_up = objList[i].lineListUp;
 
-        // Transform qlines to be upright
-        for (int i_down = 0; i_down < lines_down.length(); i_down++)
-        {
-            int x, y;
-            x = lines_down[i_down].x1();
-            y = lines_down[i_down].y1();
-            x = x*xFactor;
-            y = y*(-1)*yFactor;
-            lines_down[i_down].setP1(QPoint(x, y));
-            x = lines_down[i_down].x2();
-            x = x*xFactor;
-            y = lines_down[i_down].y2();
-            y = y*(-1)*yFactor;
-            lines_down[i_down].setP2(QPoint(x, y));
-        }
+//        // Transform qlines to be upright
+//        for (int i_down = 0; i_down < lines_down.length(); i_down++)
+//        {
+//            int x, y;
+//            x = lines_down[i_down].x1();
+//            y = lines_down[i_down].y1();
+//            x = x*xFactor;
+//            y = y*(-1)*yFactor;
+//            lines_down[i_down].setP1(QPoint(x, y));
+//            x = lines_down[i_down].x2();
+//            x = x*xFactor;
+//            y = lines_down[i_down].y2();
+//            y = y*(-1)*yFactor;
+//            lines_down[i_down].setP2(QPoint(x, y));
+//        }
 
-        for (int i_up = 0; i_up < lines_up.length(); i_up++)
-        {
-            int x, y;
-            x = lines_up[i_up].x1();
-            x = x*xFactor;
-            y = lines_up[i_up].y1();
-            y = y*(-1)*yFactor;
-            lines_up[i_up].setP1(QPoint(x, y));
-            x = lines_up[i_up].x2();
-            x = x*xFactor;
-            y = lines_up[i_up].y2();
-            y = y*(-1)*yFactor;
-            lines_up[i_up].setP2(QPoint(x, y));
-        }
+//        for (int i_up = 0; i_up < lines_up.length(); i_up++)
+//        {
+//            int x, y;
+//            x = lines_up[i_up].x1();
+//            x = x*xFactor;
+//            y = lines_up[i_up].y1();
+//            y = y*(-1)*yFactor;
+//            lines_up[i_up].setP1(QPoint(x, y));
+//            x = lines_up[i_up].x2();
+//            x = x*xFactor;
+//            y = lines_up[i_up].y2();
+//            y = y*(-1)*yFactor;
+//            lines_up[i_up].setP2(QPoint(x, y));
+//        }
 
-        // Write qlines to the scene
-        for (int i_write = 0; i_write < objList.length(); i_write++)
-        {
-            for (int l = 0; l < lines_down.length(); l++)
-            {
-                plotScene.addLine(lines_down[l], downPen);
-            }
-            for (int l = 0; l < lines_up.length(); l++)
-            {
-                plotScene.addLine(lines_up[l], upPen);
-            }
-        }
-    }
+//        // Write qlines to the scene
+//        for (int i_write = 0; i_write < objList.length(); i_write++)
+//        {
+//            for (int l = 0; l < lines_down.length(); l++)
+//            {
+//                plotScene.addLine(lines_down[l], downPen);
+//            }
+//            for (int l = 0; l < lines_up.length(); l++)
+//            {
+//                plotScene.addLine(lines_up[l], upPen);
+//            }
+//        }
+//    }
 
-    // Draw origin text
-    QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
-    label->setRotation(90);
-    QRectF labelRect = label->boundingRect();
-    label->setY(label->y() - labelRect.width());
-    plotScene.addText("(0,0)");
-    QString scaleText = "View Scale: " + QString::number(scale);
-    QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
-    QRectF scaleTextItemRect = scaleTextItem->boundingRect();
-    scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
+//    // Draw origin text
+//    QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
+//    label->setRotation(90);
+//    QRectF labelRect = label->boundingRect();
+//    label->setY(label->y() - labelRect.width());
+//    plotScene.addText("(0,0)");
+//    QString scaleText = "View Scale: " + QString::number(scale);
+//    QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
+//    QRectF scaleTextItemRect = scaleTextItem->boundingRect();
+//    scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
 
-    // Set scene rectangle to match new items
-    plotScene.setSceneRect(plotScene.itemsBoundingRect());
-    //plotScene.addRect(plotScene.sceneRect(), downPen);
+//    // Set scene rectangle to match new items
+//    plotScene.setSceneRect(plotScene.itemsBoundingRect());
+//    //plotScene.addRect(plotScene.sceneRect(), downPen);
 
-    // Set scene to view
-    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
-    ui->graphicsView_view->show();
+//    // Set scene to view
+//    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
+//    ui->graphicsView_view->show();
 }
 
-void MainWindow::do_loadFile()
+void MainWindow::do_loadFile(QString filePath)
 {
-    settings->setValue("mainwindow/filePath", filePath);
+    QSettings settings;
 
-    do_drawView();
+    settings.setValue("mainwindow/filePath", filePath);
+
+//    do_drawView();
+    emit please_plotter_loadFile(filePath);
 }
 
-//void MainWindow::handle_objectTransform()
-//{
+void MainWindow::handle_objectTransform()
+{
 //    QTransform Tscale, Trotate, Ttranslate;
 //    double scale = ui->doubleSpinBox_objScale->value();
 //    double rotation = ui->doubleSpinBox_objRotation->value();
@@ -448,9 +427,13 @@ void MainWindow::do_loadFile()
 //        objList[i].cmdTransformTranslate = Ttranslate;
 //    }
 //    do_drawView();
-//}
+}
 
-
+void MainWindow::addPolygon(QPolygonF poly)
+{
+    plotScene.addPolygon(poly);
+    ui->graphicsView_view->show();
+}
 
 
 

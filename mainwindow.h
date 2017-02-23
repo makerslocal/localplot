@@ -8,10 +8,15 @@
 #include <QtCore>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QMainWindow>
+#include <QFileDialog>
+#include <QGuiApplication>
+#include <QScreen>
 
 #include "hpgl.h"
 #include "settings.h"
 #include "ancilla.h"
+#include "etc.h"
 
 namespace Ui {
 class MainWindow;
@@ -24,12 +29,6 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    QString timeStamp();
-    int get_nextInt(QString input, int *index);
-    QGraphicsScene penDownDemoScene;
-    QGraphicsScene penUpDemoScene;
-    QPen downPen;
-    QPen upPen;
 
 /*
  * please_  for signals to threads
@@ -37,8 +36,9 @@ public:
 signals:
     void please_plotter_openSerial();
     void please_plotter_closeSerial();
-    void please_plotter_doPlot(QList<hpgl> * _objList);
+    void please_plotter_doPlot();
     void please_plotter_cancelPlot();
+    void please_plotter_loadFile(QString filePath);
 
 /*
  * do_      for ui action
@@ -46,7 +46,7 @@ signals:
  * handle_  for ui update
  */
 private slots:
-    void do_loadFile();
+    void do_loadFile(QString filePath);
     void do_drawView();
     void do_updatePens();
     void do_openDialogAbout();
@@ -72,12 +72,17 @@ private slots:
 //    void handle_autoTranslateBtn();
     void handle_plottingPercent(int percent);
 
+    void addPolygon(QPolygonF poly);
+
 private:
     Ui::MainWindow *ui;
-    QList<hpgl> objList;
     QGraphicsScene plotScene;
-    QPointer<QSettings> settings;
+    QGraphicsScene penDownDemoScene;
+    QGraphicsScene penUpDemoScene;
+    QPen downPen;
+    QPen upPen;
     AncillaryThread * ancilla;
+    QVector<QPolygonF *> hpgl_items;
 };
 
 #endif // MAINWINDOW_H

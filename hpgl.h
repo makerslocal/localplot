@@ -8,7 +8,6 @@
 #include <QtCore>
 
 #include "settings.h"
-#include "hpgl_cmd.h"
 
 namespace std {
 class hpgl;
@@ -30,7 +29,7 @@ public:
     void gen_height(QList<QLine> lineList);
     void gen_width(QList<QLine> lineList);
     double time(int command_index);
-    double speedTranslate(int setting_speed);
+
 
 //    QTransform cmdTransformScale;
 //    QTransform cmdTransformRotate;
@@ -45,7 +44,6 @@ private:
 
     QSettings settings;
     QMutex cmdListMutex;
-    QList<hpgl_cmd*> cmdList;
 
     int width;
     int height;

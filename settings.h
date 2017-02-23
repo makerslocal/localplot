@@ -6,7 +6,7 @@
 #define SETTINGS_H
 
 #include <QCoreApplication>
-#include <QDebug>
+#include <QtCore>
 
 void init_localplot_settings();
 
@@ -43,12 +43,6 @@ void init_localplot_settings();
 #define SETDEF_SERIAL_STOPBITS 1
 #define SETDEF_SERIAL_XONOFF false
 #define SETDEF_SERIAL_RTSCTS false
-
-/**
- * Macros
- */
-//#define CUTSPEED settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt()
-//#define TRAVELSPEED settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt()
 
 /*
  * Current Settings Paths:

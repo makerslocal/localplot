@@ -9,11 +9,9 @@ DialogSettings::DialogSettings(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogSettings)
 {
-    ui->setupUi(this);
+    QSettings settings;
 
-    // Instantiate settings object
-    init_localplot_settings();
-    settings = new QSettings();
+    ui->setupUi(this);
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -54,24 +52,24 @@ DialogSettings::DialogSettings(QWidget *parent) :
     do_refreshSerialList();
 
     // Load saved settings
-    ui->spinBox_downPen_size->setValue(settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt());
-    ui->spinBox_downPen_red->setValue(settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt());
-    ui->spinBox_downPen_green->setValue(settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt());
-    ui->spinBox_downPen_blue->setValue(settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt());
-    ui->spinBox_upPen_size->setValue(settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt());
-    ui->spinBox_upPen_red->setValue(settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt());
-    ui->spinBox_upPen_green->setValue(settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt());
-    ui->spinBox_upPen_blue->setValue(settings->value("pen/up/blue", SETDEF_PEN_DOWN_BLUE).toInt());
-    ui->checkBox_deviceIncrementalOutput->setChecked(settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool());
-    ui->spinBox_deviceCutSpeed->setValue(settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
-    ui->spinBox_deviceTravelSpeed->setValue(settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
-    if (settings->value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
+    ui->spinBox_downPen_size->setValue(settings.value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt());
+    ui->spinBox_downPen_red->setValue(settings.value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt());
+    ui->spinBox_downPen_green->setValue(settings.value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt());
+    ui->spinBox_downPen_blue->setValue(settings.value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt());
+    ui->spinBox_upPen_size->setValue(settings.value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt());
+    ui->spinBox_upPen_red->setValue(settings.value("pen/up/red", SETDEF_PEN_UP_RED).toInt());
+    ui->spinBox_upPen_green->setValue(settings.value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt());
+    ui->spinBox_upPen_blue->setValue(settings.value("pen/up/blue", SETDEF_PEN_DOWN_BLUE).toInt());
+    ui->checkBox_deviceIncrementalOutput->setChecked(settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool());
+    ui->spinBox_deviceCutSpeed->setValue(settings.value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
+    ui->spinBox_deviceTravelSpeed->setValue(settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
+    if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         ui->radioButton_XonXoff->setChecked(true);
         ui->radioButton_RtsCts->setChecked(false);
         ui->radioButton_flowControlNone->setChecked(false);
     }
-    else if (settings->value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
+    else if (settings.value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
     {
         ui->radioButton_XonXoff->setChecked(false);
         ui->radioButton_RtsCts->setChecked(true);
@@ -86,7 +84,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     for (int index = 0; index < ui->comboBox_baud->count(); index++)
     {
         int value = ui->comboBox_baud->itemData(index).toInt();
-        if (value == settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt())
+        if (value == settings.value("serial/baud", SETDEF_SERIAL_BAUD).toInt())
         {
             ui->comboBox_baud->setCurrentIndex(index);
             break;
@@ -95,7 +93,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     for (int index = 0; index < ui->comboBox_bytesize->count(); index++)
     {
         int value = ui->comboBox_bytesize->itemData(index).toInt();
-        if (value == settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt())
+        if (value == settings.value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt())
         {
             ui->comboBox_bytesize->setCurrentIndex(index);
             break;
@@ -104,7 +102,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     for (int index = 0; index < ui->comboBox_stopbits->count(); index++)
     {
         int value = ui->comboBox_stopbits->itemData(index).toInt();
-        if (value == settings->value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt())
+        if (value == settings.value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt())
         {
             ui->comboBox_stopbits->setCurrentIndex(index);
             break;
@@ -113,7 +111,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     for (int index = 0; index < ui->comboBox_parity->count(); index++)
     {
         QString value = ui->comboBox_parity->itemData(index).toString();
-        if (value == settings->value("serial/parity", SETDEF_SERIAL_PARITY).toString())
+        if (value == settings.value("serial/parity", SETDEF_SERIAL_PARITY).toString())
         {
             ui->comboBox_parity->setCurrentIndex(index);
             break;
@@ -122,7 +120,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     for (int index = 0; index < ui->comboBox_serialPort->count(); index++)
     {
         QString value = ui->comboBox_serialPort->itemData(index).toString();
-        if (value == settings->value("serial/port", SETDEF_SERIAL_STOPBITS).toString())
+        if (value == settings.value("serial/port", SETDEF_SERIAL_STOPBITS).toString())
         {
             ui->comboBox_serialPort->setCurrentIndex(index);
             break;
@@ -156,84 +154,87 @@ DialogSettings::DialogSettings(QWidget *parent) :
 
 DialogSettings::~DialogSettings()
 {
-    delete settings;
     delete ui;
 }
 
 void DialogSettings::do_settingsClear()
 {
+    QSettings settings;
     qDebug() << "Clearing all settings.";
     do_settingsPrint();
-    settings->clear();
+    settings.clear();
     qDebug() << "... Done.";
 }
 
 void DialogSettings::do_settingsPrint()
 {
+    QSettings settings;
     qDebug() << "Printing all settings: ";
-    QStringList allKeys = settings->allKeys();
+    QStringList allKeys = settings.allKeys();
     for (int index = 0; index < allKeys.size(); index++)
     {
-        qDebug() << allKeys.at(index) << ":\t" << settings->value(allKeys.at(index));
+        qDebug() << allKeys.at(index) << ":\t" << settings.value(allKeys.at(index));
     }
 }
 
 void DialogSettings::do_saveAndClose()
 {
-    settings->beginGroup("pen");
+    QSettings settings;
+    settings.beginGroup("pen");
     {
-        settings->setValue("down/size", ui->spinBox_downPen_size->value());
-        settings->setValue("down/red", ui->spinBox_downPen_red->value());
-        settings->setValue("down/green", ui->spinBox_downPen_green->value());
-        settings->setValue("down/blue", ui->spinBox_downPen_blue->value());
-        settings->setValue("up/size", ui->spinBox_upPen_size->value());
-        settings->setValue("up/red", ui->spinBox_upPen_red->value());
-        settings->setValue("up/green", ui->spinBox_upPen_green->value());
-        settings->setValue("up/blue", ui->spinBox_upPen_blue->value());
+        settings.setValue("down/size", ui->spinBox_downPen_size->value());
+        settings.setValue("down/red", ui->spinBox_downPen_red->value());
+        settings.setValue("down/green", ui->spinBox_downPen_green->value());
+        settings.setValue("down/blue", ui->spinBox_downPen_blue->value());
+        settings.setValue("up/size", ui->spinBox_upPen_size->value());
+        settings.setValue("up/red", ui->spinBox_upPen_red->value());
+        settings.setValue("up/green", ui->spinBox_upPen_green->value());
+        settings.setValue("up/blue", ui->spinBox_upPen_blue->value());
     }
-    settings->endGroup();
+    settings.endGroup();
 
-    settings->beginGroup("serial");
+    settings.beginGroup("serial");
     {
         if (ui->comboBox_serialPort->currentData().toString() == ui->lineEdit_serialPort->text())
         {
-            settings->setValue("port", ui->comboBox_serialPort->currentData());
+            settings.setValue("port", ui->comboBox_serialPort->currentData());
         }
         else
         {
-            settings->setValue("port", ui->lineEdit_serialPort->text());
+            settings.setValue("port", ui->lineEdit_serialPort->text());
         }
-        settings->setValue("parity", ui->comboBox_parity->currentData());
-        settings->setValue("baud", ui->comboBox_baud->currentData());
-        settings->setValue("bytesize", ui->comboBox_bytesize->currentData());
-        settings->setValue("stopbits", ui->comboBox_stopbits->currentData());
-        settings->setValue("xonxoff", ui->radioButton_XonXoff->isChecked());
-        settings->setValue("rtscts", ui->radioButton_RtsCts->isChecked());
+        settings.setValue("parity", ui->comboBox_parity->currentData());
+        settings.setValue("baud", ui->comboBox_baud->currentData());
+        settings.setValue("bytesize", ui->comboBox_bytesize->currentData());
+        settings.setValue("stopbits", ui->comboBox_stopbits->currentData());
+        settings.setValue("xonxoff", ui->radioButton_XonXoff->isChecked());
+        settings.setValue("rtscts", ui->radioButton_RtsCts->isChecked());
     }
-    settings->endGroup();
+    settings.endGroup();
 
-    settings->beginGroup("device");
+    settings.beginGroup("device");
     {
-        settings->setValue("incremental", ui->checkBox_deviceIncrementalOutput->isChecked());
-        settings->setValue("speed/cut", ui->spinBox_deviceCutSpeed->value());
-        settings->setValue("speed/travel", ui->spinBox_deviceTravelSpeed->value());
+        settings.setValue("incremental", ui->checkBox_deviceIncrementalOutput->isChecked());
+        settings.setValue("speed/cut", ui->spinBox_deviceCutSpeed->value());
+        settings.setValue("speed/travel", ui->spinBox_deviceTravelSpeed->value());
     }
-    settings->endGroup();
+    settings.endGroup();
 
     close();
 }
 
 void DialogSettings::do_refreshSerialList()
 {
+    QSettings settings;
     QList<QSerialPortInfo> _ports = serialPorts.availablePorts();
     ui->comboBox_serialPort->clear();
 
-    ui->lineEdit_serialPort->setText(settings->value("serial/port", SETDEF_SERIAL_PORT).toString());
+    ui->lineEdit_serialPort->setText(settings.value("serial/port", SETDEF_SERIAL_PORT).toString());
 
     for (int i = 0; i < _ports.count(); ++i)
     {
         ui->comboBox_serialPort->insertItem(i, _ports.at(i).portName(), _ports.at(i).systemLocation());
-        if (_ports.at(i).systemLocation() == settings->value("serial/port", SETDEF_SERIAL_PORT).toString())
+        if (_ports.at(i).systemLocation() == settings.value("serial/port", SETDEF_SERIAL_PORT).toString())
         {
             ui->comboBox_baud->setCurrentIndex(i);
         }
@@ -281,3 +282,29 @@ void DialogSettings::do_drawDemoView()
     ui->graphicsView_penDownDemo->show();
     ui->graphicsView_penUpDemo->show();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -5,8 +5,8 @@
 #ifndef DIALOGABOUT_H
 #define DIALOGABOUT_H
 
+#include <QtCore>
 #include <QDialog>
-#include <QDebug>
 
 namespace Ui {
 class DialogAbout;

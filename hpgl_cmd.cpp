@@ -244,13 +244,6 @@ double hpgl_cmd::time()
     return(retval);
 }
 
-double hpgl_cmd::speedTranslate(int setting_speed)
-{
-//    return((0.5*setting_speed) + 30);
-    return((0.3*setting_speed) + 70);
-//    return((0.52*setting_speed) + 24.8);
-}
-
 
 
 

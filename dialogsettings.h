@@ -5,16 +5,10 @@
 #ifndef DIALOGSETTINGS_H
 #define DIALOGSETTINGS_H
 
-#include <QDialog>
-#include <QCoreApplication>
-#include <QSettings>
-
+#include <QtCore>
 #include <QSerialPortInfo>
 #include <QGraphicsScene>
-#include <QPen>
-#include <QDebug>
-#include <QComboBox>
-#include <QLineEdit>
+#include <QDialog>
 
 #include "settings.h"
 
