@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    // Declare threads
+    // Declare worker thread
     ancilla = new AncillaryThread;
 
     // Connect actions
@@ -53,8 +53,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
 
-    // Connect threads
-    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
+    // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ancilla, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
     connect(ancilla, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
@@ -97,7 +96,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     do_drawView();
 
-    // Kickstart threads
+    // Kickstart worker thread
     ancilla->start();
 }
 
@@ -192,7 +191,7 @@ void MainWindow::do_updatePens()
 
 void MainWindow::handle_ancillaThreadStart()
 {
-    ui->textBrowser_console->append("Ancillary thread started.");
+    ui->textBrowser_console->append("Ancillary thread started \\o/");
 }
 
 void MainWindow::handle_ancillaThreadQuit()
@@ -200,30 +199,14 @@ void MainWindow::handle_ancillaThreadQuit()
     ui->textBrowser_console->append("Ancillary thread stopped.");
 }
 
-void MainWindow::handle_serialConnectBtn()
-{
-    if (ui->pushButton_serialConnect->text() == "Connect")
-    {
-        emit please_plotter_openSerial(); //do_openSerial();
-    }
-    else
-    {
-        emit please_plotter_closeSerial(); //do_closeSerial();
-    }
-}
-
 void MainWindow::handle_serialOpened()
 {
-    ui->pushButton_doPlot->setEnabled(true);
     ui->textBrowser_console->append(timeStamp() + "Serial port opened x)");
-    ui->pushButton_serialConnect->setText("Disconnect");
 }
 
 void MainWindow::handle_serialClosed()
 {
-    ui->pushButton_doPlot->setEnabled(false);
-    ui->textBrowser_console->append(timeStamp() + "Serial port closed :D");
-    ui->pushButton_serialConnect->setText("Connect");
+    ui->textBrowser_console->append(timeStamp() + "Serial port closed.");
 }
 
 void MainWindow::do_plot()
@@ -289,24 +272,24 @@ void MainWindow::do_drawView()
     // Set up new graphics view.
     plotScene.clear();
 
-//    // physicalDpi is the number of pixels in an inch
-//    int xDpi = ui->graphicsView_view->physicalDpiX();
-//    int yDpi = ui->graphicsView_view->physicalDpiY();
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
 
-//    // Draw origin
-//    QPen originPen;
-//    originPen.setColor(QColor(150, 150, 150));
-//    originPen.setWidth(2);
-//    plotScene.addLine(0, 0, xDpi, 0, originPen);
-//    plotScene.addLine(0, 0, 0, -yDpi, originPen);
+    // Draw origin
+    QPen originPen;
+    originPen.setColor(QColor(150, 150, 150));
+    originPen.setWidth(2);
+    plotScene.addLine(0, 0, xDpi, 0, originPen);
+    plotScene.addLine(0, 0, 0, yDpi, originPen);
 
-//    do_updatePens();
+    do_updatePens();
 
-//    // scale is the value set by our user
-//    double scale = 1.0;
-//    // Factor is the conversion from HP Graphic Unit to pixels
-//    double xFactor = (xDpi / 1016.0 * scale);
-//    double yFactor = (yDpi / 1016.0 * scale);
+    // scale is the value set by our user
+    double scale = 1.0;
+    // Factor is the conversion from HP Graphic Unit to pixels
+    double xFactor = (xDpi / 1016.0 * scale);
+    double yFactor = (yDpi / 1016.0 * scale);
 
 //    QList<QLine> lines_down;
 //    lines_down.clear();
@@ -376,9 +359,13 @@ void MainWindow::do_drawView()
 //        }
 //    }
 
-//    // Draw origin text
-//    QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
-//    label->setRotation(90);
+    // Draw origin text
+    QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
+    QTransform flip;
+    flip.scale(1, -1);
+    label->setRotation(90);
+    label->moveBy(0, label->shape().boundingRect().width());
+    label->setTransform(flip);
 //    QRectF labelRect = label->boundingRect();
 //    label->setY(label->y() - labelRect.width());
 //    plotScene.addText("(0,0)");
@@ -387,13 +374,18 @@ void MainWindow::do_drawView()
 //    QRectF scaleTextItemRect = scaleTextItem->boundingRect();
 //    scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
 
-//    // Set scene rectangle to match new items
+    // Set scene rectangle to match new items
 //    plotScene.setSceneRect(plotScene.itemsBoundingRect());
-//    //plotScene.addRect(plotScene.sceneRect(), downPen);
+    //plotScene.addRect(plotScene.sceneRect(), downPen);
 
-//    // Set scene to view
+//    ui->graphicsView_view->scale(1, -1);
+    QTransform viewTransform;
+    viewTransform.scale(xDpi/1016.0, -yDpi/1016.0);
+    ui->graphicsView_view->setTransform(viewTransform);
+
+    // Set scene to view
 //    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
-//    ui->graphicsView_view->show();
+    ui->graphicsView_view->show();
 }
 
 void MainWindow::do_loadFile(QString filePath)

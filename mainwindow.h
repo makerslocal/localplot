@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QGraphicsTextItem>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -53,8 +54,6 @@ private slots:
     void do_openDialogSettings();
 
     // plotter thread
-//    void do_openSerial();
-//    void do_closeSerial();
     void do_plot();
     void do_cancelPlot();
     void handle_ancillaThreadStart();
@@ -64,7 +63,6 @@ private slots:
 
     void handle_serialOpened();
     void handle_serialClosed();
-    void handle_serialConnectBtn();
     void handle_selectFileBtn();
     void handle_objectTransform();
     void handle_plotStarted();
@@ -77,8 +75,6 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
-    QGraphicsScene penDownDemoScene;
-    QGraphicsScene penUpDemoScene;
     QPen downPen;
     QPen upPen;
     AncillaryThread * ancilla;

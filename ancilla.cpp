@@ -371,7 +371,6 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
         else if (opcode == "PU")
         {
             // Pen up - we assume a single line (two points)
-            qDebug() << "Pen up command: " << cmdText;
             int commaCount, newX, newY;
             cmdText.remove(0,2);
             commaCount = cmdText.count(',');
@@ -380,7 +379,6 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
             newX = cmdText.section(',', i, i).toInt();
             i++;
             newY = cmdText.section(',', i, i).toInt();
-            qDebug() << "Pen up last point: " << newX << ", " << newY;
             tail.setX(newX);
             tail.setY(newY);
         }
@@ -407,7 +405,6 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
 ////                    newCmd.coordList.push_back(QPoint(newX, newY));
 //                }
             }
-            qDebug() << "Emitting polygon" << newItem;
             emit newPolygon(newItem);
         }
     }
