@@ -269,19 +269,25 @@ void MainWindow::handle_plottingPercent(int percent)
 
 void MainWindow::do_drawView()
 {
-    // Set up new graphics view.
-    plotScene.clear();
-
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
+
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    // Set up new graphics view.
+    plotScene.clear();
 
     // Draw origin
     QPen originPen;
     originPen.setColor(QColor(150, 150, 150));
     originPen.setWidth(2);
-    plotScene.addLine(0, 0, xDpi, 0, originPen);
-    plotScene.addLine(0, 0, 0, yDpi, originPen);
+    plotScene.addLine(0, 0, xDpi, 0, originPen)->setTransform(itemToScene);
+    plotScene.addLine(0, 0, 0, yDpi, originPen)->setTransform(itemToScene);
 
     do_updatePens();
 
@@ -361,11 +367,13 @@ void MainWindow::do_drawView()
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
-    QTransform flip;
-    flip.scale(1, -1);
-    label->setRotation(90);
-    label->moveBy(0, label->shape().boundingRect().width());
-    label->setTransform(flip);
+    label->setTransform(itemToScene * viewFlip);
+    label->setRotation(-90);
+    QRectF label_rect = label->boundingRect();
+
+    label->moveBy(-1 * label->mapRectToScene(label->boundingRect()).width(), 0);
+//    label->setTransform(flip);
+
 //    QRectF labelRect = label->boundingRect();
 //    label->setY(label->y() - labelRect.width());
 //    plotScene.addText("(0,0)");
@@ -379,9 +387,8 @@ void MainWindow::do_drawView()
     //plotScene.addRect(plotScene.sceneRect(), downPen);
 
 //    ui->graphicsView_view->scale(1, -1);
-    QTransform viewTransform;
-    viewTransform.scale(xDpi/1016.0, -yDpi/1016.0);
-    ui->graphicsView_view->setTransform(viewTransform);
+
+    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 
     // Set scene to view
 //    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
@@ -423,7 +430,23 @@ void MainWindow::handle_objectTransform()
 
 void MainWindow::addPolygon(QPolygonF poly)
 {
-    plotScene.addPolygon(poly);
+    // Variables
+    QSettings settings;
+    int rgbColor[3];
+    int penSize;
+    QColor penColor;
+    QPen downPen;
+
+    // Set downPen
+    penSize = settings.value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
+    rgbColor[0] = settings.value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
+    rgbColor[1] = settings.value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
+    rgbColor[2] = settings.value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
+    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+    downPen.setColor(penColor);
+    downPen.setWidth(penSize);
+
+    plotScene.addPolygon(poly, downPen);
     ui->graphicsView_view->show();
 }
 
