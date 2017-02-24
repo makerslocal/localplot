@@ -277,8 +277,8 @@ void DialogSettings::do_drawDemoView()
     do_updatePens();
     penDownDemoScene.clear();
     penUpDemoScene.clear();
-    penDownDemoScene.addLine(0, 0, 28, 0, downPen);
-    penUpDemoScene.addLine(0, 0, 28, 0, upPen);
+    penDownDemoScene.addLine(0, 0, 75, 0, downPen);
+    penUpDemoScene.addLine(0, 0, 75, 0, upPen);
     ui->graphicsView_penDownDemo->show();
     ui->graphicsView_penUpDemo->show();
 }

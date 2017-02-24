@@ -8,6 +8,7 @@
 #include <QtCore>
 #include <QSerialPortInfo>
 #include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QDialog>
 
 #include "settings.h"

@@ -304,6 +304,10 @@ void MainWindow::addPolygon(QPolygonF poly)
     int penSize;
     QColor penColor;
     QPen downPen;
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    int avgDpi = (xDpi + yDpi) / 2.0;
 
     // Set downPen
     penSize = settings.value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
@@ -312,7 +316,7 @@ void MainWindow::addPolygon(QPolygonF poly)
     rgbColor[2] = settings.value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
     penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
     downPen.setColor(penColor);
-    downPen.setWidth(penSize);
+    downPen.setWidth(penSize * (1016.0 / avgDpi));
 
     plotScene.addPolygon(poly, downPen);
     ui->graphicsView_view->show();
