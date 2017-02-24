@@ -191,12 +191,12 @@ void MainWindow::do_updatePens()
 
 void MainWindow::handle_ancillaThreadStart()
 {
-    ui->textBrowser_console->append("Ancillary thread started \\o/");
+    ui->textBrowser_console->append(timeStamp() + "Ancillary thread started \\o/");
 }
 
 void MainWindow::handle_ancillaThreadQuit()
 {
-    ui->textBrowser_console->append("Ancillary thread stopped.");
+    ui->textBrowser_console->append(timeStamp() + "Ancillary thread stopped.");
 }
 
 void MainWindow::handle_serialOpened()
@@ -291,107 +291,19 @@ void MainWindow::do_drawView()
 
     do_updatePens();
 
-    // scale is the value set by our user
-    double scale = 1.0;
-    // Factor is the conversion from HP Graphic Unit to pixels
-    double xFactor = (xDpi / 1016.0 * scale);
-    double yFactor = (yDpi / 1016.0 * scale);
-
-//    QList<QLine> lines_down;
-//    lines_down.clear();
-//    QList<QLine> lines_up;
-//    lines_up.clear();
-
-//    double time = 0;
-
-//    for (int i = 0; i < objList.length(); i++)
-//    {
-//        // Build ETA
-//        for (int i_cmd = 0; i_cmd < objList[i].cmdCount(); i_cmd++)
-//        {
-//            qDebug() << "debug: " << i << i_cmd;
-//            time += objList[i].time(i_cmd);
-//            qDebug() << "test time: " << time;
-//        }
-//        ui->textBrowser_console->append("Estimated cut time: "+QString::number(time)+" seconds.");
-
-//        // Get a list of qlines
-//        objList[i].gen_line_lists();
-//        lines_down = objList[i].lineListDown;
-//        lines_up = objList[i].lineListUp;
-
-//        // Transform qlines to be upright
-//        for (int i_down = 0; i_down < lines_down.length(); i_down++)
-//        {
-//            int x, y;
-//            x = lines_down[i_down].x1();
-//            y = lines_down[i_down].y1();
-//            x = x*xFactor;
-//            y = y*(-1)*yFactor;
-//            lines_down[i_down].setP1(QPoint(x, y));
-//            x = lines_down[i_down].x2();
-//            x = x*xFactor;
-//            y = lines_down[i_down].y2();
-//            y = y*(-1)*yFactor;
-//            lines_down[i_down].setP2(QPoint(x, y));
-//        }
-
-//        for (int i_up = 0; i_up < lines_up.length(); i_up++)
-//        {
-//            int x, y;
-//            x = lines_up[i_up].x1();
-//            x = x*xFactor;
-//            y = lines_up[i_up].y1();
-//            y = y*(-1)*yFactor;
-//            lines_up[i_up].setP1(QPoint(x, y));
-//            x = lines_up[i_up].x2();
-//            x = x*xFactor;
-//            y = lines_up[i_up].y2();
-//            y = y*(-1)*yFactor;
-//            lines_up[i_up].setP2(QPoint(x, y));
-//        }
-
-//        // Write qlines to the scene
-//        for (int i_write = 0; i_write < objList.length(); i_write++)
-//        {
-//            for (int l = 0; l < lines_down.length(); l++)
-//            {
-//                plotScene.addLine(lines_down[l], downPen);
-//            }
-//            for (int l = 0; l < lines_up.length(); l++)
-//            {
-//                plotScene.addLine(lines_up[l], upPen);
-//            }
-//        }
-//    }
-
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
     label->setTransform(itemToScene * viewFlip);
     label->setRotation(-90);
-    QRectF label_rect = label->boundingRect();
-
     label->moveBy(-1 * label->mapRectToScene(label->boundingRect()).width(), 0);
-//    label->setTransform(flip);
 
-//    QRectF labelRect = label->boundingRect();
-//    label->setY(label->y() - labelRect.width());
-//    plotScene.addText("(0,0)");
-//    QString scaleText = "View Scale: " + QString::number(scale);
-//    QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
-//    QRectF scaleTextItemRect = scaleTextItem->boundingRect();
-//    scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
-
-    // Set scene rectangle to match new items
-//    plotScene.setSceneRect(plotScene.itemsBoundingRect());
-    //plotScene.addRect(plotScene.sceneRect(), downPen);
-
-//    ui->graphicsView_view->scale(1, -1);
+    QGraphicsTextItem * originText = plotScene.addText("(0,0)");
+    originText->setTransform(itemToScene * viewFlip);
+//    originText->moveBy(0, -1 * originText->mapRectToScene(originText->boundingRect()).height());
 
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 
     // Set scene to view
-//    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
     ui->graphicsView_view->show();
 }
 
