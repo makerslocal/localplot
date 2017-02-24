@@ -79,15 +79,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
             this, SLOT(do_drawView())); // Update view if the pixel DPI changes
 
-    connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)),
-            this, SLOT(handle_objectTransform())); // Update view if the rotation changes
-    connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)),
-            this, SLOT(handle_objectTransform())); // Update view if the translation-X changes
-    connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)),
-            this, SLOT(handle_objectTransform())); // Update view if the translation-Y changes
-
     ui->graphicsView_view->setScene(&plotScene);
 
     ui->lineEdit_filePath->setText(
@@ -252,17 +243,6 @@ void MainWindow::handle_plottingPercent(int percent)
     ui->progressBar_plotting->setValue(percent);
 }
 
-//void MainWindow::handle_autoTranslateBtn()
-//{
-//    for (int i = 0; i < objList.count(); i++)
-//    {
-//        if (objList[i].minX() < 0)
-//        {
-//            int val = ui->spinBox_objTranslationX
-//        }
-//    }
-//}
-
 /*******************************************************************************
  * Etcetera methods
  ******************************************************************************/
@@ -313,31 +293,7 @@ void MainWindow::do_loadFile(QString filePath)
 
     settings.setValue("mainwindow/filePath", filePath);
 
-//    do_drawView();
     emit please_plotter_loadFile(filePath);
-}
-
-void MainWindow::handle_objectTransform()
-{
-//    QTransform Tscale, Trotate, Ttranslate;
-//    double scale = ui->doubleSpinBox_objScale->value();
-//    double rotation = ui->doubleSpinBox_objRotation->value();
-//    int translateX = ui->spinBox_objTranslationX->value();
-//    int translateY = ui->spinBox_objTranslationY->value();
-
-//    Tscale.scale(scale, scale);
-//    Trotate.rotate(rotation);
-//    Ttranslate.translate(translateX, translateY);
-
-//    //qDebug() << "MATRIX: " << transform;
-
-//    for (int i = 0; i < objList.count(); i++)
-//    {
-//        objList[i].cmdTransformScale = Tscale;
-//        objList[i].cmdTransformRotate = Trotate;
-//        objList[i].cmdTransformTranslate = Ttranslate;
-//    }
-//    do_drawView();
 }
 
 void MainWindow::addPolygon(QPolygonF poly)

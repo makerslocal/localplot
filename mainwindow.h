@@ -64,10 +64,8 @@ private slots:
     void handle_serialOpened();
     void handle_serialClosed();
     void handle_selectFileBtn();
-    void handle_objectTransform();
     void handle_plotStarted();
     void handle_plotCancelled();
-//    void handle_autoTranslateBtn();
     void handle_plottingPercent(int percent);
 
     void addPolygon(QPolygonF poly);
