@@ -9,6 +9,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QPolygonF>
+#include <QGraphicsPolygonItem>
 
 #include "settings.h"
 #include "etc.h"
@@ -25,7 +26,7 @@ class AncillaryThread;
  * - Serial port connections
  * - HPGL plotting/output
  */
-class AncillaryThread : public QThread
+class AncillaryThread : public QObject
 {
     Q_OBJECT
 
@@ -34,16 +35,15 @@ public:
     ~AncillaryThread();
 
 public slots:
-//    void do_loadFile(QString const * const filePath);
-    void do_beginPlot();
+    void do_run(); // kickstart
+    void do_beginPlot(const QVector<QGraphicsPolygonItem *> hpgl_items);
     void do_cancelPlot();
-    void do_plotNext();
-    int load_file(const QString _filepath);
-    void parseHPGL(QString * hpgl_text);
+    int do_loadFile(const QString _filepath);
 
 private slots:
-    void do_openSerial();
-    void do_closeSerial();
+    void do_plotNext(QPointer<QSerialPort> _port, const QVector<QGraphicsPolygonItem *> hpgl_items, int index);
+    QString print(const QVector<QGraphicsPolygonItem *> hpgl_items, int index);
+    void parseHPGL(QString * hpgl_text);
 
 signals:
     void plottingStarted();
@@ -60,15 +60,9 @@ signals:
     void statusUpdate(QString _consoleStatus);
 
 private:
-    void run() override; // Reimplement from QThread
+    QPointer<QSerialPort> openSerial();
+    void closeSerial(QPointer<QSerialPort> _device);
     bool cancelPlotFlag;
-
-    // plotting
-    int index_obj;
-    int index_cmd;
-    QString printThis;
-    int cmdCount;
-    double time;
 };
 
 #endif // PLOTTER_H

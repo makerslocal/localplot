@@ -11,277 +11,213 @@ AncillaryThread::AncillaryThread()
 
 AncillaryThread::~AncillaryThread()
 {
-    // Make sure serial port is closed first
-    do_closeSerial();
+    //
 }
 
-void AncillaryThread::run()
+void AncillaryThread::do_run()
 {
-    exec();
+    //?
 }
 
-void AncillaryThread::do_openSerial()
+QPointer<QSerialPort> AncillaryThread::openSerial()
 {
-//    QSettings settings;
-//    QString _portLocation = settings.value("serial/port", SETDEF_SERIAL_PORT).toString();
-//    QSerialPortInfo _device;
+    QSettings settings;
+    QString _portLocation = settings.value("serial/port", SETDEF_SERIAL_PORT).toString();
+    QSerialPortInfo _deviceInfo;
+    QPointer<QSerialPort> _device;
 
-//    for (int i = 0; i < serialPorts.availablePorts().count(); i++)
-//    {
-//        if (_portLocation == serialPorts.availablePorts().at(i).systemLocation())
-//        {
-//            _device = serialPorts.availablePorts().at(i);
-//        }
-//    }
+    for (int i = 0; i < _deviceInfo.availablePorts().count(); i++)
+    {
+        if (_portLocation == _deviceInfo.availablePorts().at(i).systemLocation())
+        {
+            _deviceInfo = _deviceInfo.availablePorts().at(i);
+        }
+    }
 
-//    if (_device.isNull())
-//    {
-//        serialBuffer = new QSerialPort(_portLocation);
-//    }
-//    else
-//    {
-//        serialBuffer = new QSerialPort(_device);
-//    }
+    if (_deviceInfo.isNull())
+    {
+        _device = new QSerialPort(_portLocation);
+    }
+    else
+    {
+        _device = new QSerialPort(_deviceInfo);
+    }
 
-//    serialBuffer->setBaudRate(settings.value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
+    _device->setBaudRate(settings.value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
 
-//    int dataBits = settings.value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
-//    if (dataBits == 8)
-//    {
-//        serialBuffer->setDataBits(QSerialPort::Data8);
-//    }
-//    else if (dataBits == 7)
-//    {
-//        serialBuffer->setDataBits(QSerialPort::Data7);
-//    }
-//    else if (dataBits == 6)
-//    {
-//        serialBuffer->setDataBits(QSerialPort::Data6);
-//    }
-//    else if (dataBits == 5)
-//    {
-//        serialBuffer->setDataBits(QSerialPort::Data5);
-//    }
+    int dataBits = settings.value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
+    if (dataBits == 8)
+    {
+        _device->setDataBits(QSerialPort::Data8);
+    }
+    else if (dataBits == 7)
+    {
+        _device->setDataBits(QSerialPort::Data7);
+    }
+    else if (dataBits == 6)
+    {
+        _device->setDataBits(QSerialPort::Data6);
+    }
+    else if (dataBits == 5)
+    {
+        _device->setDataBits(QSerialPort::Data5);
+    }
 
-//    QString parity = settings.value("serial/parity", SETDEF_SERIAL_PARITY).toString();
-//    if (parity == "none")
-//    {
-//        serialBuffer->setParity(QSerialPort::NoParity);
-//    }
-//    else if (parity == "odd")
-//    {
-//        serialBuffer->setParity(QSerialPort::OddParity);
-//    }
-//    else if (parity == "even")
-//    {
-//        serialBuffer->setParity(QSerialPort::EvenParity);
-//    }
-//    else if (parity == "mark")
-//    {
-//        serialBuffer->setParity(QSerialPort::MarkParity);
-//    }
-//    else if (parity == "space")
-//    {
-//        serialBuffer->setParity(QSerialPort::SpaceParity);
-//    }
+    QString parity = settings.value("serial/parity", SETDEF_SERIAL_PARITY).toString();
+    if (parity == "none")
+    {
+        _device->setParity(QSerialPort::NoParity);
+    }
+    else if (parity == "odd")
+    {
+        _device->setParity(QSerialPort::OddParity);
+    }
+    else if (parity == "even")
+    {
+        _device->setParity(QSerialPort::EvenParity);
+    }
+    else if (parity == "mark")
+    {
+        _device->setParity(QSerialPort::MarkParity);
+    }
+    else if (parity == "space")
+    {
+        _device->setParity(QSerialPort::SpaceParity);
+    }
 
-//    int stopBits = settings.value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
-//    if (stopBits == 1)
-//    {
-//        serialBuffer->setStopBits(QSerialPort::OneStop);
-//    }
-//    else if (stopBits == 3)
-//    {
-//        serialBuffer->setStopBits(QSerialPort::OneAndHalfStop);
-//    }
-//    else if (stopBits == 2)
-//    {
-//        serialBuffer->setStopBits(QSerialPort::TwoStop);
-//    }
+    int stopBits = settings.value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
+    if (stopBits == 1)
+    {
+        _device->setStopBits(QSerialPort::OneStop);
+    }
+    else if (stopBits == 3)
+    {
+        _device->setStopBits(QSerialPort::OneAndHalfStop);
+    }
+    else if (stopBits == 2)
+    {
+        _device->setStopBits(QSerialPort::TwoStop);
+    }
 
-//    if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
-//    {
-//        serialBuffer->setFlowControl(QSerialPort::SoftwareControl);
-//    }
-//    else if (settings.value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
-//    {
-//        serialBuffer->setFlowControl(QSerialPort::HardwareControl);
-//    }
-//    else
-//    {
-//        serialBuffer->setFlowControl(QSerialPort::NoFlowControl);
-//    }
+    if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
+    {
+        _device->setFlowControl(QSerialPort::SoftwareControl);
+    }
+    else if (settings.value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
+    {
+        _device->setFlowControl(QSerialPort::HardwareControl);
+    }
+    else
+    {
+        _device->setFlowControl(QSerialPort::NoFlowControl);
+    }
 
-//    serialBuffer->open(QIODevice::WriteOnly);
-//    if (serialBuffer->isOpen())
-//    {
-//        qDebug() << "Flow control: " << serialBuffer->flowControl();
-//        emit serialOpened(); //handle_serialOpened();
-//    }
-//    else
-//    {
-////        ui->textBrowser_console->append(timeStamp() + "Serial port didn't open? :'(");
-//        do_closeSerial();
-//    }
+    _device->open(QIODevice::WriteOnly);
+    if (_device->isOpen())
+    {
+        qDebug() << "Flow control: " << _device->flowControl();
+        emit serialOpened(); //handle_serialOpened();
+    }
+    else
+    {
+        emit statusUpdate("Serial port didn't open? :'(");
+        closeSerial(_device);
+    }
+    return (_device);
 }
 
-void AncillaryThread::do_closeSerial()
+void AncillaryThread::closeSerial(QPointer<QSerialPort> _device)
 {
-//    if (!serialBuffer.isNull())
-//    {
-//        serialBuffer->close();
-//        serialBuffer.clear();
-//    }
-//    delete serialBuffer;
-//    emit serialClosed(); //handle_serialClosed();
+    if (!_device.isNull())
+    {
+        _device->close();
+        _device.clear();
+    }
+    delete _device;
+    emit serialClosed(); //handle_serialClosed();
 }
 
 void AncillaryThread::do_cancelPlot()
 {
-//    state = 2;
+    cancelPlotFlag = true;
 }
 
-void AncillaryThread::do_beginPlot()
+void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> hpgl_items)
 {
     // Variables
 //    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
 //    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
+    QPointer<QSerialPort> _port;
     QSettings settings;
 
-    // Set state
-    // ?
+    cancelPlotFlag = false;
 
-//    qDebug() << "Cut speed: " << CUTSPEED;
-//    qDebug() << "Travel speed: " << TRAVELSPEED;
+    _port = openSerial();
 
-//    hpgl_obj obj;
-//    QString printThis;
-//    int cmdCount;
-//    QString command;
-//    double time;
-//    QProcess process;
+    emit statusUpdate("Plotting file!");
 
-//    qDebug() << "Plotting file!";
-//    if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
-//    {
-////        ui->textBrowser_console->append(timeStamp() + "Can't plot!");
-//        return;
-//    }
+    emit statusUpdate("There are " + QString::number(hpgl_items.count()) + " hpgl items to plot.");
 
-//    // explain the situation
-//    if (settings.value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
-//    {
-//        qDebug() << "Cutting with axis speed delay";
-//    }
-//    else
-//    {
-//        qDebug() << "Cutting with absolute speed delay";
-//    }
-////    qDebug() << "Cutter speed: " << CUTSPEED;
+    if (_port.isNull() || !_port->isOpen() || hpgl_items.isEmpty())
+    {
+        emit statusUpdate("Can't plot!");
+        return;
+    }
 
-//    // Initialize plotting loop
-//    index_obj = 0;
-//    index_cmd = 0;
-//    obj = _objList->at(0);
-//    cmdCount = obj.cmdCount();
+    // explain the situation
+    if (settings.value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
+    {
+        emit statusUpdate("Cutting with axis speed delay");
+    }
+    else
+    {
+        emit statusUpdate("Cutting with absolute speed delay");
+    }
 
-//    emit plottingStarted();
+    emit plottingStarted();
 
-//    do_plotNext(_objList);
+    _port->write("IN;SP1;");
 
-//    for (int i = 0; i < objList.count(); i++)
-//    {
-//        obj = objList.at(i);
-//        cmdCount = obj.cmdCount();
-//        for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
-//        {
-//            if (state != 1)
-//            {
-//                qDebug() << "Bailing out of plot, cancelled!";
-//                break;
-//            }
-//            printThis = obj.cmdPrint(cmd_index);
-//            if (printThis == "OOB")
-//            {
-////                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-//                //ui->textBrowser_console->append("(try the auto translation button)");
-////                ui->textBrowser_console->append("(An X or Y value is less than zero)");
-//                return;
-//            }
-//            serialBuffer->write(printThis.toStdString().c_str());
-//            if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
-//            {
-//                serialBuffer->flush();
-//                command = "sleep ";
-//                time = obj.cmdLenHyp(cmd_index);
-////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-//                qDebug() << "- distance: " << time;
-//                if (obj.cmdGet(cmd_index).opcode == "PD")
-//                {
-//                    time = time / speedTranslate(cutSpeed);
-//                    qDebug() << "- PD, speedTranslate: " << speedTranslate(cutSpeed);
-//                }
-//                else if (obj.cmdGet(cmd_index).opcode == "PU")
-//                {
-//                    time = time / speedTranslate(travelSpeed);
-//                    qDebug() << "- PU, speedTranslate: " << speedTranslate(travelSpeed);
-//                }
-//                qDebug() << "- sleep time: " << time;
-//                if (time == 0)
-//                    continue;
-//                command += QString::number(time);
-//                qDebug() << "Starting sleep command: sleep " << time;
-//                process.start(command);
-//                process.waitForFinished(60000); // Waits for up to 60s
-//                qDebug() << "Done with sleep command";
-//            }
-//        }
-//    }
-//    qDebug() << "Done plotting.";
+    do_plotNext(_port, hpgl_items, 0);
 }
 
-void AncillaryThread::do_plotNext()
+void AncillaryThread::do_plotNext(QPointer<QSerialPort> _port,
+                                  const QVector<QGraphicsPolygonItem *> hpgl_items,
+                                  int index)
 {
-//    QSettings settings;
-//    if (index_cmd >= cmdCount)
-//    {
-//        index_cmd = 0;
-//        index_obj++;
-//        qDebug() << "Moving on to the next object: " << index_obj;
-//        if (index_obj >= objList.count())
-//        {
-//            qDebug() << "No more objects left.";
-//            emit plottingDone();
-//            return;
-//        }
-//        obj = objList.at(index_obj);
-//        cmdCount = obj.cmdCount();
-//    }
-//    if (state != 1)
-//    {
-//        qDebug() << "Bailing out of plot, cancelled!";
-//        emit plottingDone();
-//        return;
-//    }
-//    qDebug() << "Plotting command number: " << index_cmd;
+    QSettings settings;
 
-//    int progress = ((double)index_cmd/(cmdCount-1))*100;
-//    emit plottingProgress(progress);
+    if (index >= hpgl_items.count())
+    {
+        qDebug() << "No more objects left.";
+        emit plottingDone();
+        return;
+    }
+    if (cancelPlotFlag == true)
+    {
+        qDebug() << "Bailing out of plot, cancelled!";
+        emit plottingCancelled();
+        return;
+    }
 
-//    printThis = obj.cmdPrint(index_cmd);
-//    if (printThis == "OOB")
-//    {
-////                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-//        //ui->textBrowser_console->append("(try the auto translation button)");
-////                ui->textBrowser_console->append("(An X or Y value is less than zero)");
-//        emit plottingDone();
-//        return;
-//    }
-//    serialBuffer->write(printThis.toStdString().c_str());
+    qDebug() << "Plotting command number: " << index;
+
+    int progress = ((double)index/(hpgl_items.count()-1))*100;
+    emit plottingProgress(progress);
+
+    QString printThis = print(hpgl_items, index);
+    if (printThis == "OOB")
+    {
+//                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
+        //ui->textBrowser_console->append("(try the auto translation button)");
+//                ui->textBrowser_console->append("(An X or Y value is less than zero)");
+        emit plottingCancelled();
+        return;
+    }
+    _port->write(printThis.toStdString().c_str());
 //    if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
 //    {
-//        serialBuffer->flush();
+//        _device->flush();
 //        time = obj.time(index_cmd);
 ////        time = obj.cmdLenHyp(index_cmd);
 //////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
@@ -303,11 +239,55 @@ void AncillaryThread::do_plotNext()
 //    {
 //        //
 //    }
-//    index_cmd++;
+
 //    QTimer::singleShot(time*1000, this, SLOT(do_plotNext(_objList)));
+    do_plotNext(_port, hpgl_items, ++index);
 }
 
-int AncillaryThread::load_file(QString const _filepath)
+QString AncillaryThread::print(const QVector<QGraphicsPolygonItem *> hpgl_items,
+                               int index)
+{
+    QString retval = "";
+    QPolygonF poly = hpgl_items[index]->polygon();
+
+    // Create PU command
+    retval += "PU";
+    retval += QString::number(poly.first().x());
+    retval += ",";
+    retval += QString::number(poly.first().y());
+    retval += ";";
+
+    // Create PD command
+    retval += "PD";
+    for (int idx = 1; idx < poly.count(); idx++)
+    {
+        QPointF point = poly.at(idx);
+
+        if (point.x() < 0 || point.y() < 0)
+        {
+        retval = "OOB"; // Out of Bounds
+        return retval;
+        }
+
+        retval += QString::number(point.x());
+        retval += ",";
+        retval += QString::number(point.y());
+        if (idx < (poly.count()-1))
+        {
+            retval += ",";
+        }
+    }
+    retval += ";";
+
+    if (index == (hpgl_items.count()-1))
+    {
+        retval += "PU0,0;SP0;IN;"; // Ending commands
+    }
+
+    return(retval);
+}
+
+int AncillaryThread::do_loadFile(QString const _filepath)
 {
     QFile inputFile;
     QString buffer;
@@ -362,17 +342,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
         qDebug() << "= " << opcode;
 
         // Parse opcode
-        if (opcode == "IN")
-        {
-            // Begin plotting (automatically handled)
-        }
-        else if (opcode == "SP")
-        {
-            // Set pen
-            pen = cmdText.mid(2,1).toInt();
-            qDebug() << "[" << QString::number(pen) << "]";
-        }
-        else if (opcode == "PU")
+        if (opcode == "PU")
         {
             // Pen up - we assume a single line (two points)
             int commaCount, newX, newY;
@@ -411,55 +381,20 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
             }
             emit newPolygon(newItem);
         }
+        else if (opcode == "IN")
+        {
+            // Begin plotting (automatically handled)
+        }
+        else if (opcode == "SP")
+        {
+            // Set pen
+            pen = cmdText.mid(2,1).toInt();
+            qDebug() << "[" << QString::number(pen) << "]";
+        }
+        int progress = ((double)i/(numCmds-1))*100;
+        emit plottingProgress(progress);
     }
 }
-
-//QString AncillaryThread::print()
-//{
-//    QString retval = "";
-//    hpgl_cmd cmd;
-//    for (int idx = 0; idx < cmdList.length(); idx++)
-//    {
-//        cmd = cmdList[idx];
-
-//        retval += cmd.opcode;
-//        if (cmd.opcode == "SP")
-//        {
-//            retval += QString::number(cmd.pen);
-//        }
-//        else
-//        {
-//            for (int i = 0; i < cmd.coordList.length(); i++)
-//            {
-//                QPoint point = cmd.coordList.at(i);
-
-//                QTransform center, uncenter;
-//                center.translate(-width/2, -height/2);
-//                uncenter.translate(width/2, height/2);
-
-//                point = cmdTransformScale.map(point);
-//                point = cmdTransformRotate.map(point);
-//                point = cmdTransformTranslate.map(point);
-
-//                if (point.x() < 0 || point.y() < 0)
-//                {
-//                    retval = "OOB"; // Out of Bounds
-//                    return retval;
-//                }
-
-//                retval += QString::number(point.x());
-//                retval += ",";
-//                retval += QString::number(point.y());
-//                if (i < (cmd.coordList.length()-1))
-//                {
-//                    retval += ",";
-//                }
-//            }
-//        }
-//        retval += ";";
-//    }
-//    return(retval);
-//}
 
 
 

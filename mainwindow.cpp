@@ -45,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Declare worker thread
     ancilla = new AncillaryThread;
+    ancilla->moveToThread(&ancillaryThreadInstance);
 
     // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
@@ -56,15 +57,16 @@ MainWindow::MainWindow(QWidget *parent) :
     // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
-    connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
-    connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
-    connect(ancilla, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
+    connect(&ancillaryThreadInstance, SIGNAL(started()), this, SLOT(handle_ancillaThreadStart()));
+    connect(&ancillaryThreadInstance, SIGNAL(finished()), this, SLOT(handle_ancillaThreadQuit()));
+    connect(&ancillaryThreadInstance, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_ancillaThreadStatus(QString)));
     connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
-    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl>*)), ancilla, SLOT(do_beginPlot(QList<hpgl>*)));
+    connect(this, SIGNAL(please_plotter_doPlot(const QVector<QGraphicsPolygonItem *>)),
+            ancilla, SLOT(do_beginPlot(const QVector<QGraphicsPolygonItem *>)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
-    connect(this, SIGNAL(please_plotter_loadFile(QString)), ancilla, SLOT(load_file(QString)));
+    connect(this, SIGNAL(please_plotter_loadFile(QString)), ancilla, SLOT(do_loadFile(QString)));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -83,14 +85,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     do_drawView();
 
+    ui->pushButton_doPlot->setEnabled(true);
+
     // Kickstart worker thread
-    ancilla->start();
+    ancillaryThreadInstance.start();
 }
 
 MainWindow::~MainWindow()
 {
-    ancilla->quit();
-    ancilla->wait();
+    ancillaryThreadInstance.quit();
+    ancillaryThreadInstance.wait();
 
     delete ui;
 }
@@ -193,7 +197,7 @@ void MainWindow::handle_ancillaThreadStatus(QString _consoleText)
 
 void MainWindow::do_plot()
 {
-    emit please_plotter_doPlot();
+    emit please_plotter_doPlot(hpgl_items);
 }
 
 void MainWindow::do_cancelPlot()
@@ -280,7 +284,6 @@ void MainWindow::do_drawView()
 
     QGraphicsTextItem * originText = plotScene.addText("(0,0)");
     originText->setTransform(itemToScene * viewFlip);
-//    originText->moveBy(0, -1 * originText->mapRectToScene(originText->boundingRect()).height());
 
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 

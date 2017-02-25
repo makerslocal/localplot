@@ -13,6 +13,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QGraphicsTextItem>
+#include <QPushButton>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -37,7 +38,7 @@ public:
 signals:
     void please_plotter_openSerial();
     void please_plotter_closeSerial();
-    void please_plotter_doPlot();
+    void please_plotter_doPlot(const QVector<QGraphicsPolygonItem *>);
     void please_plotter_cancelPlot();
     void please_plotter_loadFile(QString filePath);
 
@@ -77,6 +78,7 @@ private:
     QGraphicsScene plotScene;
     QPen downPen;
     QPen upPen;
+    QThread ancillaryThreadInstance;
     QPointer<AncillaryThread> ancilla;
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QTimer drawTimer; // Measures performance of drawView()

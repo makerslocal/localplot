@@ -13,8 +13,7 @@ int main(int argc, char *argv[])
     w.show();
 
     // Required setup to pass custom item in signal/slot.
-//    qRegisterMetaType<hpgl_obj>("hpgl_obj");
-//    qRegisterMetaType<QList<hpgl_obj>>("QList<hpgl_obj>");
+    qRegisterMetaType<QVector<QGraphicsPolygonItem*>>("QVector<QGraphicsPolygonItem*>");
 
     return a.exec();
 }
