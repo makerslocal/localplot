@@ -57,6 +57,7 @@ signals:
     void fileOpened();
     void fileClosed();
     void hpglParsingDone();
+    void statusUpdate(QString _consoleStatus);
 
 private:
     void run() override; // Reimplement from QThread

@@ -55,22 +55,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
-    connect(ancilla, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
-    connect(ancilla, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
-    connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
-    connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
-    connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
     connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
-    connect(ancilla, SIGNAL(fileOpened()), this, SLOT(handle_fileOpened()));
-    connect(ancilla, SIGNAL(fileClosed()), this, SLOT(handle_fileClosed()));
     connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
     connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
-    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_hpglDoneParsing()));
+    connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_ancillaThreadStatus(QString)));
+    connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
     connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl>*)), ancilla, SLOT(do_beginPlot(QList<hpgl>*)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
-
-    connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
     connect(this, SIGNAL(please_plotter_loadFile(QString)), ancilla, SLOT(load_file(QString)));
 
     // Set up the drawing pens
@@ -193,29 +185,9 @@ void MainWindow::handle_ancillaThreadQuit()
     ui->textBrowser_console->append(timeStamp() + "Ancillary thread stopped.");
 }
 
-void MainWindow::handle_serialOpened()
+void MainWindow::handle_ancillaThreadStatus(QString _consoleText)
 {
-    ui->textBrowser_console->append(timeStamp() + "Serial port opened x)");
-}
-
-void MainWindow::handle_serialClosed()
-{
-    ui->textBrowser_console->append(timeStamp() + "Serial port closed.");
-}
-
-void MainWindow::handle_fileOpened()
-{
-    ui->textBrowser_console->append(timeStamp() + "File opened.");
-}
-
-void MainWindow::handle_fileClosed()
-{
-    ui->textBrowser_console->append(timeStamp() + "File closed.");
-}
-
-void MainWindow::handle_hpglDoneParsing()
-{
-    ui->textBrowser_console->append(timeStamp() + "HPGL finished parsing.");
+    ui->textBrowser_console->append(timeStamp() + _consoleText);
 }
 
 void MainWindow::do_plot()

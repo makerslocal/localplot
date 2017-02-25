@@ -58,16 +58,12 @@ private slots:
     void do_cancelPlot();
     void handle_ancillaThreadStart();
     void handle_ancillaThreadQuit();
-    void handle_fileOpened();
-    void handle_fileClosed();
     void sceneClearHpgl();
     void sceneSetSceneRect();
-    void handle_hpglDoneParsing();
+    void handle_ancillaThreadStatus(QString _consoleText);
 
     void update_filePath();
 
-    void handle_serialOpened();
-    void handle_serialClosed();
     void handle_selectFileBtn();
     void handle_plotStarted();
     void handle_plotCancelled();

@@ -325,14 +325,15 @@ int AncillaryThread::load_file(QString const _filepath)
         qDebug() << "Failed to open file.";
         return 1;
     }
-    emit fileOpened();
+    emit statusUpdate("File opened.");
 
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
     inputFile.close();
-    emit fileClosed();
+    emit statusUpdate("File closed.");
 
     parseHPGL(&buffer);
+    emit statusUpdate("HPGL finished parsing.");
     emit hpglParsingDone();
     return 0;
 }
@@ -353,7 +354,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
 
         cmdText = hpgl_text->section(';', i, i);
 
-        qDebug() << "====\n" << "= Processing command: ";
+        qDebug() << "====\n= Processing command: ";
 
         // Get opcode, first two characters
         opcode = cmdText.mid(0, 2);
@@ -377,7 +378,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
             int commaCount, newX, newY;
             cmdText.remove(0,2);
             commaCount = cmdText.count(',');
-            qDebug() << "= Comma count: " << commaCount;
+//            qDebug() << "= Comma count: " << commaCount;
             int i = commaCount - 1;
             newX = cmdText.section(',', i, i).toInt();
             i++;
@@ -390,7 +391,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
             // Pen down
             cmdText.remove(0,2);
             int commaCount = cmdText.count(',');
-            qDebug() << "= Comma count: " << commaCount;
+//            qDebug() << "= Comma count: " << commaCount;
             newItem << tail; // Begin from last PU location
             for (int i = 0; i < commaCount; i++)
             {
@@ -398,7 +399,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
                 int newX = cmdText.section(',', i, i).toInt();
                 i++;
                 int newY = cmdText.section(',', i, i).toInt();
-                qDebug() << "= Found x: " << newX << " y: " << newY;
+//                qDebug() << "= Found x: " << newX << " y: " << newY;
                 newItem << QPointF(newX, newY);
 //                if (i < (commaCount-2) && ((i+1) % 500) == 0)
 //                {
