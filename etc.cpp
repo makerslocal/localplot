@@ -7,7 +7,7 @@
 
 QString timeStamp()
 {
-    return(QTime::currentTime().toString("[HH:mm ss.zzz]\n"));
+    return(QTime::currentTime().toString("[HH:mm ss.zzz]\n- "));
 }
 
 /**
