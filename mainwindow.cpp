@@ -299,7 +299,16 @@ void MainWindow::sceneClearHpgl()
 
 void MainWindow::sceneSetSceneRect()
 {
-    plotScene.setSceneRect(plotScene.itemsBoundingRect());
+    qreal marginX, marginY;
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+
+    // Quarter inch margins
+    marginX = (xDpi / 4.0) * (1016.0 / xDpi);
+    marginY = (yDpi / 4.0) * (1016.0 / yDpi);
+
+    plotScene.setSceneRect(plotScene.itemsBoundingRect().marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
 }
 
 void MainWindow::do_loadFile(QString filePath)
