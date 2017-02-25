@@ -62,6 +62,7 @@ private slots:
     void handle_fileClosed();
     void sceneClearHpgl();
     void sceneSetSceneRect();
+    void handle_hpglDoneParsing();
 
     void update_filePath();
 

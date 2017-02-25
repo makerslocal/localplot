@@ -61,9 +61,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
     connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
     connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
+    connect(ancilla, SIGNAL(fileOpened()), this, SLOT(handle_fileOpened()));
+    connect(ancilla, SIGNAL(fileClosed()), this, SLOT(handle_fileClosed()));
     connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
     connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_hpglDoneParsing()));
     connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl>*)), ancilla, SLOT(do_beginPlot(QList<hpgl>*)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
 
@@ -208,6 +211,11 @@ void MainWindow::handle_fileOpened()
 void MainWindow::handle_fileClosed()
 {
     ui->textBrowser_console->append(timeStamp() + "File closed.");
+}
+
+void MainWindow::handle_hpglDoneParsing()
+{
+    ui->textBrowser_console->append(timeStamp() + "HPGL finished parsing.");
 }
 
 void MainWindow::do_plot()
