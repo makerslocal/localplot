@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Declare worker thread
     ancilla = new AncillaryThread;
 
-    // Connect actions
+    // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
@@ -57,15 +57,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ancilla, SIGNAL(serialOpened()), this, SLOT(handle_serialOpened()));
     connect(ancilla, SIGNAL(serialClosed()), this, SLOT(handle_serialClosed()));
-    connect(this, SIGNAL(please_plotter_openSerial()), ancilla, SLOT(do_openSerial()));
-    connect(this, SIGNAL(please_plotter_closeSerial()), ancilla, SLOT(do_closeSerial()));
-    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl>*)), ancilla, SLOT(do_beginPlot(QList<hpgl>*)));
-    connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
-    connect(ancilla, SIGNAL(donePlotting()), this, SLOT(handle_plotCancelled()));
-    connect(ancilla, SIGNAL(startedPlotting()), this, SLOT(handle_plotStarted()));
+    connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
+    connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
+    connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
     connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
     connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
+    connect(this, SIGNAL(please_plotter_doPlot(QList<hpgl>*)), ancilla, SLOT(do_beginPlot(QList<hpgl>*)));
+    connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
 
     connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
     connect(this, SIGNAL(please_plotter_loadFile(QString)), ancilla, SLOT(load_file(QString)));
@@ -200,6 +200,16 @@ void MainWindow::handle_serialClosed()
     ui->textBrowser_console->append(timeStamp() + "Serial port closed.");
 }
 
+void MainWindow::handle_fileOpened()
+{
+    ui->textBrowser_console->append(timeStamp() + "File opened.");
+}
+
+void MainWindow::handle_fileClosed()
+{
+    ui->textBrowser_console->append(timeStamp() + "File closed.");
+}
+
 void MainWindow::do_plot()
 {
     emit please_plotter_doPlot();
@@ -216,6 +226,7 @@ void MainWindow::handle_plotStarted()
     ui->pushButton_doPlot->setText("Cancel");
     ui->progressBar_plotting->setValue(0);
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
+    ui->textBrowser_console->append(timeStamp() + "Plotting started.");
 }
 
 void MainWindow::handle_plotCancelled()
@@ -223,6 +234,15 @@ void MainWindow::handle_plotCancelled()
     disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
     ui->pushButton_doPlot->setText("Plot!");
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    ui->textBrowser_console->append(timeStamp() + "Plotting cancelled.");
+}
+
+void MainWindow::handle_plotFinished()
+{
+    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
+    ui->pushButton_doPlot->setText("Plot!");
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    ui->textBrowser_console->append(timeStamp() + "Plotting Done.");
 }
 
 void MainWindow::handle_selectFileBtn()
@@ -287,11 +307,28 @@ void MainWindow::do_drawView()
     ui->graphicsView_view->show();
 }
 
+void MainWindow::sceneClearHpgl()
+{
+    for (int i = 0; i < hpgl_items.count(); i++)
+    {
+        plotScene.removeItem(hpgl_items[i]);
+    }
+    hpgl_items.clear();
+    sceneSetSceneRect();
+}
+
+void MainWindow::sceneSetSceneRect()
+{
+    plotScene.setSceneRect(plotScene.itemsBoundingRect());
+}
+
 void MainWindow::do_loadFile(QString filePath)
 {
     QSettings settings;
 
     settings.setValue("mainwindow/filePath", filePath);
+
+    sceneClearHpgl();
 
     emit please_plotter_loadFile(filePath);
 }
@@ -318,8 +355,7 @@ void MainWindow::addPolygon(QPolygonF poly)
     downPen.setColor(penColor);
     downPen.setWidth(penSize * (1016.0 / avgDpi));
 
-    plotScene.addPolygon(poly, downPen);
-    ui->graphicsView_view->show();
+    hpgl_items.push_back(plotScene.addPolygon(poly, downPen));
 }
 
 

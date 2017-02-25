@@ -58,6 +58,10 @@ private slots:
     void do_cancelPlot();
     void handle_ancillaThreadStart();
     void handle_ancillaThreadQuit();
+    void handle_fileOpened();
+    void handle_fileClosed();
+    void sceneClearHpgl();
+    void sceneSetSceneRect();
 
     void update_filePath();
 
@@ -66,6 +70,7 @@ private slots:
     void handle_selectFileBtn();
     void handle_plotStarted();
     void handle_plotCancelled();
+    void handle_plotFinished();
     void handle_plottingPercent(int percent);
 
     void addPolygon(QPolygonF poly);
@@ -76,7 +81,8 @@ private:
     QPen downPen;
     QPen upPen;
     AncillaryThread * ancilla;
-    QVector<QPolygonF *> hpgl_items;
+    QVector<QGraphicsPolygonItem *> hpgl_items;
+    QTimer drawTimer; // Measures performance of drawView()
 };
 
 #endif // MAINWINDOW_H

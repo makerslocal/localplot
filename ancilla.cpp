@@ -325,12 +325,15 @@ int AncillaryThread::load_file(QString const _filepath)
         qDebug() << "Failed to open file.";
         return 1;
     }
+    emit fileOpened();
 
     QTextStream fstream(&inputFile);
     buffer = fstream.readAll();
     inputFile.close();
+    emit fileClosed();
 
     parseHPGL(&buffer);
+    emit hpglParsingDone();
     return 0;
 }
 
@@ -402,7 +405,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
 //                    qDebug() << "Breaking line";
 //                    cmdList.push_back(newCmd);
 //                    newCmd.coordList.clear();
-////                    newCmd.coordList.push_back(QPoint(newX, newY));
+//                    newCmd.coordList.push_back(QPoint(newX, newY));
 //                }
             }
             emit newPolygon(newItem);

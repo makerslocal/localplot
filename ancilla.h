@@ -54,6 +54,9 @@ signals:
     void newPolygon(QPolygonF hpglItem);
     void serialOpened();
     void serialClosed();
+    void fileOpened();
+    void fileClosed();
+    void hpglParsingDone();
 
 private:
     void run() override; // Reimplement from QThread
