@@ -77,7 +77,7 @@ private:
     QGraphicsScene plotScene;
     QPen downPen;
     QPen upPen;
-    AncillaryThread * ancilla;
+    QPointer<AncillaryThread> ancilla;
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QTimer drawTimer; // Measures performance of drawView()
 };

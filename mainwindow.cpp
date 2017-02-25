@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(ancilla, &AncillaryThread::started, this, &MainWindow::handle_ancillaThreadStart);
     connect(ancilla, &AncillaryThread::finished, this, &MainWindow::handle_ancillaThreadQuit);
+    connect(ancilla, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_ancillaThreadStatus(QString)));
     connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
