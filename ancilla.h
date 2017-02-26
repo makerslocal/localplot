@@ -10,6 +10,7 @@
 #include <QSerialPortInfo>
 #include <QPolygonF>
 #include <QGraphicsPolygonItem>
+#include <QtMath>
 
 #include "settings.h"
 #include "etc.h"
@@ -36,13 +37,13 @@ public:
 
 public slots:
     void do_run(); // kickstart
-    void do_beginPlot(const QVector<QGraphicsPolygonItem *> hpgl_items);
+    void do_beginPlot(const QVector<QGraphicsPolygonItem *> _hpgl_items);
     void do_cancelPlot();
     int do_loadFile(const QString _filepath);
 
 private slots:
-    void do_plotNext(QPointer<QSerialPort> _port, const QVector<QGraphicsPolygonItem *> hpgl_items, int index);
-    QString print(const QVector<QGraphicsPolygonItem *> hpgl_items, int index);
+    void do_plotNext();
+    QString print();
     void parseHPGL(QString * hpgl_text);
 
 signals:
@@ -60,9 +61,18 @@ signals:
     void statusUpdate(QString _consoleStatus);
 
 private:
+    double lenHyp(const QPolygonF _poly);
+    double plotTime(const QLineF _line);
+    double plotTime(const QPolygonF _poly);
+
     QPointer<QSerialPort> openSerial();
-    void closeSerial(QPointer<QSerialPort> _device);
+    void closeSerial();
     bool cancelPlotFlag;
+
+    // plotting
+    QPointer<QSerialPort> _port;
+    QVector<QGraphicsPolygonItem *> hpgl_items;
+    int index;
 };
 
 #endif // PLOTTER_H

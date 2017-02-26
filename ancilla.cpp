@@ -24,7 +24,7 @@ QPointer<QSerialPort> AncillaryThread::openSerial()
     QSettings settings;
     QString _portLocation = settings.value("serial/port", SETDEF_SERIAL_PORT).toString();
     QSerialPortInfo _deviceInfo;
-    QPointer<QSerialPort> _device;
+//    QPointer<QSerialPort> _port;
 
     for (int i = 0; i < _deviceInfo.availablePorts().count(); i++)
     {
@@ -36,104 +36,104 @@ QPointer<QSerialPort> AncillaryThread::openSerial()
 
     if (_deviceInfo.isNull())
     {
-        _device = new QSerialPort(_portLocation);
+        _port = new QSerialPort(_portLocation);
     }
     else
     {
-        _device = new QSerialPort(_deviceInfo);
+        _port = new QSerialPort(_deviceInfo);
     }
 
-    _device->setBaudRate(settings.value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
+    _port->setBaudRate(settings.value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
 
     int dataBits = settings.value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
     if (dataBits == 8)
     {
-        _device->setDataBits(QSerialPort::Data8);
+        _port->setDataBits(QSerialPort::Data8);
     }
     else if (dataBits == 7)
     {
-        _device->setDataBits(QSerialPort::Data7);
+        _port->setDataBits(QSerialPort::Data7);
     }
     else if (dataBits == 6)
     {
-        _device->setDataBits(QSerialPort::Data6);
+        _port->setDataBits(QSerialPort::Data6);
     }
     else if (dataBits == 5)
     {
-        _device->setDataBits(QSerialPort::Data5);
+        _port->setDataBits(QSerialPort::Data5);
     }
 
     QString parity = settings.value("serial/parity", SETDEF_SERIAL_PARITY).toString();
     if (parity == "none")
     {
-        _device->setParity(QSerialPort::NoParity);
+        _port->setParity(QSerialPort::NoParity);
     }
     else if (parity == "odd")
     {
-        _device->setParity(QSerialPort::OddParity);
+        _port->setParity(QSerialPort::OddParity);
     }
     else if (parity == "even")
     {
-        _device->setParity(QSerialPort::EvenParity);
+        _port->setParity(QSerialPort::EvenParity);
     }
     else if (parity == "mark")
     {
-        _device->setParity(QSerialPort::MarkParity);
+        _port->setParity(QSerialPort::MarkParity);
     }
     else if (parity == "space")
     {
-        _device->setParity(QSerialPort::SpaceParity);
+        _port->setParity(QSerialPort::SpaceParity);
     }
 
     int stopBits = settings.value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
     if (stopBits == 1)
     {
-        _device->setStopBits(QSerialPort::OneStop);
+        _port->setStopBits(QSerialPort::OneStop);
     }
     else if (stopBits == 3)
     {
-        _device->setStopBits(QSerialPort::OneAndHalfStop);
+        _port->setStopBits(QSerialPort::OneAndHalfStop);
     }
     else if (stopBits == 2)
     {
-        _device->setStopBits(QSerialPort::TwoStop);
+        _port->setStopBits(QSerialPort::TwoStop);
     }
 
     if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
-        _device->setFlowControl(QSerialPort::SoftwareControl);
+        _port->setFlowControl(QSerialPort::SoftwareControl);
     }
     else if (settings.value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
     {
-        _device->setFlowControl(QSerialPort::HardwareControl);
+        _port->setFlowControl(QSerialPort::HardwareControl);
     }
     else
     {
-        _device->setFlowControl(QSerialPort::NoFlowControl);
+        _port->setFlowControl(QSerialPort::NoFlowControl);
     }
 
-    _device->open(QIODevice::WriteOnly);
-    if (_device->isOpen())
+    _port->open(QIODevice::WriteOnly);
+    if (_port->isOpen())
     {
-        qDebug() << "Flow control: " << _device->flowControl();
+        qDebug() << "Flow control: " << _port->flowControl();
         emit serialOpened(); //handle_serialOpened();
     }
     else
     {
         emit statusUpdate("Serial port didn't open? :'(");
-        closeSerial(_device);
+        closeSerial();
     }
-    return (_device);
+    return (_port);
 }
 
-void AncillaryThread::closeSerial(QPointer<QSerialPort> _device)
+void AncillaryThread::closeSerial()
 {
-    if (!_device.isNull())
+    if (!_port.isNull())
     {
-        _device->close();
-        _device.clear();
+        _port->close();
+        _port.clear();
     }
-    delete _device;
+    delete _port;
     emit serialClosed(); //handle_serialClosed();
 }
 
@@ -142,7 +142,7 @@ void AncillaryThread::do_cancelPlot()
     cancelPlotFlag = true;
 }
 
-void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> hpgl_items)
+void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> _hpgl_items)
 {
     // Variables
 //    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
@@ -150,8 +150,9 @@ void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> hpgl_it
     QPointer<QSerialPort> _port;
     QSettings settings;
 
+    hpgl_items = _hpgl_items;
+    index = 0;
     cancelPlotFlag = false;
-
     _port = openSerial();
 
     emit statusUpdate("Plotting file!");
@@ -178,18 +179,18 @@ void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> hpgl_it
 
     _port->write("IN;SP1;");
 
-    do_plotNext(_port, hpgl_items, 0);
+    do_plotNext();
 }
 
-void AncillaryThread::do_plotNext(QPointer<QSerialPort> _port,
-                                  const QVector<QGraphicsPolygonItem *> hpgl_items,
-                                  int index)
+void AncillaryThread::do_plotNext()
 {
     QSettings settings;
+    double time = 0;
 
     if (index >= hpgl_items.count())
     {
         qDebug() << "No more objects left.";
+        closeSerial();
         emit plottingDone();
         return;
     }
@@ -205,7 +206,7 @@ void AncillaryThread::do_plotNext(QPointer<QSerialPort> _port,
     int progress = ((double)index/(hpgl_items.count()-1))*100;
     emit plottingProgress(progress);
 
-    QString printThis = print(hpgl_items, index);
+    QString printThis = print();
     if (printThis == "OOB")
     {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
@@ -215,37 +216,37 @@ void AncillaryThread::do_plotNext(QPointer<QSerialPort> _port,
         return;
     }
     _port->write(printThis.toStdString().c_str());
-//    if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
-//    {
-//        _device->flush();
-//        time = obj.time(index_cmd);
-////        time = obj.cmdLenHyp(index_cmd);
-//////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-////        qDebug() << "- distance: " << time;
-////        if (obj.cmdGet(index_cmd).opcode == "PD")
-////        {
-////            time = time / speedTranslate(CUTSPEED);
-////            qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
-////        }
-////        else if (obj.cmdGet(index_cmd).opcode == "PU")
-////        {
-////            time = time / speedTranslate(TRAVELSPEED);
-////            qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
-////        }
-////        qDebug() << "- sleep time: " << time;
-//    }
-//    else
-//    {
-//        //
-//    }
+    if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
+    {
+        _port->flush();
+        time = plotTime(hpgl_items.at(index)->polygon());
+//        time = obj.cmdLenHyp(index_cmd);
+////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+//        qDebug() << "- distance: " << time;
+//        if (obj.cmdGet(index_cmd).opcode == "PD")
+//        {
+//            time = time / speedTranslate(CUTSPEED);
+//            qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
+//        }
+//        else if (obj.cmdGet(index_cmd).opcode == "PU")
+//        {
+//            time = time / speedTranslate(TRAVELSPEED);
+//            qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
+//        }
+//        qDebug() << "- sleep time: " << time;
+    }
+    else
+    {
+        //
+    }
 
-//    QTimer::singleShot(time*1000, this, SLOT(do_plotNext(_objList)));
-    do_plotNext(_port, hpgl_items, ++index);
+    ++index;
+    QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
+//    do_plotNext(_port, hpgl_items, ++index);
 }
 
-QString AncillaryThread::print(const QVector<QGraphicsPolygonItem *> hpgl_items,
-                               int index)
+QString AncillaryThread::print()
 {
     QString retval = "";
     QPolygonF poly = hpgl_items[index]->polygon();
@@ -283,6 +284,71 @@ QString AncillaryThread::print(const QVector<QGraphicsPolygonItem *> hpgl_items,
     {
         retval += "PU0,0;SP0;IN;"; // Ending commands
     }
+
+    return(retval);
+}
+
+/**
+ * @brief AncillaryThread::lenHyp
+ * @return - the length (in mm) of the hypotenuse of the command's line segments
+ */
+double AncillaryThread::lenHyp(const QPolygonF _poly)
+{
+    QPointF prev;
+    QPointF curr;
+    double mm = 0;
+    prev.setX(0);
+    prev.setY(0);
+
+    for (int i = 0; i < _poly.length(); i++)
+    {
+        qreal x, y;
+        curr = _poly.at(i);
+        x = qFabs(curr.x() - prev.x());
+        y = qFabs(curr.y() - prev.y());
+        mm += qSqrt(x*x + y*y);
+        prev.setX(curr.x());
+        prev.setY(curr.y());
+    }
+
+    mm = mm * 0.025; // convert graphics units to mm
+    return(mm);
+}
+
+double AncillaryThread::plotTime(const QPolygonF _poly)
+{
+    double retval = 0;
+    QSettings settings;
+
+    retval = lenHyp(_poly);
+//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+
+    if (retval <= 0)
+    {
+        return(retval);
+    }
+
+    retval = retval / speedTranslate(settings.value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
+
+    return(retval);
+}
+
+double AncillaryThread::plotTime(const QLineF _line)
+{
+    double retval = 0;
+    QSettings settings;
+
+    retval = _line.length();
+//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
+//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+
+    if (retval <= 0)
+    {
+        return(retval);
+    }
+
+    retval = retval / speedTranslate(settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
 
     return(retval);
 }
