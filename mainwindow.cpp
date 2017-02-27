@@ -47,6 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ancilla = new AncillaryThread;
     ancilla->moveToThread(&ancillaryThreadInstance);
 
+    hpgl_items_group = NULL;
+
     // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -61,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&ancillaryThreadInstance, SIGNAL(finished()), this, SLOT(handle_ancillaThreadQuit()));
     connect(&ancillaryThreadInstance, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_groupingItems()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_ancillaThreadStatus(QString)));
     connect(ancilla, SIGNAL(newPolygon(QPolygonF)), this, SLOT(addPolygon(QPolygonF)));
     connect(this, SIGNAL(please_plotter_doPlot(const QVector<QGraphicsPolygonItem *>)),
@@ -230,6 +233,19 @@ void MainWindow::handle_plotFinished()
     ui->textBrowser_console->append(timeStamp() + "Plotting Done.");
 }
 
+void MainWindow::handle_groupingItems()
+{
+    hpgl_items_group = plotScene.createItemGroup(plotScene.selectedItems());
+    hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
+    for (int i = 0; i < hpgl_items.count(); ++i)
+    {
+        hpgl_items[i]->setSelected(false);
+        hpgl_items[i]->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    }
+//    ui->graphicsView_view->installEventFilter(this);
+    plotScene.installEventFilter(this);
+}
+
 void MainWindow::handle_selectFileBtn()
 {
     QSettings settings;
@@ -240,6 +256,13 @@ void MainWindow::handle_selectFileBtn()
         tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
 
     ui->lineEdit_filePath->setText(filePath);
+
+    QList<QGraphicsItem *> allThings = plotScene.items();
+    for (int i = 0; i < allThings.length(); i++)
+    {
+        allThings[i]->setSelected(false);
+    }
+
     do_loadFile(filePath);
 }
 
@@ -312,7 +335,29 @@ void MainWindow::sceneSetSceneRect()
     marginX = (xDpi / 4.0) * (1016.0 / xDpi);
     marginY = (yDpi / 4.0) * (1016.0 / yDpi);
 
+    qDebug() << "Setting scene rect.";
+
     plotScene.setSceneRect(plotScene.itemsBoundingRect().marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+
+    for (int i = 0; i < hpgl_items.count(); ++i)
+    {
+        if (hpgl_items_group == NULL)
+        {
+            return;
+        }
+        QPointF pos = hpgl_items_group->pos();
+        if (pos.x() < 0)
+        {
+            hpgl_items_group->setPos(0, pos.y());
+            pos.setX(0);
+        }
+        if (pos.y() < 0)
+        {
+            hpgl_items_group->setPos(pos.x(), 0);
+        }
+//        hpgl_items[i]->setSelected(false);
+//        hpgl_items[i]->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    }
 }
 
 void MainWindow::do_loadFile(QString filePath)
@@ -349,6 +394,25 @@ void MainWindow::addPolygon(QPolygonF poly)
     downPen.setWidth(penSize * (1016.0 / avgDpi));
 
     hpgl_items.push_back(plotScene.addPolygon(poly, downPen));
+    hpgl_items.last()->setFlag(QGraphicsItem::ItemIsSelectable, true);
+    hpgl_items.last()->setSelected(true);
+//    hpgl_items.last()->setFlag(QGraphicsItem::ItemIsMovable, true);
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == &plotScene) {
+        if (event->type() == QEvent::GraphicsSceneMouseRelease) {
+//            qDebug() << "Event filter; plotscene; mouse release.";
+            QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
+            if (!(mouseEvent->buttons() & Qt::LeftButton))
+            {
+                sceneSetSceneRect();
+            }
+        }
+    }
+    // pass the event on to the parent class
+    return QMainWindow::eventFilter(obj, event);
 }
 
 

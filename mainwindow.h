@@ -14,6 +14,10 @@
 #include <QScreen>
 #include <QGraphicsTextItem>
 #include <QPushButton>
+#include <QGraphicsItem>
+#include <QEvent>
+#include <QKeyEvent>
+#include <QMouseEvent>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -43,35 +47,40 @@ signals:
     void please_plotter_loadFile(QString filePath);
 
 /*
- * do_      for ui action
+ * do_      for ui/proc action
  * update_  for settings change
  * handle_  for ui update
  */
 private slots:
     void do_loadFile(QString filePath);
-    void do_drawView();
-    void do_updatePens();
     void do_openDialogAbout();
     void do_openDialogSettings();
 
-    // plotter thread
-    void do_plot();
-    void do_cancelPlot();
-    void handle_ancillaThreadStart();
-    void handle_ancillaThreadQuit();
-    void sceneClearHpgl();
-    void sceneSetSceneRect();
-    void handle_ancillaThreadStatus(QString _consoleText);
-
+    // UI
     void update_filePath();
-
     void handle_selectFileBtn();
     void handle_plotStarted();
     void handle_plotCancelled();
     void handle_plotFinished();
     void handle_plottingPercent(int percent);
 
+    // View/Scene
+    void do_drawView();
+    void do_updatePens();
+    void sceneClearHpgl();
+    void sceneSetSceneRect();
+    void handle_groupingItems();
     void addPolygon(QPolygonF poly);
+
+    // plotter thread
+    void do_plot();
+    void do_cancelPlot();
+    void handle_ancillaThreadStart();
+    void handle_ancillaThreadQuit();
+    void handle_ancillaThreadStatus(QString _consoleText);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *ev);
 
 private:
     Ui::MainWindow *ui;
@@ -82,6 +91,7 @@ private:
     QPointer<AncillaryThread> ancilla;
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QTimer drawTimer; // Measures performance of drawView()
+    QGraphicsItemGroup * hpgl_items_group;
 };
 
 #endif // MAINWINDOW_H

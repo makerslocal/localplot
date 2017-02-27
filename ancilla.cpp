@@ -251,6 +251,10 @@ QString AncillaryThread::print()
     QString retval = "";
     QPolygonF poly = hpgl_items[index]->polygon();
 
+    // Scene offset incurred from dragging
+    QPointF offset = hpgl_items[index]->pos();
+    poly.translate(offset.x(), offset.y());
+
     // Create PU command
     retval += "PU";
     retval += QString::number(poly.first().x());
