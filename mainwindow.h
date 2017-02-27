@@ -69,6 +69,7 @@ private slots:
     void do_updatePens();
     void sceneClearHpgl();
     void sceneSetSceneRect();
+    void sceneConstrainItems();
     void handle_groupingItems();
     void addPolygon(QPolygonF poly);
 

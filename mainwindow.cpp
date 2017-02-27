@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ancilla->moveToThread(&ancillaryThreadInstance);
 
     hpgl_items_group = NULL;
+    plotScene.setObjectName("plotScene");
 
     // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
@@ -70,6 +71,9 @@ MainWindow::MainWindow(QWidget *parent) :
             ancilla, SLOT(do_beginPlot(const QVector<QGraphicsPolygonItem *>)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
     connect(this, SIGNAL(please_plotter_loadFile(QString)), ancilla, SLOT(do_loadFile(QString)));
+
+    // View/scene
+    connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -338,25 +342,23 @@ void MainWindow::sceneSetSceneRect()
     qDebug() << "Setting scene rect.";
 
     plotScene.setSceneRect(plotScene.itemsBoundingRect().marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+}
 
-    for (int i = 0; i < hpgl_items.count(); ++i)
+void MainWindow::sceneConstrainItems()
+{
+    if (hpgl_items_group == NULL)
     {
-        if (hpgl_items_group == NULL)
-        {
-            return;
-        }
-        QPointF pos = hpgl_items_group->pos();
-        if (pos.x() < 0)
-        {
-            hpgl_items_group->setPos(0, pos.y());
-            pos.setX(0);
-        }
-        if (pos.y() < 0)
-        {
-            hpgl_items_group->setPos(pos.x(), 0);
-        }
-//        hpgl_items[i]->setSelected(false);
-//        hpgl_items[i]->setFlag(QGraphicsItem::ItemIsSelectable, false);
+        return;
+    }
+    QPointF pos = hpgl_items_group->pos();
+    if (pos.x() < 0)
+    {
+        hpgl_items_group->setPos(0, pos.y());
+        pos.setX(0);
+    }
+    if (pos.y() < 0)
+    {
+        hpgl_items_group->setPos(pos.x(), 0);
     }
 }
 
@@ -403,7 +405,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == &plotScene) {
         if (event->type() == QEvent::GraphicsSceneMouseRelease) {
-//            qDebug() << "Event filter; plotscene; mouse release.";
             QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
             if (!(mouseEvent->buttons() & Qt::LeftButton))
             {
