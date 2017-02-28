@@ -23,6 +23,7 @@
 #include "settings.h"
 #include "ancilla.h"
 #include "etc.h"
+#include "hpglgraphicsview.h"
 
 namespace Ui {
 class MainWindow;
@@ -65,7 +66,7 @@ private slots:
     void handle_plottingPercent(int percent);
 
     // View/Scene
-    void do_drawView();
+    void sceneSetup();
     void do_updatePens();
     void sceneClearHpgl();
     void sceneSetSceneRect();
@@ -81,11 +82,12 @@ private slots:
     void handle_ancillaThreadStatus(QString _consoleText);
 
 protected:
-    bool eventFilter(QObject *obj, QEvent *ev);
+//    bool eventFilter(QObject *obj, QEvent *ev);
 
 private:
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
+//    hpglScene plotScene;
     QPen downPen;
     QPen upPen;
     QThread ancillaryThreadInstance;

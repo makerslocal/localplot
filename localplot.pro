@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport designer
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -17,14 +17,16 @@ SOURCES += main.cpp\
     dialogsettings.cpp \
     settings.cpp \
     ancilla.cpp \
-    etc.cpp
+    etc.cpp \
+    hpglgraphicsview.cpp
 
 HEADERS  += mainwindow.h \
     dialogabout.h \
     dialogsettings.h \
     settings.h \
     ancilla.h \
-    etc.h
+    etc.h \
+    hpglgraphicsview.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \

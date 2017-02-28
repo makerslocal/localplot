@@ -130,6 +130,9 @@
          </widget>
         </item>
         <item>
+         <widget class="QListView" name="listView"/>
+        </item>
+        <item>
          <widget class="QTextBrowser" name="textBrowser_console">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
@@ -200,7 +203,7 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QGraphicsView" name="graphicsView_view">
+         <widget class="hpglGraphicsView" name="graphicsView_view">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>1</horstretch>
@@ -308,6 +311,13 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>hpglGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>hpglgraphicsview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -74,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // View/scene
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
+    connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
 
     // Set up the drawing pens
     upPen.setStyle(Qt::DotLine);
@@ -82,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
 
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
-            this, SLOT(do_drawView())); // Update view if the pixel DPI changes
+            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
 
     ui->graphicsView_view->setScene(&plotScene);
 
@@ -90,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 settings.value("mainwindow/filePath",
                                 SETDEF_MAINWINDOW_FILEPATH).toString());
 
-    do_drawView();
+    sceneSetup();
 
     ui->pushButton_doPlot->setEnabled(true);
 
@@ -239,15 +240,16 @@ void MainWindow::handle_plotFinished()
 
 void MainWindow::handle_groupingItems()
 {
-    hpgl_items_group = plotScene.createItemGroup(plotScene.selectedItems());
+//    qDebug() << "Grouping items.";
+//    hpgl_items_group = new QGraphicsItemGroup;
+//    plotScene.addItem(hpgl_items_group);
+//    for (int i = 0; i < hpgl_items.count(); ++i)
+//    {
+//        hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(hpgl_items[i]));
+//    }
     hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
-    for (int i = 0; i < hpgl_items.count(); ++i)
-    {
-        hpgl_items[i]->setSelected(false);
-        hpgl_items[i]->setFlag(QGraphicsItem::ItemIsSelectable, false);
-    }
-//    ui->graphicsView_view->installEventFilter(this);
-    plotScene.installEventFilter(this);
+//    plotScene.installEventFilter(this);
+//    plotScene.removeItem(static_cast<QGraphicsItem*>(hpgl_items[1]));
 }
 
 void MainWindow::handle_selectFileBtn()
@@ -279,7 +281,7 @@ void MainWindow::handle_plottingPercent(int percent)
  * Etcetera methods
  ******************************************************************************/
 
-void MainWindow::do_drawView()
+void MainWindow::sceneSetup()
 {
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
@@ -291,8 +293,16 @@ void MainWindow::do_drawView()
     itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
     viewFlip.scale(1, -1);
 
+    // Auto-position scene to bottom left of view.
+    ui->graphicsView_view->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
     // Set up new graphics view.
     plotScene.clear();
+
+    // Create item group
+    hpgl_items_group = new QGraphicsItemGroup;
+    plotScene.addItem(hpgl_items_group);
+    hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
 
     // Draw origin
     QPen originPen;
@@ -320,6 +330,7 @@ void MainWindow::do_drawView()
 
 void MainWindow::sceneClearHpgl()
 {
+    qDebug() << "Clearing hpgl from scene.";
     for (int i = 0; i < hpgl_items.count(); i++)
     {
         plotScene.removeItem(hpgl_items[i]);
@@ -335,6 +346,12 @@ void MainWindow::sceneSetSceneRect()
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
 
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
     // Quarter inch margins
     marginX = (xDpi / 4.0) * (1016.0 / xDpi);
     marginY = (yDpi / 4.0) * (1016.0 / yDpi);
@@ -342,6 +359,29 @@ void MainWindow::sceneSetSceneRect()
     qDebug() << "Setting scene rect.";
 
     plotScene.setSceneRect(plotScene.itemsBoundingRect().marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+    QRectF _rect = plotScene.sceneRect();
+    QRectF _ViewRect = ui->graphicsView_view->rect();
+
+    _ViewRect = itemToScene.mapRect(_ViewRect);
+
+    qDebug() << "Graphics view: " << ui->graphicsView_view->rect().width() << "," << ui->graphicsView_view->rect().height();
+    qDebug() << "Graphics view: " << ui->graphicsView_view->size().width() << "," << ui->graphicsView_view->size().height();
+    qDebug() << "Scene size: " << plotScene.sceneRect().width() << "," << plotScene.sceneRect().height();
+
+//    plotScene.addRect(ui->graphicsView_view->rect())->setTransform(itemToScene);
+
+    if (_rect.width() < _ViewRect.width())
+    {
+        _rect.setWidth(ui->graphicsView_view->rect().width());
+        qDebug() << "Increasing scene width." << _rect.width();
+        plotScene.setSceneRect(_rect);
+    }
+    if (_rect.height() < ui->graphicsView_view->rect().height())
+    {
+        _rect.setHeight(ui->graphicsView_view->rect().height());
+        qDebug() << "Increasing scene height: " << _rect.height();
+        plotScene.setSceneRect(_rect);
+    }
 }
 
 void MainWindow::sceneConstrainItems()
@@ -396,25 +436,32 @@ void MainWindow::addPolygon(QPolygonF poly)
     downPen.setWidth(penSize * (1016.0 / avgDpi));
 
     hpgl_items.push_back(plotScene.addPolygon(poly, downPen));
-    hpgl_items.last()->setFlag(QGraphicsItem::ItemIsSelectable, true);
-    hpgl_items.last()->setSelected(true);
-//    hpgl_items.last()->setFlag(QGraphicsItem::ItemIsMovable, true);
+    hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(hpgl_items.last()));
+//    hpgl_items.last()->setFlag(QGraphicsItem::ItemIsSelectable, true);
+//    hpgl_items.last()->setSelected(true);
 }
 
-bool MainWindow::eventFilter(QObject *obj, QEvent *event)
-{
-    if (obj == &plotScene) {
-        if (event->type() == QEvent::GraphicsSceneMouseRelease) {
-            QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
-            if (!(mouseEvent->buttons() & Qt::LeftButton))
-            {
-                sceneSetSceneRect();
-            }
-        }
-    }
-    // pass the event on to the parent class
-    return QMainWindow::eventFilter(obj, event);
-}
+//bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+//{
+//    if (obj == &plotScene) {
+//        if (event->type() == QEvent::GraphicsSceneMousePress){//QEvent::GraphicsSceneMouseRelease) {
+//            qDebug() << "filter obj: " << obj->objectName() << event->type();
+//            QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
+//            qDebug() << mouseEvent->buttons() << "button: " << mouseEvent->button() << (mouseEvent->button() == Qt::LeftButton);
+//            if (!(mouseEvent->buttons() & Qt::LeftButton))
+//            {
+//                sceneSetSceneRect();
+//            }
+//        }
+//    }
+//    // pass the event on to the parent class
+//    return QMainWindow::eventFilter(obj, event);
+//}
+
+
+
+
+
 
 
 
