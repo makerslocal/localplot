@@ -50,6 +50,10 @@ MainWindow::MainWindow(QWidget *parent) :
     hpgl_items_group = NULL;
     plotScene.setObjectName("plotScene");
 
+    listModel = new QStringListModel(this);
+    ui->listView->setModel(listModel);
+    ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
     // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -268,6 +272,11 @@ void MainWindow::handle_selectFileBtn()
     {
         allThings[i]->setSelected(false);
     }
+
+    listModel->insertRows(0, 1);
+    int row = listModel->rowCount();
+    QModelIndex index = listModel->index(row-1);
+    listModel->setData(index, filePath, Qt::DisplayRole);
 
     do_loadFile(filePath);
 }

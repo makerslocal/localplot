@@ -18,6 +18,8 @@
 #include <QEvent>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QListView>
+#include <QModelIndex>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -95,6 +97,7 @@ private:
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QTimer drawTimer; // Measures performance of drawView()
     QGraphicsItemGroup * hpgl_items_group;
+    QStringListModel * listModel;
 };
 
 #endif // MAINWINDOW_H
