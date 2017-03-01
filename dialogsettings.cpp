@@ -49,6 +49,13 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->comboBox_stopbits->insertItem(2, "2", 2);
     ui->comboBox_stopbits->setCurrentIndex(0);
 
+    ui->comboBox_deviceWidthType->clear();
+    for (int i = 0; i < deviceWidth_t::SIZE_OF_ENUM; ++i)
+    {
+        ui->comboBox_deviceWidthType->insertItem(i, deviceWidth_names[i], i);
+    }
+    ui->comboBox_deviceWidthType->setCurrentIndex(0);
+
     do_refreshSerialList();
 
     // Load saved settings
@@ -63,6 +70,8 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->checkBox_deviceIncrementalOutput->setChecked(settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool());
     ui->spinBox_deviceCutSpeed->setValue(settings.value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
     ui->spinBox_deviceTravelSpeed->setValue(settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
+    ui->spinBox_deviceWidth->setValue(settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt());
+    ui->comboBox_deviceWidthType->setCurrentIndex(settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt());
     if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         ui->radioButton_XonXoff->setChecked(true);
@@ -130,7 +139,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     connect(ui->pushButton_serialRefresh, SIGNAL(clicked()), this, SLOT(do_refreshSerialList()));
     connect(ui->comboBox_serialPort, SIGNAL(activated(int)), this, SLOT(do_writeLineEditSerialPort()));
 
-    // Update settings on UI change
+    // Update UI on settings change
     connect(ui->spinBox_downPen_size, SIGNAL(valueChanged(int)), this, SLOT(do_drawDemoView()));
     connect(ui->spinBox_downPen_red, SIGNAL(valueChanged(int)), this, SLOT(do_drawDemoView()));
     connect(ui->spinBox_downPen_green, SIGNAL(valueChanged(int)), this, SLOT(do_drawDemoView()));
@@ -217,6 +226,8 @@ void DialogSettings::do_saveAndClose()
         settings.setValue("incremental", ui->checkBox_deviceIncrementalOutput->isChecked());
         settings.setValue("speed/cut", ui->spinBox_deviceCutSpeed->value());
         settings.setValue("speed/travel", ui->spinBox_deviceTravelSpeed->value());
+        settings.setValue("width", ui->spinBox_deviceWidth->value());
+        settings.setValue("width/type", ui->comboBox_deviceWidthType->currentData().toInt());
     }
     settings.endGroup();
 

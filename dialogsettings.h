@@ -10,6 +10,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QDialog>
+#include <QComboBox>
+#include <QSpinBox>
 
 #include "settings.h"
 
