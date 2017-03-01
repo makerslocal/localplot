@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
     hpgl_items_group = NULL;
     plotScene.setObjectName("plotScene");
 
+    // Setup listView and listModel
     listModel = new QStringListModel(this);
     ui->listView->setModel(listModel);
     ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -84,16 +85,10 @@ MainWindow::MainWindow(QWidget *parent) :
     upPen.setStyle(Qt::DotLine);
     do_updatePens();
 
-    connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
-
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
             this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
 
     ui->graphicsView_view->setScene(&plotScene);
-
-    ui->lineEdit_filePath->setText(
-                settings.value("mainwindow/filePath",
-                                SETDEF_MAINWINDOW_FILEPATH).toString());
 
     sceneSetup();
 
@@ -150,16 +145,6 @@ void MainWindow::do_openDialogSettings()
 /*******************************************************************************
  * UI Slots
  ******************************************************************************/
-
-/**
- * @brief MainWindow::update_filePath
- * Stores the current file in QSettings
- */
-void MainWindow::update_filePath()
-{
-    QSettings settings;
-    settings.setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
-}
 
 void MainWindow::do_updatePens()
 {
@@ -265,7 +250,7 @@ void MainWindow::handle_selectFileBtn()
     filePath = QFileDialog::getOpenFileName(this,
         tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
 
-    ui->lineEdit_filePath->setText(filePath);
+    settings.setValue("mainwindow/filePath", filePath);
 
     QList<QGraphicsItem *> allThings = plotScene.items();
     for (int i = 0; i < allThings.length(); i++)
@@ -416,8 +401,6 @@ void MainWindow::do_loadFile(QString filePath)
     QSettings settings;
 
     settings.setValue("mainwindow/filePath", filePath);
-
-    sceneClearHpgl();
 
     emit please_plotter_loadFile(filePath);
 }

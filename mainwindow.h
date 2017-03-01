@@ -20,6 +20,7 @@
 #include <QMouseEvent>
 #include <QListView>
 #include <QModelIndex>
+#include <QStringListModel>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -60,7 +61,6 @@ private slots:
     void do_openDialogSettings();
 
     // UI
-    void update_filePath();
     void handle_selectFileBtn();
     void handle_plotStarted();
     void handle_plotCancelled();
@@ -89,13 +89,11 @@ protected:
 private:
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
-//    hpglScene plotScene;
     QPen downPen;
     QPen upPen;
     QThread ancillaryThreadInstance;
     QPointer<AncillaryThread> ancilla;
     QVector<QGraphicsPolygonItem *> hpgl_items;
-    QTimer drawTimer; // Measures performance of drawView()
     QGraphicsItemGroup * hpgl_items_group;
     QStringListModel * listModel;
 };
