@@ -81,10 +81,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
     connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
 
-    // Set up the drawing pens
-    upPen.setStyle(Qt::DotLine);
-    do_updatePens();
-
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
             this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
 
@@ -146,7 +142,7 @@ void MainWindow::do_openDialogSettings()
  * UI Slots
  ******************************************************************************/
 
-void MainWindow::do_updatePens()
+void MainWindow::get_pen(QPen * _pen, QString _name)
 {
     // Variables
     QSettings settings;
@@ -155,22 +151,17 @@ void MainWindow::do_updatePens()
     QColor penColor;
 
     // Set downPen
-    penSize = settings.value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
-    rgbColor[0] = settings.value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
-    rgbColor[1] = settings.value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
-    rgbColor[2] = settings.value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    downPen.setColor(penColor);
-    downPen.setWidth(penSize);
-
-    // Set upPen
-    penSize = settings.value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
-    rgbColor[0] = settings.value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
-    rgbColor[1] = settings.value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
-    rgbColor[2] = settings.value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    upPen.setColor(penColor);
-    upPen.setWidth(penSize);
+    settings.beginGroup("pen/"+_name);
+    {
+        penSize = settings.value("size", SETDEF_PEN_DOWN_SIZE).toInt();
+        rgbColor[0] = settings.value("red", SETDEF_PEN_DOWN_RED).toInt();
+        rgbColor[1] = settings.value("green", SETDEF_PEN_DOWN_GREEN).toInt();
+        rgbColor[2] = settings.value("blue", SETDEF_PEN_DOWN_BLUE).toInt();
+        penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+        _pen->setColor(penColor);
+        _pen->setWidth(penSize);
+    }
+    settings.endGroup();
 }
 
 /*******************************************************************************
@@ -277,6 +268,8 @@ void MainWindow::handle_plottingPercent(int percent)
 
 void MainWindow::sceneSetup()
 {
+    QPen pen;
+
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
@@ -299,13 +292,10 @@ void MainWindow::sceneSetup()
     hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
 
     // Draw origin
-    QPen originPen;
-    originPen.setColor(QColor(150, 150, 150));
-    originPen.setWidth(2);
-    plotScene.addLine(0, 0, xDpi, 0, originPen)->setTransform(itemToScene);
-    plotScene.addLine(0, 0, 0, yDpi, originPen)->setTransform(itemToScene);
-
-    do_updatePens();
+    pen.setColor(QColor(150, 150, 150));
+    pen.setWidth(2);
+    plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
+    plotScene.addLine(0, 0, 0, yDpi, pen)->setTransform(itemToScene);
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
@@ -408,26 +398,17 @@ void MainWindow::do_loadFile(QString filePath)
 void MainWindow::addPolygon(QPolygonF poly)
 {
     // Variables
-    QSettings settings;
-    int rgbColor[3];
-    int penSize;
-    QColor penColor;
-    QPen downPen;
+    QPen pen;
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
     int avgDpi = (xDpi + yDpi) / 2.0;
 
     // Set downPen
-    penSize = settings.value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
-    rgbColor[0] = settings.value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
-    rgbColor[1] = settings.value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
-    rgbColor[2] = settings.value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    downPen.setColor(penColor);
-    downPen.setWidth(penSize * (1016.0 / avgDpi));
+    get_pen(&pen, "down");
+    pen.setWidth(pen.widthF() * (1016.0 / avgDpi));
 
-    hpgl_items.push_back(plotScene.addPolygon(poly, downPen));
+    hpgl_items.push_back(plotScene.addPolygon(poly, pen));
     hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(hpgl_items.last()));
 //    hpgl_items.last()->setFlag(QGraphicsItem::ItemIsSelectable, true);
 //    hpgl_items.last()->setSelected(true);

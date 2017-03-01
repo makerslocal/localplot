@@ -69,7 +69,7 @@ private slots:
 
     // View/Scene
     void sceneSetup();
-    void do_updatePens();
+    void get_pen(QPen *_pen, QString _name);
     void sceneClearHpgl();
     void sceneSetSceneRect();
     void sceneConstrainItems();
@@ -89,8 +89,6 @@ protected:
 private:
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
-    QPen downPen;
-    QPen upPen;
     QThread ancillaryThreadInstance;
     QPointer<AncillaryThread> ancilla;
     QVector<QGraphicsPolygonItem *> hpgl_items;
