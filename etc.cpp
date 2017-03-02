@@ -37,3 +37,8 @@ double speedTranslate(int setting_speed)
     return((0.3*setting_speed) + 70);
 //    return((0.52*setting_speed) + 24.8);
 }
+
+bool operator==(const file_uid& lhs, const file_uid& rhs)
+{
+    return(lhs.path == rhs.path && lhs.uid == rhs.uid);
+}

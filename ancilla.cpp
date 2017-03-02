@@ -357,18 +357,18 @@ double AncillaryThread::plotTime(const QLineF _line)
     return(retval);
 }
 
-int AncillaryThread::do_loadFile(QString const _filepath)
+int AncillaryThread::do_loadFile(const file_uid _file)
 {
     QFile inputFile;
     QString buffer;
 
-    if (_filepath.isEmpty())
+    if (_file.path.isEmpty())
     {
         qDebug() << "File path is empty.";
         return 1;
     }
 
-    inputFile.setFileName(_filepath);
+    inputFile.setFileName(_file.path);
     if (!inputFile.open(QIODevice::ReadOnly))
     {
         // failed to open
@@ -382,14 +382,14 @@ int AncillaryThread::do_loadFile(QString const _filepath)
     inputFile.close();
     emit statusUpdate("File closed.");
 
-    parseHPGL(&buffer);
+    parseHPGL(_file, &buffer);
     emit statusUpdate("HPGL finished parsing.");
     emit hpglParsingDone();
     return 0;
 }
 
 // Modifies input string, warning!
-void AncillaryThread::parseHPGL(QString * hpgl_text)
+void AncillaryThread::parseHPGL(file_uid _file, QString * hpgl_text)
 {
     QPointF tail(0, 0);
 
@@ -449,7 +449,7 @@ void AncillaryThread::parseHPGL(QString * hpgl_text)
 //                    newCmd.coordList.push_back(QPoint(newX, newY));
 //                }
             }
-            emit newPolygon(newItem);
+            emit newPolygon(_file, newItem);
         }
         else if (opcode == "IN")
         {

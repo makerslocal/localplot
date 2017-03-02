@@ -39,12 +39,12 @@ public slots:
     void do_run(); // kickstart
     void do_beginPlot(const QVector<QGraphicsPolygonItem *> _hpgl_items);
     void do_cancelPlot();
-    int do_loadFile(const QString _filepath);
+    int do_loadFile(const file_uid _file);
 
 private slots:
     void do_plotNext();
     QString print();
-    void parseHPGL(QString * hpgl_text);
+    void parseHPGL(file_uid _file, QString * hpgl_text);
 
 signals:
     void plottingStarted();
@@ -52,7 +52,7 @@ signals:
     void plottingCancelled();
     void plottingProgress(int percentComplete);
     void plottingEta(double seconds);
-    void newPolygon(QPolygonF hpglItem);
+    void newPolygon(file_uid file, QPolygonF hpglItem);
     void serialOpened();
     void serialClosed();
     void fileOpened();

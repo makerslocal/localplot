@@ -48,7 +48,7 @@ signals:
     void please_plotter_closeSerial();
     void please_plotter_doPlot(const QVector<QGraphicsPolygonItem *>);
     void please_plotter_cancelPlot();
-    void please_plotter_loadFile(QString filePath);
+    void please_plotter_loadFile(file_uid _file);
 
 /*
  * do_      for ui/proc action
@@ -56,12 +56,13 @@ signals:
  * handle_  for ui update
  */
 private slots:
-    void do_loadFile(QString filePath);
+    void do_loadFile(file_uid _file);
     void do_openDialogAbout();
     void do_openDialogSettings();
 
     // UI
     void handle_selectFileBtn();
+    void handle_deleteFileBtn();
     void handle_plotStarted();
     void handle_plotCancelled();
     void handle_plotFinished();
@@ -70,11 +71,12 @@ private slots:
     // View/Scene
     void sceneSetup();
     void get_pen(QPen *_pen, QString _name);
-    void sceneClearHpgl();
+    void deleteHpglFile(file_uid _file);
     void sceneSetSceneRect();
     void sceneConstrainItems();
     void handle_groupingItems();
-    void addPolygon(QPolygonF poly);
+    void addPolygon(file_uid _file, QPolygonF poly);
+    hpgl_file *createHpglFile(file_uid _file);
 
     // plotter thread
     void do_plot();
@@ -91,8 +93,7 @@ private:
     QGraphicsScene plotScene;
     QThread ancillaryThreadInstance;
     QPointer<AncillaryThread> ancilla;
-    QVector<QGraphicsPolygonItem *> hpgl_items;
-    QGraphicsItemGroup * hpgl_items_group;
+    QVector<hpgl_file *> hpglList;
     QStringListModel * listModel;
 };
 
