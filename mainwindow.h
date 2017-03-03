@@ -20,6 +20,7 @@
 #include <QMouseEvent>
 #include <QListView>
 #include <QModelIndex>
+#include <QModelIndexList>
 #include <QStringListModel>
 
 #include "hpgl.h"
@@ -67,14 +68,14 @@ private slots:
     void handle_plotCancelled();
     void handle_plotFinished();
     void handle_plottingPercent(int percent);
+    void handle_listViewClick();
 
     // View/Scene
     void sceneSetup();
     void get_pen(QPen *_pen, QString _name);
-    void deleteHpglFile(file_uid _file);
+    void deleteHpglFile(hpgl_file *_hpgl);
     void sceneSetSceneRect();
     void sceneConstrainItems();
-    void handle_groupingItems();
     void addPolygon(file_uid _file, QPolygonF poly);
     hpgl_file *createHpglFile(file_uid _file);
 

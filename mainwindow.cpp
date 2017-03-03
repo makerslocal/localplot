@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     listModel = new QStringListModel(this);
     ui->listView->setModel(listModel);
     ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
@@ -59,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
+    connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
 
     // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
@@ -217,19 +219,31 @@ void MainWindow::handle_plotFinished()
     ui->textBrowser_console->append(timeStamp() + "Plotting Done.");
 }
 
-void MainWindow::handle_groupingItems()
+void MainWindow::handle_listViewClick()
 {
+    QModelIndexList list;
+    bool selectedFlag = false;
 
-//    qDebug() << "Grouping items.";
-//    hpgl_items_group = new QGraphicsItemGroup;
-//    plotScene.addItem(hpgl_items_group);
-//    for (int i = 0; i < hpgl_items.count(); ++i)
-//    {
-//        hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(hpgl_items[i]));
-//    }
-//    hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
-//    plotScene.installEventFilter(this);
-//    plotScene.removeItem(static_cast<QGraphicsItem*>(hpgl_items[1]));
+    list = ui->listView->selectionModel()->selectedIndexes();
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
+        selectedFlag = false;
+        for (int i2 = 0 ; i2 < list.length(); ++i2)
+        {
+            if (list.at(i2).data(Qt::DisplayRole).toString() ==
+                    (hpglList.at(i)->name.path+", "+QString::number(hpglList.at(i)->name.uid)))
+            {
+                hpglList[i]->hpgl_items_group->setSelected(true);
+                selectedFlag = true;
+                break;
+            }
+        }
+        if (selectedFlag == false)
+        {
+            hpglList[i]->hpgl_items_group->setSelected(false);
+        }
+    }
 }
 
 void MainWindow::handle_selectFileBtn()
@@ -257,16 +271,15 @@ void MainWindow::handle_selectFileBtn()
 
 void MainWindow::handle_deleteFileBtn()
 {
-    QModelIndex index = ui->listView->currentIndex();
-    for (int i = 0; i < hpglList.length(); ++i)
+    QModelIndexList list;
+
+    list = ui->listView->selectionModel()->selectedIndexes();
+
+    for (int i = (hpglList.length() - 1); i >= 0 ; --i)
     {
-        qDebug() << "Checking: " << hpglList[i]->name.path+", "+QString::number(hpglList[i]->name.uid);
-        qDebug() << '\t' << listModel->data(index, Qt::DisplayRole).toString();
-        if ((hpglList[i]->name.path+", "+QString::number(hpglList[i]->name.uid)) == listModel->data(index, Qt::DisplayRole).toString())
+        if (hpglList.at(i)->hpgl_items_group->isSelected())
         {
-            qDebug() << "Matched, deleting this one.";
-            deleteHpglFile(hpglList[i]->name);
-            break;
+            deleteHpglFile(hpglList.at(i));
         }
     }
 }
@@ -321,8 +334,9 @@ void MainWindow::sceneSetup()
     ui->graphicsView_view->show();
 }
 
-void MainWindow::deleteHpglFile(file_uid _file)
+void MainWindow::deleteHpglFile(hpgl_file * _hpgl)
 {
+    file_uid _file = _hpgl->name;
     QModelIndex modelIndex;
 
     // Remove from listView
@@ -335,6 +349,7 @@ void MainWindow::deleteHpglFile(file_uid _file)
         {
             qDebug() << "Removing listview row: " << i;
             listModel->removeRow(i);
+            break;
         }
     }
 
@@ -351,6 +366,7 @@ void MainWindow::deleteHpglFile(file_uid _file)
             delete hpglList[i]->hpgl_items_group;
             hpglList[i]->hpgl_items.clear();
             hpglList.remove(i);
+            break;
         }
     }
 }
@@ -365,6 +381,7 @@ hpgl_file * MainWindow::createHpglFile(file_uid _file)
     newFile = new hpgl_file;
     newFile->hpgl_items_group = new QGraphicsItemGroup;
     newFile->hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
+    newFile->hpgl_items_group->setFlag(QGraphicsItem::ItemIsSelectable, true);
     newFile->name = _file;
 
     newFile->hpgl_items.clear();
@@ -374,6 +391,7 @@ hpgl_file * MainWindow::createHpglFile(file_uid _file)
     listModel->insertRows(0, 1);
     QModelIndex index = listModel->index(0);
     listModel->setData(index, newFile->name.path+", "+QString::number(newFile->name.uid), Qt::DisplayRole);
+    ui->listView->setCurrentIndex(index);
 
     hpglList.push_back(newFile);
     return(hpglList.last());
