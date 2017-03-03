@@ -260,9 +260,9 @@ void MainWindow::handle_deleteFileBtn()
     QModelIndex index = ui->listView->currentIndex();
     for (int i = 0; i < hpglList.length(); ++i)
     {
-        qDebug() << "Checking: " << hpglList[i]->name.path << ", " << hpglList[i]->name.uid;
+        qDebug() << "Checking: " << hpglList[i]->name.path+", "+QString::number(hpglList[i]->name.uid);
         qDebug() << '\t' << listModel->data(index, Qt::DisplayRole).toString();
-        if (hpglList[i]->name.path+", "+QString::number(hpglList[i]->name.uid) == listModel->data(index, Qt::DisplayRole).toString())
+        if ((hpglList[i]->name.path+", "+QString::number(hpglList[i]->name.uid)) == listModel->data(index, Qt::DisplayRole).toString())
         {
             qDebug() << "Matched, deleting this one.";
             deleteHpglFile(hpglList[i]->name);
@@ -326,13 +326,20 @@ void MainWindow::deleteHpglFile(file_uid _file)
     QModelIndex modelIndex;
 
     // Remove from listView
-    for (int i = 0; i < hpglList.length(); ++i)
+    for (int i = 0; i < listModel->rowCount(); ++i)
     {
         modelIndex = listModel->index(i);
-        if (listModel->data(modelIndex, Qt::DisplayRole).toString() == _file.path+", "+QString::number(_file.uid))
+//        qDebug() << "listview deletion: " << listModel->data(modelIndex, Qt::DisplayRole).toString();
+//        qDebug() << " vs: " << (_file.path+", "+QString::number(_file.uid));
+        if (listModel->data(modelIndex, Qt::DisplayRole).toString() == (_file.path+", "+QString::number(_file.uid)))
         {
+            qDebug() << "Removing listview row: " << i;
             listModel->removeRow(i);
         }
+    }
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
         if (hpglList[i]->name == _file)
         {
             // Remove from graphicsView
@@ -343,6 +350,7 @@ void MainWindow::deleteHpglFile(file_uid _file)
             }
             delete hpglList[i]->hpgl_items_group;
             hpglList[i]->hpgl_items.clear();
+            hpglList.remove(i);
         }
     }
 }
