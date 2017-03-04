@@ -37,13 +37,13 @@ public:
 
 public slots:
     void do_run(); // kickstart
-    void do_beginPlot(const QVector<QGraphicsPolygonItem *> _hpgl_items);
+    void do_beginPlot(QVector<hpgl_file *> *_hpglList);
     void do_cancelPlot();
     int do_loadFile(const file_uid _file);
 
 private slots:
     void do_plotNext();
-    QString print();
+    QString print(QPolygonF hpgl_poly, QPointF offset);
     void parseHPGL(file_uid _file, QString * hpgl_text);
 
 signals:
@@ -71,8 +71,9 @@ private:
 
     // plotting
     QPointer<QSerialPort> _port;
-    QVector<QGraphicsPolygonItem *> hpgl_items;
-    int index;
+//    QVector<QGraphicsPolygonItem *> hpgl_items;
+    QVector<hpgl_file *> * hpglList;
+    int hpglList_index, hpgl_obj_index;
 };
 
 #endif // PLOTTER_H

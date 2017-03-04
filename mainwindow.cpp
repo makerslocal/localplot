@@ -68,18 +68,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&ancillaryThreadInstance, SIGNAL(started()), this, SLOT(handle_ancillaThreadStart()));
     connect(&ancillaryThreadInstance, SIGNAL(finished()), this, SLOT(handle_ancillaThreadQuit()));
     connect(&ancillaryThreadInstance, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
-//    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
-    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_groupingItems()));
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_ancillaThreadStatus(QString)));
     connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
-    connect(this, SIGNAL(please_plotter_doPlot(const QVector<QGraphicsPolygonItem *>)),
-            ancilla, SLOT(do_beginPlot(const QVector<QGraphicsPolygonItem *>)));
+    connect(this, SIGNAL(please_plotter_doPlot(QVector<hpgl_file *> *)),
+            ancilla, SLOT(do_beginPlot(QVector<hpgl_file *> *)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
     connect(this, SIGNAL(please_plotter_loadFile(file_uid)), ancilla, SLOT(do_loadFile(file_uid)));
 
     // View/scene
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
-//    connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
+    connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
 
     connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
             this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
@@ -99,6 +98,11 @@ MainWindow::~MainWindow()
 {
     ancillaryThreadInstance.quit();
     ancillaryThreadInstance.wait();
+
+    for (int i = (hpglList.length() - 1); i >= 0; --i)
+    {
+        deleteHpglFile(hpglList[i]);
+    }
 
     delete ui;
 }
@@ -186,7 +190,7 @@ void MainWindow::handle_ancillaThreadStatus(QString _consoleText)
 
 void MainWindow::do_plot()
 {
-//    emit please_plotter_doPlot(hpgl_items);
+    emit please_plotter_doPlot(&hpglList);
 }
 
 void MainWindow::do_cancelPlot()
@@ -296,6 +300,7 @@ void MainWindow::handle_plottingPercent(int percent)
 void MainWindow::sceneSetup()
 {
     QPen pen;
+    QSettings settings;
 
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
@@ -317,7 +322,23 @@ void MainWindow::sceneSetup()
     pen.setColor(QColor(150, 150, 150));
     pen.setWidth(2);
     plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
-    plotScene.addLine(0, 0, 0, yDpi, pen)->setTransform(itemToScene);
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::INCH)
+    {
+        qDebug() << "Device width in inches.";
+        int inches = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
+        plotScene.addLine(0, 0, 0, (yDpi*inches), pen)->setTransform(itemToScene);
+    }
+    else if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        qDebug() << "Device width in cm.";
+        int inches = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
+        plotScene.addLine(0, 0, 0, (yDpi*2.54*inches), pen)->setTransform(itemToScene);
+    }
+    else
+    {
+        qDebug() << "Default switch statement reached for device width! D:";
+    }
+
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
@@ -332,6 +353,8 @@ void MainWindow::sceneSetup()
 
     // Set scene to view
     ui->graphicsView_view->show();
+
+    sceneSetSceneRect();
 }
 
 void MainWindow::deleteHpglFile(hpgl_file * _hpgl)
@@ -416,7 +439,21 @@ void MainWindow::sceneSetSceneRect()
 
     qDebug() << "Setting scene rect.";
 
-    plotScene.setSceneRect(plotScene.itemsBoundingRect().marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+    QRectF srect = plotScene.itemsBoundingRect();
+
+    if (srect.x() < 0)
+    {
+        srect.setX(0);
+    }
+    if (srect.y() < 0)
+    {
+        srect.setY(0);
+    }
+
+    plotScene.setSceneRect(srect.marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+
+    return;
+
     QRectF _rect = plotScene.sceneRect();
     QRectF _ViewRect = ui->graphicsView_view->rect();
 

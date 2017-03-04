@@ -142,7 +142,7 @@ void AncillaryThread::do_cancelPlot()
     cancelPlotFlag = true;
 }
 
-void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> _hpgl_items)
+void AncillaryThread::do_beginPlot(QVector<hpgl_file*> * _hpglList)
 {
     // Variables
 //    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
@@ -150,16 +150,17 @@ void AncillaryThread::do_beginPlot(const QVector<QGraphicsPolygonItem *> _hpgl_i
     QPointer<QSerialPort> _port;
     QSettings settings;
 
-    hpgl_items = _hpgl_items;
-    index = 0;
+    hpglList = _hpglList;
+    hpglList_index = 0;
+    hpgl_obj_index = 0;
     cancelPlotFlag = false;
     _port = openSerial();
 
     emit statusUpdate("Plotting file!");
 
-    emit statusUpdate("There are " + QString::number(hpgl_items.count()) + " hpgl items to plot.");
+    emit statusUpdate("There are " + QString::number(hpglList->length()) + " hpgl items to plot.");
 
-    if (_port.isNull() || !_port->isOpen() || hpgl_items.isEmpty())
+    if (_port.isNull() || !_port->isOpen() || hpglList->isEmpty())
     {
         emit statusUpdate("Can't plot!");
         return;
@@ -187,11 +188,18 @@ void AncillaryThread::do_plotNext()
     QSettings settings;
     double time = 0;
 
-    if (index >= hpgl_items.count())
+    if (hpglList_index >= hpglList->length())
     {
-        qDebug() << "No more objects left.";
+        qDebug() << "No more hpgl files left.";
         closeSerial();
         emit plottingDone();
+        return;
+    }
+    if (hpgl_obj_index >= hpglList->at(hpglList_index)->hpgl_items.length())
+    {
+        hpglList_index++;
+        hpgl_obj_index = 0;
+        do_plotNext();
         return;
     }
     if (cancelPlotFlag == true)
@@ -201,12 +209,15 @@ void AncillaryThread::do_plotNext()
         return;
     }
 
-    qDebug() << "Plotting command number: " << index;
+    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
 
-    int progress = ((double)index/(hpgl_items.count()-1))*100;
+    int progress = ((double)hpglList_index/(hpglList->count()-1))*100;
     emit plottingProgress(progress);
 
-    QString printThis = print();
+    qDebug() << "Offset: " << hpglList->at(hpglList_index)->hpgl_items_group->pos();
+
+    QString printThis = print(hpglList->at(hpglList_index)->hpgl_items.at(hpgl_obj_index)->polygon(),
+                              hpglList->at(hpglList_index)->hpgl_items_group->pos());
     if (printThis == "OOB")
     {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
@@ -215,11 +226,17 @@ void AncillaryThread::do_plotNext()
         emit plottingCancelled();
         return;
     }
+
+    if (hpglList_index == (hpglList->count()-1) && hpgl_obj_index == (hpglList->at(hpglList_index)->hpgl_items.length()-1))
+    {
+        printThis += "PU0,0;SP0;IN;"; // Ending commands
+    }
+
     _port->write(printThis.toStdString().c_str());
     if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         _port->flush();
-        time = plotTime(hpgl_items.at(index)->polygon());
+//        time = plotTime(hpglList->at(hpglList_index)->polygon());
 //        time = obj.cmdLenHyp(index_cmd);
 ////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
 ////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
@@ -241,32 +258,31 @@ void AncillaryThread::do_plotNext()
         //
     }
 
-    ++index;
+    ++hpgl_obj_index;
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
 //    do_plotNext(_port, hpgl_items, ++index);
 }
 
-QString AncillaryThread::print()
+QString AncillaryThread::print(QPolygonF hpgl_poly, QPointF offset)
 {
     QString retval = "";
-    QPolygonF poly = hpgl_items[index]->polygon();
 
     // Scene offset incurred from dragging
-    QPointF offset = hpgl_items[index]->pos();
-    poly.translate(offset.x(), offset.y());
+//    QPointF offset = hpgl_poly.pos();
+    hpgl_poly.translate(offset.x(), offset.y());
 
     // Create PU command
     retval += "PU";
-    retval += QString::number(poly.first().x());
+    retval += QString::number(static_cast<int>(hpgl_poly.first().x()));
     retval += ",";
-    retval += QString::number(poly.first().y());
+    retval += QString::number(static_cast<int>(hpgl_poly.first().y()));
     retval += ";";
 
     // Create PD command
     retval += "PD";
-    for (int idx = 1; idx < poly.count(); idx++)
+    for (int idx = 1; idx < hpgl_poly.count(); idx++)
     {
-        QPointF point = poly.at(idx);
+        QPointF point = hpgl_poly.at(idx);
 
         if (point.x() < 0 || point.y() < 0)
         {
@@ -274,20 +290,15 @@ QString AncillaryThread::print()
         return retval;
         }
 
-        retval += QString::number(point.x());
+        retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
-        retval += QString::number(point.y());
-        if (idx < (poly.count()-1))
+        retval += QString::number(static_cast<int>(point.y()));
+        if (idx < (hpgl_poly.length()-1))
         {
             retval += ",";
         }
     }
     retval += ";";
-
-    if (index == (hpgl_items.count()-1))
-    {
-        retval += "PU0,0;SP0;IN;"; // Ending commands
-    }
 
     return(retval);
 }

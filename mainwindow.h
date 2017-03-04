@@ -47,7 +47,7 @@ public:
 signals:
     void please_plotter_openSerial();
     void please_plotter_closeSerial();
-    void please_plotter_doPlot(const QVector<QGraphicsPolygonItem *>);
+    void please_plotter_doPlot(QVector<hpgl_file *> *);
     void please_plotter_cancelPlot();
     void please_plotter_loadFile(file_uid _file);
 
