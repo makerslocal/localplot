@@ -87,6 +87,8 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  *
  * mainwindow
  * - filePath (string)
+ * - windowState (bytearray)
+ * - geometry (bytearray)
  */
 
 #endif // SETTINGS_H

@@ -22,6 +22,7 @@
 #include <QModelIndex>
 #include <QModelIndexList>
 #include <QStringListModel>
+#include <QMainWindow>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -86,6 +87,9 @@ private slots:
     void handle_ancillaThreadStart();
     void handle_ancillaThreadQuit();
     void handle_ancillaThreadStatus(QString _consoleText);
+
+protected:
+    void closeEvent(QCloseEvent *event);
 
 private:
     Ui::MainWindow *ui;

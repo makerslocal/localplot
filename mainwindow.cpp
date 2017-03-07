@@ -91,6 +91,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->pushButton_doPlot->setEnabled(true);
     ui->pushButton_fileRemove->setEnabled(true);
 
+    // Restore saved window geometry
+    if (settings.contains("mainwindow/geometry"))
+    {
+        restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
+    }
+    if (settings.contains("mainwindow/windowState"))
+    {
+        restoreState(settings.value("mainwindow/windowState").toByteArray());
+    }
+
     // Kickstart worker thread
     ancillaryThreadInstance.start();
 }
@@ -106,6 +116,14 @@ MainWindow::~MainWindow()
     }
 
     delete ui;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    QSettings settings;
+    settings.setValue("mainwindow/geometry", saveGeometry());
+    settings.setValue("mainwindow/windowState", saveState());
+    QMainWindow::closeEvent(event);
 }
 
 /*******************************************************************************
