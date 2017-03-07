@@ -400,22 +400,24 @@ void MainWindow::sceneSetup()
     pen.setColor(QColor(150, 150, 150));
     pen.setWidth(2);
     plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
+    double length;
     if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::INCH)
     {
         qDebug() << "Device width in inches.";
-        int inches = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
-        plotScene.addLine(0, 0, 0, (yDpi*inches), pen)->setTransform(itemToScene);
+        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
     }
     else if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
     {
         qDebug() << "Device width in cm.";
-        int inches = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
-        plotScene.addLine(0, 0, 0, (yDpi*2.54*inches), pen)->setTransform(itemToScene);
+        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt() * 2.54;
     }
     else
     {
         qDebug() << "Default switch statement reached for device width! D:";
+        length = SETDEF_DEVICE_WIDTH;
     }
+    widthLine = plotScene.addLine(0, 0, 0, (yDpi*length), pen);
+    widthLine->setTransform(itemToScene);
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
@@ -559,22 +561,45 @@ void MainWindow::sceneSetSceneRect()
 
 void MainWindow::sceneConstrainItems()
 {
+    int modCount;
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    QTransform sceneToItem;
+    sceneToItem.scale(xDpi/1016.0, yDpi/1016.0);
+
     for (int i = 0; i < hpglList.length(); ++i)
     {
-        if (hpglList[i]->hpgl_items_group == NULL)
+        modCount = 0;
+        if (hpglList.at(i)->hpgl_items_group == NULL)
         {
             qDebug() << "Serious issue somewhere with hpglList. hpgl_items_group is missing!";
             return;
         }
-        QPointF pos = hpglList[i]->hpgl_items_group->pos();
+        QPointF pos = hpglList.at(i)->hpgl_items_group->pos();
         if (pos.x() < 0)
         {
-            hpglList[i]->hpgl_items_group->setPos(0, pos.y());
+            ++modCount;
             pos.setX(0);
         }
+
+        QPointF _point = widthLine->mapToScene(widthLine->line().p2());
         if (pos.y() < 0)
         {
-            hpglList[i]->hpgl_items_group->setPos(pos.x(), 0);
+            ++modCount;
+            pos.setY(0);
+        }
+        else if ((pos.y() + hpglList.at(i)->hpgl_items_group->boundingRect().height()) >
+                 _point.y())
+        {
+            ++modCount;
+            pos.setY(_point.y() - hpglList.at(i)->hpgl_items_group->boundingRect().height());
+        }
+
+
+        if (modCount)
+        {
+            hpglList[i]->hpgl_items_group->setPos(pos);
         }
     }
 }

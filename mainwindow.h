@@ -98,6 +98,7 @@ private:
     QPointer<AncillaryThread> ancilla;
     QVector<hpgl_file *> hpglList;
     QStringListModel * listModel;
+    QGraphicsLineItem * widthLine;
 };
 
 #endif // MAINWINDOW_H
