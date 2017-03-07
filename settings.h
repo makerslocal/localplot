@@ -33,7 +33,7 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
 /**
  * Settings Defaults
  */
-#define SETDEF_PEN_DOWN_SIZE    (2)
+#define SETDEF_PEN_DOWN_SIZE    (1)
 #define SETDEF_PEN_DOWN_RED     (100)
 #define SETDEF_PEN_DOWN_GREEN   (150)
 #define SETDEF_PEN_DOWN_BLUE    (200)

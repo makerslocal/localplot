@@ -86,9 +86,6 @@ private slots:
     void handle_ancillaThreadQuit();
     void handle_ancillaThreadStatus(QString _consoleText);
 
-protected:
-//    bool eventFilter(QObject *obj, QEvent *ev);
-
 private:
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;

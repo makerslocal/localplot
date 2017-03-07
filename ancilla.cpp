@@ -236,22 +236,8 @@ void AncillaryThread::do_plotNext()
     if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         _port->flush();
-//        time = plotTime(hpglList->at(hpglList_index)->polygon());
-//        time = obj.cmdLenHyp(index_cmd);
-////                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-////                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-//        qDebug() << "- distance: " << time;
-//        if (obj.cmdGet(index_cmd).opcode == "PD")
-//        {
-//            time = time / speedTranslate(CUTSPEED);
-//            qDebug() << "- PD, speedTranslate: " << speedTranslate(CUTSPEED);
-//        }
-//        else if (obj.cmdGet(index_cmd).opcode == "PU")
-//        {
-//            time = time / speedTranslate(TRAVELSPEED);
-//            qDebug() << "- PU, speedTranslate: " << speedTranslate(TRAVELSPEED);
-//        }
-//        qDebug() << "- sleep time: " << time;
+        time = plotTime(hpglList->at(hpglList_index)->hpgl_items.at(hpgl_obj_index)->polygon());
+        qDebug() << "- sleep time: " << time;
     }
     else
     {
@@ -260,7 +246,6 @@ void AncillaryThread::do_plotNext()
 
     ++hpgl_obj_index;
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
-//    do_plotNext(_port, hpgl_items, ++index);
 }
 
 QString AncillaryThread::print(QPolygonF hpgl_poly, QPointF offset)
@@ -336,8 +321,6 @@ double AncillaryThread::plotTime(const QPolygonF _poly)
     QSettings settings;
 
     retval = lenHyp(_poly);
-//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
 
     if (retval <= 0)
     {

@@ -167,6 +167,8 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
         _pen->setWidth(penSize);
     }
     settings.endGroup();
+
+    _pen->setCosmetic(true);
 }
 
 /*******************************************************************************
@@ -239,6 +241,13 @@ void MainWindow::handle_listViewClick()
                     (hpglList.at(i)->name.path+", "+QString::number(hpglList.at(i)->name.uid)))
             {
                 hpglList[i]->hpgl_items_group->setSelected(true);
+                QPen _selectedPen;
+                get_pen(&_selectedPen, "down");
+                _selectedPen.setColor(_selectedPen.color().lighter(120));
+                for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+                {
+                    hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+                }
                 selectedFlag = true;
                 break;
             }
@@ -246,6 +255,12 @@ void MainWindow::handle_listViewClick()
         if (selectedFlag == false)
         {
             hpglList[i]->hpgl_items_group->setSelected(false);
+            QPen _selectedPen;
+            get_pen(&_selectedPen, "down");
+            for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+            {
+                hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+            }
         }
     }
 }
@@ -319,6 +334,7 @@ void MainWindow::sceneSetup()
     plotScene.clear();
 
     // Draw origin
+    pen.setCosmetic(true);
     pen.setColor(QColor(150, 150, 150));
     pen.setWidth(2);
     plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
@@ -338,7 +354,6 @@ void MainWindow::sceneSetup()
     {
         qDebug() << "Default switch statement reached for device width! D:";
     }
-
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
@@ -517,13 +532,13 @@ void MainWindow::addPolygon(file_uid _file, QPolygonF poly)
     // Variables
     QPen pen;
     // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
-    int avgDpi = (xDpi + yDpi) / 2.0;
+//    int xDpi = ui->graphicsView_view->physicalDpiX();
+//    int yDpi = ui->graphicsView_view->physicalDpiY();
+//    int avgDpi = (xDpi + yDpi) / 2.0;
 
     // Set downPen
     get_pen(&pen, "down");
-    pen.setWidth(pen.widthF() * (1016.0 / avgDpi));
+//    pen.setWidth(pen.widthF() * (1016.0 / avgDpi));
 
     for (int i = 0; i < hpglList.length(); ++i)
     {
@@ -535,23 +550,6 @@ void MainWindow::addPolygon(file_uid _file, QPolygonF poly)
         }
     }
 }
-
-//bool MainWindow::eventFilter(QObject *obj, QEvent *event)
-//{
-//    if (obj == &plotScene) {
-//        if (event->type() == QEvent::GraphicsSceneMousePress){//QEvent::GraphicsSceneMouseRelease) {
-//            qDebug() << "filter obj: " << obj->objectName() << event->type();
-//            QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
-//            qDebug() << mouseEvent->buttons() << "button: " << mouseEvent->button() << (mouseEvent->button() == Qt::LeftButton);
-//            if (!(mouseEvent->buttons() & Qt::LeftButton))
-//            {
-//                sceneSetSceneRect();
-//            }
-//        }
-//    }
-//    // pass the event on to the parent class
-//    return QMainWindow::eventFilter(obj, event);
-//}
 
 
 

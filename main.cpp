@@ -13,7 +13,6 @@ int main(int argc, char *argv[])
     w.show();
 
     // Required setup to pass custom item in signal/slot.
-    qRegisterMetaType<QVector<QGraphicsPolygonItem*>>("QVector<QGraphicsPolygonItem*>");
     qRegisterMetaType<file_uid>("file_uid");
 
     return a.exec();
