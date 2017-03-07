@@ -160,6 +160,7 @@ void MainWindow::do_openDialogSettings()
     newwindow = new DialogSettings(this);
     newwindow->setWindowTitle("localplot settings");
     newwindow->exec();
+    widthLine->setLine(get_widthLine());
 }
 
 /*******************************************************************************
@@ -374,6 +375,30 @@ void MainWindow::handle_plottingPercent(int percent)
  * Etcetera methods
  ******************************************************************************/
 
+QLineF MainWindow::get_widthLine()
+{
+    // physicalDpi is the number of pixels in an inch
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    QSettings settings;
+    double length;
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::INCH)
+    {
+        qDebug() << "Device width in inches.";
+        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
+    }
+    else if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        qDebug() << "Device width in cm.";
+        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt() * 2.54;
+    }
+    else
+    {
+        qDebug() << "Default switch statement reached for device width! D:";
+        length = SETDEF_DEVICE_WIDTH;
+    }
+    return (QLineF(0, 0, 0, (yDpi*length)));
+}
+
 void MainWindow::sceneSetup()
 {
     QPen pen;
@@ -400,23 +425,9 @@ void MainWindow::sceneSetup()
     pen.setColor(QColor(150, 150, 150));
     pen.setWidth(2);
     plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
-    double length;
-    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::INCH)
-    {
-        qDebug() << "Device width in inches.";
-        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
-    }
-    else if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
-    {
-        qDebug() << "Device width in cm.";
-        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt() * 2.54;
-    }
-    else
-    {
-        qDebug() << "Default switch statement reached for device width! D:";
-        length = SETDEF_DEVICE_WIDTH;
-    }
-    widthLine = plotScene.addLine(0, 0, 0, (yDpi*length), pen);
+
+    // Width line
+    widthLine = plotScene.addLine(get_widthLine(), pen);
     widthLine->setTransform(itemToScene);
 
     // Draw origin text

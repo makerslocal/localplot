@@ -88,6 +88,8 @@ private slots:
     void handle_ancillaThreadQuit();
     void handle_ancillaThreadStatus(QString _consoleText);
 
+    QLineF get_widthLine();
+
 protected:
     void closeEvent(QCloseEvent *event);
 
