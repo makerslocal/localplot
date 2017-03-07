@@ -61,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
+    connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
 
     // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
@@ -223,6 +224,49 @@ void MainWindow::handle_plotFinished()
     ui->pushButton_doPlot->setText("Plot!");
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     ui->textBrowser_console->append(timeStamp() + "Plotting Done.");
+}
+
+void MainWindow::handle_plotSceneSelectionChanged()
+{
+    QList<QGraphicsItem*> list;
+    bool selectedFlag = false;
+
+    list = plotScene.selectedItems();
+
+    ui->listView->selectionModel()->clearSelection();
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
+        selectedFlag = false;
+        for (int i2 = 0 ; i2 < list.length(); ++i2)
+        {
+            if (list.at(i2) == hpglList.at(i)->hpgl_items_group)
+            {
+                QModelIndex index;
+                index = listModel->index(i);
+                ui->listView->selectionModel()->select(index, QItemSelectionModel::Select);
+                QPen _selectedPen;
+                get_pen(&_selectedPen, "down");
+                _selectedPen.setColor(_selectedPen.color().lighter(120));
+                for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+                {
+                    hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+                }
+                selectedFlag = true;
+                break;
+            }
+        }
+        if (selectedFlag == false)
+        {
+            hpglList[i]->hpgl_items_group->setSelected(false);
+            QPen _selectedPen;
+            get_pen(&_selectedPen, "down");
+            for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+            {
+                hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+            }
+        }
+    }
 }
 
 void MainWindow::handle_listViewClick()
@@ -426,8 +470,9 @@ hpgl_file * MainWindow::createHpglFile(file_uid _file)
     plotScene.addItem(newFile->hpgl_items_group);
 
     // Add to listView
-    listModel->insertRows(0, 1);
-    QModelIndex index = listModel->index(0);
+    int numRows = listModel->rowCount();
+    listModel->insertRows(numRows, 1);
+    QModelIndex index = listModel->index(numRows);
     listModel->setData(index, newFile->name.path+", "+QString::number(newFile->name.uid), Qt::DisplayRole);
     ui->listView->setCurrentIndex(index);
 

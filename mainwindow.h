@@ -69,6 +69,7 @@ private slots:
     void handle_plotFinished();
     void handle_plottingPercent(int percent);
     void handle_listViewClick();
+    void handle_plotSceneSelectionChanged();
 
     // View/Scene
     void sceneSetup();
