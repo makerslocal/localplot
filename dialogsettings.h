@@ -36,6 +36,9 @@ public slots:
     void do_settingsPrint();
     void do_writeLineEditSerialPort();
 
+protected:
+    void closeEvent(QCloseEvent *event);
+
 private:
     Ui::DialogSettings *ui;
     QSettings * settings;

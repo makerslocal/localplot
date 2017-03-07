@@ -17,6 +17,12 @@ DialogSettings::DialogSettings(QWidget *parent) :
     upPen.setStyle(Qt::DotLine);
     do_updatePens();
 
+    // Restore saved window geometry
+    if (settings.contains("dialogsettings/geometry"))
+    {
+        restoreGeometry(settings.value("dialogsettings/geometry").toByteArray());
+    }
+
     // Initialize interface
     ui->comboBox_baud->clear();
     ui->comboBox_baud->insertItem(0, "2400", 2400);
@@ -72,6 +78,7 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->spinBox_deviceTravelSpeed->setValue(settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
     ui->spinBox_deviceWidth->setValue(settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt());
     ui->comboBox_deviceWidthType->setCurrentIndex(settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt());
+    ui->tabWidget->setCurrentIndex(settings.value("dialogsettings/index", SETDEF_DIALLOGSETTINGS_INDEX).toInt());
     if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         ui->radioButton_XonXoff->setChecked(true);
@@ -166,6 +173,13 @@ DialogSettings::~DialogSettings()
     delete ui;
 }
 
+void DialogSettings::closeEvent(QCloseEvent *event)
+{
+    QSettings settings;
+    settings.setValue("dialogsettings/geometry", saveGeometry());
+    QDialog::closeEvent(event);
+}
+
 void DialogSettings::do_settingsClear()
 {
     QSettings settings;
@@ -230,6 +244,8 @@ void DialogSettings::do_saveAndClose()
         settings.setValue("width/type", ui->comboBox_deviceWidthType->currentData().toInt());
     }
     settings.endGroup();
+
+    settings.setValue("dialogsettings/index", ui->tabWidget->currentIndex());
 
     close();
 }

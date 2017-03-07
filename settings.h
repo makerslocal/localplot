@@ -50,6 +50,7 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
 #define SETDEF_DEVICE_WDITH_TYPE    (deviceWidth_t::INCH)
 
 #define SETDEF_MAINWINDOW_FILEPATH  ("")
+#define SETDEF_DIALLOGSETTINGS_INDEX (1)
 
 #define SETDEF_SERIAL_PORT      ("")
 #define SETDEF_SERIAL_BAUD      (9600)
@@ -88,6 +89,13 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  * mainwindow
  * - filePath (string)
  * - windowState (bytearray)
+ * - geometry (bytearray)
+ *
+ * dialogsettings
+ * - index (int)
+ * - geometry (bytearray)
+ *
+ * dialogabout
  * - geometry (bytearray)
  */
 
