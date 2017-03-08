@@ -210,9 +210,10 @@ void AncillaryThread::do_plotNext()
         return;
     }
 
-    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
+//    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
+//    qDebug() << "Total file count: " << hpglList->count();
 
-    int progress = ((double)hpglList_index/(hpglList->count()-1))*100;
+    int progress = (((double)hpglList_index+((double)hpgl_obj_index/(hpglList->at(hpglList_index)->hpgl_items.count()-1)))/(hpglList->count()))*100;
     emit plottingProgress(progress);
 
     qDebug() << "Offset: " << hpglList->at(hpglList_index)->hpgl_items_group->pos();

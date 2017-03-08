@@ -75,6 +75,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_newConsoleText(QString)));
     connect(ancilla, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
+    connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
+    connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
     connect(this, SIGNAL(please_plotter_doPlot(QVector<hpgl_file *> *)),
             ancilla, SLOT(do_beginPlot(QVector<hpgl_file *> *)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
@@ -244,27 +246,21 @@ void MainWindow::do_cancelPlot()
 
 void MainWindow::handle_plotStarted()
 {
-    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     ui->pushButton_doPlot->setText("Cancel");
     ui->progressBar_plotting->setValue(0);
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
-    ui->textBrowser_console->append(timeStamp() + "Plotting started.");
+    handle_newConsoleText("Plotting started.");
 }
 
 void MainWindow::handle_plotCancelled()
 {
-    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
     ui->pushButton_doPlot->setText("Plot!");
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
-    ui->textBrowser_console->append(timeStamp() + "Plotting cancelled.");
+    handle_newConsoleText("Plotting cancelled.");
 }
 
 void MainWindow::handle_plotFinished()
 {
-    disconnect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_cancelPlot()));
     ui->pushButton_doPlot->setText("Plot!");
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
-    ui->textBrowser_console->append(timeStamp() + "Plotting Done.");
+    handle_newConsoleText("Plotting Done.");
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()
