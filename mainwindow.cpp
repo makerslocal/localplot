@@ -62,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action1_1, SIGNAL(triggered(bool)), this, SLOT(sceneScale11()));
     connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
-    connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
+    connect(ui->listView, SIGNAL(activated(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
 
     // Connect thread
@@ -72,6 +72,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&ancillaryThreadInstance, SIGNAL(finished()), this, SLOT(handle_ancillaThreadQuit()));
     connect(&ancillaryThreadInstance, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_listViewClick()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_newConsoleText(QString)));
     connect(ancilla, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
@@ -366,6 +367,12 @@ void MainWindow::handle_selectFileBtn()
 
     _file.path = QFileDialog::getOpenFileName(this,
         tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
+
+    if (_file.path == "")
+    {
+        handle_newConsoleText("File open cancelled.", Qt::darkRed);
+        return;
+    }
 
     settings.setValue("mainwindow/filePath", _file.path);
 
