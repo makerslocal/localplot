@@ -77,6 +77,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
     connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
     connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
+    connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
     connect(this, SIGNAL(please_plotter_doPlot(QVector<hpgl_file *> *)),
             ancilla, SLOT(do_beginPlot(QVector<hpgl_file *> *)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
@@ -229,12 +230,10 @@ void MainWindow::do_plot()
     if (ui->pushButton_doPlot->text() == "Plot!")
     {
         emit please_plotter_doPlot(&hpglList);
-        ui->pushButton_doPlot->setText("Cancel");
     }
     else
     {
         emit please_plotter_cancelPlot();
-        ui->pushButton_doPlot->setText("Plot!");
     }
 
 }
@@ -247,6 +246,9 @@ void MainWindow::do_cancelPlot()
 void MainWindow::handle_plotStarted()
 {
     ui->pushButton_doPlot->setText("Cancel");
+    ui->pushButton_fileRemove->setEnabled(false);
+    ui->pushButton_fileSelect->setEnabled(false);
+    ui->graphicsView_view->setEnabled(false);
     ui->progressBar_plotting->setValue(0);
     handle_newConsoleText("Plotting started.");
 }
@@ -254,12 +256,18 @@ void MainWindow::handle_plotStarted()
 void MainWindow::handle_plotCancelled()
 {
     ui->pushButton_doPlot->setText("Plot!");
+    ui->pushButton_fileRemove->setEnabled(true);
+    ui->pushButton_fileSelect->setEnabled(true);
+    ui->graphicsView_view->setEnabled(true);
     handle_newConsoleText("Plotting cancelled.");
 }
 
 void MainWindow::handle_plotFinished()
 {
     ui->pushButton_doPlot->setText("Plot!");
+    ui->pushButton_fileRemove->setEnabled(true);
+    ui->pushButton_fileSelect->setEnabled(true);
+    ui->graphicsView_view->setEnabled(true);
     handle_newConsoleText("Plotting Done.");
 }
 
