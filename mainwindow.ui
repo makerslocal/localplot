@@ -49,9 +49,6 @@
           <widget class="QWidget" name="verticalLayoutWidget">
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
-             <widget class="QListView" name="listView"/>
-            </item>
-            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
                <widget class="QPushButton" name="pushButton_fileRemove">
@@ -83,6 +80,9 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QListView" name="listView"/>
             </item>
            </layout>
           </widget>
@@ -145,7 +145,7 @@
       <widget class="QWidget" name="widget_main" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>4</horstretch>
+         <horstretch>3</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
