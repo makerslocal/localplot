@@ -89,6 +89,8 @@ private slots:
     void handle_ancillaThreadStatus(QString _consoleText);
 
     QLineF get_widthLine();
+    void sceneScaleWidth();
+    void sceneScale11();
 
 protected:
     void closeEvent(QCloseEvent *event);

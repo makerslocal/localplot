@@ -59,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
     connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
+    connect(ui->action1_1, SIGNAL(triggered(bool)), this, SLOT(sceneScale11()));
+    connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
@@ -396,7 +398,42 @@ QLineF MainWindow::get_widthLine()
         qDebug() << "Default switch statement reached for device width! D:";
         length = SETDEF_DEVICE_WIDTH;
     }
-    return (QLineF(0, 0, 0, (yDpi*length)));
+    return (QLineF(0, 0, 0, (1016.0*length)));
+}
+
+void MainWindow::sceneScaleWidth()
+{
+    ui->graphicsView_view->fitInView(
+        plotScene.itemsBoundingRect(),
+        Qt::KeepAspectRatio);
+    return;
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    QTransform scenetowidth;
+
+    scenetowidth.scale(1, 1);
+    ui->graphicsView_view->setTransform(viewFlip);
+}
+
+void MainWindow::sceneScale11()
+{
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 }
 
 void MainWindow::sceneSetup()
@@ -428,7 +465,6 @@ void MainWindow::sceneSetup()
 
     // Width line
     widthLine = plotScene.addLine(get_widthLine(), pen);
-    widthLine->setTransform(itemToScene);
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
