@@ -3,6 +3,19 @@
 
 ### Past
 
+#### v0.4.0
+
+Total rewrite based on storing HPGL data in QGraphicsScene rather than custom classes.
+
+* UI simplified and cleaned.
+* Worker thread implemented (poorly).
+* Multiple HPGL files can be opened and plotted.
+* Cancel/Pause active cuts.
+* Progress bar (seperate UI thread).
+* Salience for serial connection status.
+* ETA (cut time estimation).
+* Set size of vinyl
+
 #### v0.3.1
 
 Some bugfixes and minor features:
@@ -26,36 +39,17 @@ Some bugfixes and minor features:
 
 ### Future
 
-#### v0.3.git-good-2
+#### Unsorted ToDo:
 
 * Run perimeter command.
-* Cancel/Pause active cuts.
-* Progress bar (seperate UI thread).
-* Salience for serial connection status.
+* Generate perimeter (to plot).
 * Alert when done.
-* ETA (cut time estimation).
 * Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
-* Manually drive plotter
-
-#### v0.4 - "Social"
-
-* Should be able to represent and hold in objects multiple separate 'items'.
-* Each item should be able to have it's own transformations applied to it.
-* An item can be associated with a single hpgl file.
-* Be able to create a box (with variable margin) around objects, to make removing from the vinyl reel easier.
-* Set size of vinyl
-
-#### v0.5 - "Twins"
-
-* Items should be able to be duplicated.
-* Items should be able to be carved out of an hpgl file which has many items already.
-* Items should be able to be auto-arranged and grid-arranged.
-
-##### v0.6 - "Printer talk"
-
-* Program should be able to export to serial port and/or LP printer, as found on the USB connection on USCutter vinyl cutters.
-
-
+* Manually drive plotter.
+* Rotations/scaling on individual hpgl files.
+* Auto arrange (bin packing).
+* Export to USB plotter.
+* Export to printer.
 
 <br><br><br><br>
 
