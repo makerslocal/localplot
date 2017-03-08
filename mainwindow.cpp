@@ -282,6 +282,7 @@ void MainWindow::handle_plotSceneSelectionChanged()
                 QModelIndex index;
                 index = listModel->index(i);
                 ui->listView->selectionModel()->select(index, QItemSelectionModel::Select);
+                hpglList[i]->hpgl_items_group->setZValue(1);
                 QPen _selectedPen;
                 get_pen(&_selectedPen, "down");
                 _selectedPen.setColor(_selectedPen.color().lighter(120));
@@ -296,6 +297,7 @@ void MainWindow::handle_plotSceneSelectionChanged()
         if (selectedFlag == false)
         {
             hpglList[i]->hpgl_items_group->setSelected(false);
+            hpglList[i]->hpgl_items_group->setZValue(-1);
             QPen _selectedPen;
             get_pen(&_selectedPen, "down");
             for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
@@ -322,6 +324,7 @@ void MainWindow::handle_listViewClick()
                     (hpglList.at(i)->name.path+", "+QString::number(hpglList.at(i)->name.uid)))
             {
                 hpglList[i]->hpgl_items_group->setSelected(true);
+                hpglList[i]->hpgl_items_group->setZValue(1);
                 QPen _selectedPen;
                 get_pen(&_selectedPen, "down");
                 _selectedPen.setColor(_selectedPen.color().lighter(120));
@@ -336,6 +339,7 @@ void MainWindow::handle_listViewClick()
         if (selectedFlag == false)
         {
             hpglList[i]->hpgl_items_group->setSelected(false);
+            hpglList[i]->hpgl_items_group->setZValue(-1);
             QPen _selectedPen;
             get_pen(&_selectedPen, "down");
             for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
