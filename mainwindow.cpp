@@ -62,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action1_1, SIGNAL(triggered(bool)), this, SLOT(sceneScale11()));
     connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
-    connect(ui->listView, SIGNAL(activated(QModelIndex)), this, SLOT(handle_listViewClick()));
+    connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
 
     // Connect thread
@@ -401,6 +401,7 @@ void MainWindow::handle_deleteFileBtn()
             deleteHpglFile(hpglList.at(i));
         }
     }
+    sceneSetSceneRect();
 }
 
 void MainWindow::handle_plottingPercent(int percent)
@@ -441,20 +442,8 @@ void MainWindow::sceneScaleWidth()
     ui->graphicsView_view->fitInView(
         plotScene.itemsBoundingRect(),
         Qt::KeepAspectRatio);
+    handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
     return;
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
-
-    QTransform hpglToPx, itemToScene, viewFlip;
-    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
-    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
-    viewFlip.scale(1, -1);
-
-    QTransform scenetowidth;
-
-    scenetowidth.scale(1, 1);
-    ui->graphicsView_view->setTransform(viewFlip);
 }
 
 void MainWindow::sceneScale11()
@@ -469,6 +458,8 @@ void MainWindow::sceneScale11()
     viewFlip.scale(1, -1);
 
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
+
+    handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
 }
 
 void MainWindow::sceneSetup()
