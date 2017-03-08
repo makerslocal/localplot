@@ -11,7 +11,7 @@ AncillaryThread::AncillaryThread()
 
 AncillaryThread::~AncillaryThread()
 {
-    //
+    closeSerial();
 }
 
 void AncillaryThread::do_run()

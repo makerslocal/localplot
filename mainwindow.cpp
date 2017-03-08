@@ -250,6 +250,7 @@ void MainWindow::handle_plotStarted()
     ui->pushButton_fileRemove->setEnabled(false);
     ui->pushButton_fileSelect->setEnabled(false);
     ui->graphicsView_view->setEnabled(false);
+    ui->actionLoad_File->setEnabled(false);
     ui->progressBar_plotting->setValue(0);
     handle_newConsoleText("Plotting started.");
 }
@@ -260,6 +261,7 @@ void MainWindow::handle_plotCancelled()
     ui->pushButton_fileRemove->setEnabled(true);
     ui->pushButton_fileSelect->setEnabled(true);
     ui->graphicsView_view->setEnabled(true);
+    ui->actionLoad_File->setEnabled(true);
     handle_newConsoleText("Plotting cancelled.");
 }
 
@@ -269,6 +271,7 @@ void MainWindow::handle_plotFinished()
     ui->pushButton_fileRemove->setEnabled(true);
     ui->pushButton_fileSelect->setEnabled(true);
     ui->graphicsView_view->setEnabled(true);
+    ui->actionLoad_File->setEnabled(true);
     handle_newConsoleText("Plotting Done.");
 }
 
@@ -415,8 +418,6 @@ void MainWindow::handle_plottingPercent(int percent)
 
 QLineF MainWindow::get_widthLine()
 {
-    // physicalDpi is the number of pixels in an inch
-    int yDpi = ui->graphicsView_view->physicalDpiY();
     QSettings settings;
     double length;
     if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::INCH)
@@ -440,7 +441,7 @@ QLineF MainWindow::get_widthLine()
 void MainWindow::sceneScaleWidth()
 {
     ui->graphicsView_view->fitInView(
-        plotScene.itemsBoundingRect(),
+        plotScene.sceneRect(),
         Qt::KeepAspectRatio);
     handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
     return;

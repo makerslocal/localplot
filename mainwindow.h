@@ -24,6 +24,7 @@
 #include <QStringListModel>
 #include <QMainWindow>
 #include <QTextBrowser>
+#include <QMenuBar>
 
 #include "hpgl.h"
 #include "settings.h"
