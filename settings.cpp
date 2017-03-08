@@ -1,8 +1,18 @@
+/**
+ * Settings - helper code for using QSettings
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #include "settings.h"
 
 void init_localplot_settings()
 {
-    QCoreApplication::setOrganizationName("Makers Local 256");
-    QCoreApplication::setOrganizationDomain("256.makerslocal.org");
-    QCoreApplication::setApplicationName("localplot");
+    qDebug() << "QSettings: initializing.";
+    // Only initialize settings if needed.
+    if (QCoreApplication::organizationName() != ORGANIZATION_NAME)
+    {
+        qDebug() << "QSettings: setting org properties.";
+        QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
+        QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
+        QCoreApplication::setApplicationName(APPLICATION_NAME);
+    }
 }

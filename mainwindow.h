@@ -1,29 +1,36 @@
+/**
+ * Localplot - Main UI thread header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QDebug>
-#include <QSerialPort>
-#include <QSerialPortInfo>
-#include <QVector>
-#include <QList>
-#include <QPointer>
-#include <QString>
-#include <QTimer>
-#include <QTime>
-#include <QFile>
-#include <QFileDialog>
+#include <QtCore>
+#include <QGraphicsView>
 #include <QGraphicsScene>
-#include <QGraphicsTextItem>
-#include <QPen>
+#include <QMainWindow>
+#include <QFileDialog>
+#include <QGuiApplication>
 #include <QScreen>
-#include <QCoreApplication>
-#include <QSettings>
-#include <QThread>
-#include <QProcess>
+#include <QGraphicsTextItem>
+#include <QPushButton>
+#include <QGraphicsItem>
+#include <QEvent>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QListView>
+#include <QModelIndex>
+#include <QModelIndexList>
+#include <QStringListModel>
+#include <QMainWindow>
+#include <QTextBrowser>
+#include <QMenuBar>
 
-#include "hpgl_obj.h"
+#include "hpgl.h"
 #include "settings.h"
+#include "ancilla.h"
+#include "etc.h"
+#include "hpglgraphicsview.h"
 
 namespace Ui {
 class MainWindow;
@@ -36,47 +43,69 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    QString timeStamp();
-    int get_nextInt(QString input, int *index);
-    QGraphicsScene penDownDemoScene;
-    QGraphicsScene penUpDemoScene;
-    QPen downPen;
-    QPen upPen;
-    double speedTranslate(int setting_speed);
 
-public slots:
-    void do_openSerial();
-    void do_closeSerial();
-    void do_loadFile();
-    void do_plot();
-    void do_drawView();
-    void do_updatePens();
-
-    void update_filePath();
-
-    void handle_serialOpened();
-    void handle_serialClosed();
-    void handle_serialConnectBtn();
-    void handle_selectFileBtn();
-    void handle_objectTransform();
-//    void handle_autoTranslateBtn();
-
+/*
+ * please_  for signals to threads
+ */
 signals:
-    //
+    void please_plotter_openSerial();
+    void please_plotter_closeSerial();
+    void please_plotter_doPlot(QVector<hpgl_file *> *);
+    void please_plotter_cancelPlot();
+    void please_plotter_loadFile(file_uid _file);
 
+/*
+ * do_      for ui/proc action
+ * update_  for settings change
+ * handle_  for ui update
+ */
 private slots:
-//    void open();
-    void open_dialogAbout();
-    void open_dialogSettings();
+    void do_loadFile(file_uid _file);
+    void do_openDialogAbout();
+    void do_openDialogSettings();
+
+    // UI
+    void handle_selectFileBtn();
+    void handle_deleteFileBtn();
+    void handle_plotStarted();
+    void handle_plotCancelled();
+    void handle_plotFinished();
+    void handle_plottingPercent(int percent);
+    void handle_newConsoleText(QString text, QColor textColor);
+    void handle_newConsoleText(QString text);
+    void handle_listViewClick();
+    void handle_plotSceneSelectionChanged();
+
+    // View/Scene
+    void sceneSetup();
+    void get_pen(QPen *_pen, QString _name);
+    void deleteHpglFile(hpgl_file *_hpgl);
+    void sceneSetSceneRect();
+    void sceneConstrainItems();
+    void addPolygon(file_uid _file, QPolygonF poly);
+    hpgl_file *createHpglFile(file_uid _file);
+
+    // plotter thread
+    void do_plot();
+    void do_cancelPlot();
+    void handle_ancillaThreadStart();
+    void handle_ancillaThreadQuit();
+
+    QLineF get_widthLine();
+    void sceneScaleWidth();
+    void sceneScale11();
+
+protected:
+    void closeEvent(QCloseEvent *event);
 
 private:
     Ui::MainWindow *ui;
-    QSerialPortInfo serialPorts;
-    QPointer<QSerialPort> serialBuffer;
-    QFile inputFile;
-    QList<hpgl_obj> objList;
     QGraphicsScene plotScene;
-    QSettings * settings;
+    QThread ancillaryThreadInstance;
+    QPointer<AncillaryThread> ancilla;
+    QVector<hpgl_file *> hpglList;
+    QStringListModel * listModel;
+    QGraphicsLineItem * widthLine;
 };
 
 #endif // MAINWINDOW_H

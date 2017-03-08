@@ -1,14 +1,17 @@
+/**
+ * DialogSettings - header
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #ifndef DIALOGSETTINGS_H
 #define DIALOGSETTINGS_H
 
-#include <QDialog>
-#include <QCoreApplication>
-#include <QSettings>
-
+#include <QtCore>
 #include <QSerialPortInfo>
 #include <QGraphicsScene>
-#include <QPen>
-#include <QDebug>
+#include <QGraphicsView>
+#include <QDialog>
+#include <QComboBox>
+#include <QSpinBox>
 
 #include "settings.h"
 
@@ -31,6 +34,10 @@ public slots:
     void do_saveAndClose();
     void do_settingsClear();
     void do_settingsPrint();
+    void do_writeLineEditSerialPort();
+
+protected:
+    void closeEvent(QCloseEvent *event);
 
 private:
     Ui::DialogSettings *ui;

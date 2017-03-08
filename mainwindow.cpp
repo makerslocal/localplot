@@ -1,3 +1,8 @@
+/**
+ * Localplot - Almost useful!
+ * Christopher Bero <bigbero@gmail.com>
+ */
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -8,7 +13,7 @@
 #include "ui_dialogsettings.h"
 
 /**
- * Reference: http://cstep.luberth.com/HPGL.pdf
+ * HPGL reference: http://cstep.luberth.com/HPGL.pdf
  *
  * Language Structure:
  * Using Inkscape's default format -> XXy1,y1,y2,y2;
@@ -25,64 +30,118 @@
  *             properties and transformations.
  */
 
+/**
+ * @brief MainWindow::MainWindow
+ * Instantiate main UI window.
+ * @param parent - Qt specific
+ */
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    QSettings settings;
+
     ui->setupUi(this);
 
-    // Instantiate settings object
-    init_localplot_settings();
-    settings = new QSettings();
+    // Declare worker thread
+    ancilla = new AncillaryThread;
+    ancilla->moveToThread(&ancillaryThreadInstance);
 
-    // Connect actions
-    connect(ui->pushButton_serialConnect, SIGNAL(clicked()), this, SLOT(handle_serialConnectBtn()));
+    // Setup listView and listModel
+    listModel = new QStringListModel(this);
+    ui->listView->setModel(listModel);
+    ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+    // Connect UI actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
-    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(open_dialogAbout()));
-    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(open_dialogSettings()));
+    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
+    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
+    connect(ui->action1_1, SIGNAL(triggered(bool)), this, SLOT(sceneScale11()));
+    connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
+    connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
+    connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
+    connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
 
-    // Set up the drawing pens
-    upPen.setStyle(Qt::DotLine);
-    do_updatePens();
+    // Connect thread
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    connect(ancilla, SIGNAL(plottingProgress(int)), this, SLOT(handle_plottingPercent(int)));
+    connect(&ancillaryThreadInstance, SIGNAL(started()), this, SLOT(handle_ancillaThreadStart()));
+    connect(&ancillaryThreadInstance, SIGNAL(finished()), this, SLOT(handle_ancillaThreadQuit()));
+    connect(&ancillaryThreadInstance, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
+    connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_listViewClick()));
+    connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_newConsoleText(QString)));
+    connect(ancilla, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+    connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
+    connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
+    connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
+    connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
+    connect(this, SIGNAL(please_plotter_doPlot(QVector<hpgl_file *> *)),
+            ancilla, SLOT(do_beginPlot(QVector<hpgl_file *> *)));
+    connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
+    connect(this, SIGNAL(please_plotter_loadFile(file_uid)), ancilla, SLOT(do_loadFile(file_uid)));
 
-    connect(ui->lineEdit_filePath, SIGNAL(editingFinished()), this, SLOT(update_filePath()));
+    // View/scene
+    connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
+    connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
 
-    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalSizeChanged(QSizeF)),
-            this, SLOT(do_drawView())); // Update view if the pixel DPI changes
-
-    connect(ui->doubleSpinBox_objScale, SIGNAL(valueChanged(double)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->doubleSpinBox_objRotation, SIGNAL(valueChanged(double)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->spinBox_objTranslationX, SIGNAL(valueChanged(int)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
-    connect(ui->spinBox_objTranslationY, SIGNAL(valueChanged(int)),
-            this, SLOT(handle_objectTransform())); // Update view if the scale changes
+    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
+            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
 
     ui->graphicsView_view->setScene(&plotScene);
 
-    ui->lineEdit_filePath->setText(settings->value("mainwindow/filePath", SETDEF_MAINWINDOW_FILEPATH).toString());
+    sceneSetup();
 
-    do_drawView();
+    ui->pushButton_doPlot->setEnabled(true);
+    ui->pushButton_fileRemove->setEnabled(true);
+
+    // Restore saved window geometry
+    if (settings.contains("mainwindow/geometry"))
+    {
+        restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
+    }
+    if (settings.contains("mainwindow/windowState"))
+    {
+        restoreState(settings.value("mainwindow/windowState").toByteArray());
+    }
+
+    // Kickstart worker thread
+    ancillaryThreadInstance.start();
 }
 
 MainWindow::~MainWindow()
 {
-    do_closeSerial();
+    ancillaryThreadInstance.quit();
+    ancillaryThreadInstance.wait();
 
-    delete settings;
+    for (int i = (hpglList.length() - 1); i >= 0; --i)
+    {
+        deleteHpglFile(hpglList[i]);
+    }
+
     delete ui;
 }
 
-QString MainWindow::timeStamp()
+void MainWindow::closeEvent(QCloseEvent *event)
 {
-    return(QTime::currentTime().toString("[HH:mm:ss:zzz] "));
+    QSettings settings;
+    settings.setValue("mainwindow/geometry", saveGeometry());
+    settings.setValue("mainwindow/windowState", saveState());
+    QMainWindow::closeEvent(event);
 }
 
-void MainWindow::open_dialogAbout()
+/*******************************************************************************
+ * Child windows
+ ******************************************************************************/
+
+/**
+ * @brief MainWindow::do_openDialogAbout
+ * Creates a window with information about the program and authors.
+ */
+void MainWindow::do_openDialogAbout()
 {
     // This way of doing things will allow the QDialog to be reused. (?)
 //    QDialog * widget = new QDialog;
@@ -98,461 +157,564 @@ void MainWindow::open_dialogAbout()
     newwindow->exec();
 }
 
-void MainWindow::open_dialogSettings()
+/**
+ * @brief MainWindow::do_openDialogSettings
+ * Creates a window to modify QSettings
+ */
+void MainWindow::do_openDialogSettings()
 {
     DialogSettings * newwindow;
     newwindow = new DialogSettings(this);
     newwindow->setWindowTitle("localplot settings");
     newwindow->exec();
+    widthLine->setLine(get_widthLine());
 }
 
-void MainWindow::update_filePath()
-{
-    settings->setValue("mainwindow/filePath", ui->lineEdit_filePath->text());
-}
+/*******************************************************************************
+ * UI Slots
+ ******************************************************************************/
 
-void MainWindow::do_openSerial()
-{
-    QString _portLocation = settings->value("serial/port", SETDEF_SERIAL_PORT).toString();
-    QSerialPortInfo _device;
-
-    for (int i = 0; i < serialPorts.availablePorts().count(); i++)
-    {
-        if (_portLocation == serialPorts.availablePorts().at(i).systemLocation())
-        {
-            _device = serialPorts.availablePorts().at(i);
-        }
-    }
-
-    if (_device.isNull())
-    {
-        qDebug() << "Serial list needs to be refreshed or something";
-        do_closeSerial();
-        return;
-    }
-
-    if (!serialBuffer.isNull())
-    {
-        serialBuffer.clear();
-        handle_serialClosed();
-    }
-    serialBuffer = new QSerialPort(_device);
-    serialBuffer->setBaudRate(settings->value("serial/baud", SETDEF_SERIAL_BAUD).toInt());
-
-    int dataBits = settings->value("serial/bytesize", SETDEF_SERIAL_BYTESIZE).toInt();
-    if (dataBits == 8)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data8);
-    }
-    else if (dataBits == 7)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data7);
-    }
-    else if (dataBits == 6)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data6);
-    }
-    else if (dataBits == 5)
-    {
-        serialBuffer->setDataBits(QSerialPort::Data5);
-    }
-
-    QString parity = settings->value("serial/parity", SETDEF_SERIAL_PARITY).toString();
-    if (parity == "none")
-    {
-        serialBuffer->setParity(QSerialPort::NoParity);
-    }
-    else if (parity == "odd")
-    {
-        serialBuffer->setParity(QSerialPort::OddParity);
-    }
-    else if (parity == "even")
-    {
-        serialBuffer->setParity(QSerialPort::EvenParity);
-    }
-    else if (parity == "mark")
-    {
-        serialBuffer->setParity(QSerialPort::MarkParity);
-    }
-    else if (parity == "space")
-    {
-        serialBuffer->setParity(QSerialPort::SpaceParity);
-    }
-
-    int stopBits = settings->value("serial/stopbits", SETDEF_SERIAL_STOPBITS).toInt();
-    if (stopBits == 1)
-    {
-        serialBuffer->setStopBits(QSerialPort::OneStop);
-    }
-    else if (stopBits == 3)
-    {
-        serialBuffer->setStopBits(QSerialPort::OneAndHalfStop);
-    }
-    else if (stopBits == 2)
-    {
-        serialBuffer->setStopBits(QSerialPort::TwoStop);
-    }
-
-    if (settings->value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
-    {
-        serialBuffer->setFlowControl(QSerialPort::SoftwareControl);
-    }
-    else if (settings->value("serial/rtscts", SETDEF_SERIAL_RTSCTS).toBool())
-    {
-        serialBuffer->setFlowControl(QSerialPort::HardwareControl);
-    }
-    else
-    {
-        serialBuffer->setFlowControl(QSerialPort::NoFlowControl);
-    }
-
-    serialBuffer->open(QIODevice::WriteOnly);
-    if (serialBuffer->isOpen())
-    {
-        qDebug() << "Flow control: " << serialBuffer->flowControl();
-        handle_serialOpened();
-    }
-    else
-    {
-        ui->textBrowser_console->append(timeStamp() + "Serial port didn't open? :'(");
-        do_closeSerial();
-    }
-}
-
-void MainWindow::do_closeSerial()
-{
-    if (!serialBuffer.isNull())
-    {
-        serialBuffer->close();
-        serialBuffer.clear();
-    }
-    handle_serialClosed();
-}
-
-void MainWindow::handle_serialConnectBtn()
-{
-    if (ui->pushButton_serialConnect->text() == "Connect")
-    {
-        do_openSerial();
-    }
-    else
-    {
-        do_closeSerial();
-    }
-}
-
-void MainWindow::handle_serialOpened()
-{
-    ui->textBrowser_console->append(timeStamp() + "Serial port opened x)");
-    ui->pushButton_serialConnect->setText("Disconnect");
-}
-
-void MainWindow::handle_serialClosed()
-{
-    ui->textBrowser_console->append(timeStamp() + "Serial port closed :D");
-    ui->pushButton_serialConnect->setText("Connect");
-}
-
-void MainWindow::handle_selectFileBtn()
-{
-    QString fileName;
-    QString startDir = settings->value("mainwindow/filePath", "").toString();
-
-    fileName = QFileDialog::getOpenFileName(this,
-        tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
-
-    ui->lineEdit_filePath->setText(fileName);
-    do_loadFile();
-}
-
-//void MainWindow::handle_autoTranslateBtn()
-//{
-//    for (int i = 0; i < objList.count(); i++)
-//    {
-//        if (objList[i].minX() < 0)
-//        {
-//            int val = ui->spinBox_objTranslationX
-//        }
-//    }
-//}
-
-int MainWindow::get_nextInt(QString input, int * index)
-{
-    QChar tmp = input[*index];
-    QString buffer = "";
-
-    while (tmp != ',' && tmp != ';')
-    {
-        buffer.append(tmp);
-        tmp = input[++*index];
-    }
-    return(atoi(buffer.toStdString().c_str()));
-}
-
-void MainWindow::do_updatePens()
+void MainWindow::get_pen(QPen * _pen, QString _name)
 {
     // Variables
+    QSettings settings;
     int rgbColor[3];
     int penSize;
     QColor penColor;
 
     // Set downPen
-    penSize = settings->value("pen/down/size", SETDEF_PEN_DOWN_SIZE).toInt();
-    rgbColor[0] = settings->value("pen/down/red", SETDEF_PEN_DOWN_RED).toInt();
-    rgbColor[1] = settings->value("pen/down/green", SETDEF_PEN_DOWN_GREEN).toInt();
-    rgbColor[2] = settings->value("pen/down/blue", SETDEF_PEN_DOWN_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    downPen.setColor(penColor);
-    downPen.setWidth(penSize);
+    settings.beginGroup("pen/"+_name);
+    {
+        penSize = settings.value("size", SETDEF_PEN_DOWN_SIZE).toInt();
+        rgbColor[0] = settings.value("red", SETDEF_PEN_DOWN_RED).toInt();
+        rgbColor[1] = settings.value("green", SETDEF_PEN_DOWN_GREEN).toInt();
+        rgbColor[2] = settings.value("blue", SETDEF_PEN_DOWN_BLUE).toInt();
+        penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+        _pen->setColor(penColor);
+        _pen->setWidth(penSize);
+    }
+    settings.endGroup();
 
-    // Set upPen
-    penSize = settings->value("pen/up/size", SETDEF_PEN_UP_SIZE).toInt();
-    rgbColor[0] = settings->value("pen/up/red", SETDEF_PEN_UP_RED).toInt();
-    rgbColor[1] = settings->value("pen/up/green", SETDEF_PEN_UP_GREEN).toInt();
-    rgbColor[2] = settings->value("pen/up/blue", SETDEF_PEN_UP_BLUE).toInt();
-    penColor = QColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-    upPen.setColor(penColor);
-    upPen.setWidth(penSize);
+    _pen->setCosmetic(true);
 }
 
-void MainWindow::do_drawView()
+/*******************************************************************************
+ * Worker thread slots
+ ******************************************************************************/
+
+void MainWindow::handle_newConsoleText(QString text, QColor textColor)
 {
-    // Set up new graphics view.
-    plotScene.clear();
+    QColor originalColor = ui->textBrowser_console->textColor();
+    ui->textBrowser_console->append(timeStamp());
+    ui->textBrowser_console->setTextColor(textColor);
+    ui->textBrowser_console->append("- " + text);
+    ui->textBrowser_console->setTextColor(originalColor);
+}
+
+void MainWindow::handle_newConsoleText(QString text)
+{
+    ui->textBrowser_console->append(timeStamp() + "\n- " + text);
+}
+
+void MainWindow::handle_ancillaThreadStart()
+{
+    handle_newConsoleText("Ancillary thread started \\o/", Qt::darkGreen);
+}
+
+void MainWindow::handle_ancillaThreadQuit()
+{
+    handle_newConsoleText("Ancillary thread stopped.");
+}
+
+void MainWindow::do_plot()
+{
+    if (ui->pushButton_doPlot->text() == "Plot!")
+    {
+        emit please_plotter_doPlot(&hpglList);
+    }
+    else
+    {
+        emit please_plotter_cancelPlot();
+    }
+
+}
+
+void MainWindow::do_cancelPlot()
+{
+    emit please_plotter_cancelPlot();
+}
+
+void MainWindow::handle_plotStarted()
+{
+    ui->pushButton_doPlot->setText("Cancel");
+    ui->pushButton_fileRemove->setEnabled(false);
+    ui->pushButton_fileSelect->setEnabled(false);
+    ui->graphicsView_view->setEnabled(false);
+    ui->actionLoad_File->setEnabled(false);
+    ui->progressBar_plotting->setValue(0);
+    handle_newConsoleText("Plotting started.");
+}
+
+void MainWindow::handle_plotCancelled()
+{
+    ui->pushButton_doPlot->setText("Plot!");
+    ui->pushButton_fileRemove->setEnabled(true);
+    ui->pushButton_fileSelect->setEnabled(true);
+    ui->graphicsView_view->setEnabled(true);
+    ui->actionLoad_File->setEnabled(true);
+    handle_newConsoleText("Plotting cancelled.");
+}
+
+void MainWindow::handle_plotFinished()
+{
+    ui->pushButton_doPlot->setText("Plot!");
+    ui->pushButton_fileRemove->setEnabled(true);
+    ui->pushButton_fileSelect->setEnabled(true);
+    ui->graphicsView_view->setEnabled(true);
+    ui->actionLoad_File->setEnabled(true);
+    handle_newConsoleText("Plotting Done.");
+}
+
+void MainWindow::handle_plotSceneSelectionChanged()
+{
+    QList<QGraphicsItem*> list;
+    bool selectedFlag = false;
+
+    list = plotScene.selectedItems();
+
+    ui->listView->selectionModel()->clearSelection();
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
+        selectedFlag = false;
+        for (int i2 = 0 ; i2 < list.length(); ++i2)
+        {
+            if (list.at(i2) == hpglList.at(i)->hpgl_items_group)
+            {
+                QModelIndex index;
+                index = listModel->index(i);
+                ui->listView->selectionModel()->select(index, QItemSelectionModel::Select);
+                hpglList[i]->hpgl_items_group->setZValue(1);
+                QPen _selectedPen;
+                get_pen(&_selectedPen, "down");
+                _selectedPen.setColor(_selectedPen.color().lighter(120));
+                for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+                {
+                    hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+                }
+                selectedFlag = true;
+                break;
+            }
+        }
+        if (selectedFlag == false)
+        {
+            hpglList[i]->hpgl_items_group->setSelected(false);
+            hpglList[i]->hpgl_items_group->setZValue(-1);
+            QPen _selectedPen;
+            get_pen(&_selectedPen, "down");
+            for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+            {
+                hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+            }
+        }
+    }
+}
+
+void MainWindow::handle_listViewClick()
+{
+    QModelIndexList list;
+    bool selectedFlag = false;
+
+    list = ui->listView->selectionModel()->selectedIndexes();
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
+        selectedFlag = false;
+        for (int i2 = 0 ; i2 < list.length(); ++i2)
+        {
+            if (list.at(i2).data(Qt::DisplayRole).toString() ==
+                    (hpglList.at(i)->name.path+", "+QString::number(hpglList.at(i)->name.uid)))
+            {
+                hpglList[i]->hpgl_items_group->setSelected(true);
+                hpglList[i]->hpgl_items_group->setZValue(1);
+                QPen _selectedPen;
+                get_pen(&_selectedPen, "down");
+                _selectedPen.setColor(_selectedPen.color().lighter(120));
+                for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+                {
+                    hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+                }
+                selectedFlag = true;
+                break;
+            }
+        }
+        if (selectedFlag == false)
+        {
+            hpglList[i]->hpgl_items_group->setSelected(false);
+            hpglList[i]->hpgl_items_group->setZValue(-1);
+            QPen _selectedPen;
+            get_pen(&_selectedPen, "down");
+            for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
+            {
+                hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
+            }
+        }
+    }
+}
+
+void MainWindow::handle_selectFileBtn()
+{
+    QSettings settings;
+    file_uid _file;
+    QString startDir = settings.value("mainwindow/filePath", "").toString();
+
+    _file.path = QFileDialog::getOpenFileName(this,
+        tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
+
+    if (_file.path == "")
+    {
+        handle_newConsoleText("File open cancelled.", Qt::darkRed);
+        return;
+    }
+
+    settings.setValue("mainwindow/filePath", _file.path);
+
+    if (hpglList.isEmpty())
+    {
+        _file.uid = 0;
+    }
+    else
+    {
+        _file.uid = hpglList.last()->name.uid + 1;
+    }
+
+    do_loadFile(_file);
+}
+
+void MainWindow::handle_deleteFileBtn()
+{
+    QModelIndexList list;
+
+    list = ui->listView->selectionModel()->selectedIndexes();
+
+    for (int i = (hpglList.length() - 1); i >= 0 ; --i)
+    {
+        if (hpglList.at(i)->hpgl_items_group->isSelected())
+        {
+            deleteHpglFile(hpglList.at(i));
+        }
+    }
+    sceneSetSceneRect();
+}
+
+void MainWindow::handle_plottingPercent(int percent)
+{
+    ui->progressBar_plotting->setValue(percent);
+}
+
+/*******************************************************************************
+ * Etcetera methods
+ ******************************************************************************/
+
+QLineF MainWindow::get_widthLine()
+{
+    QSettings settings;
+    double length;
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::INCH)
+    {
+        qDebug() << "Device width in inches.";
+        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt();
+    }
+    else if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        qDebug() << "Device width in cm.";
+        length = settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt() * 2.54;
+    }
+    else
+    {
+        qDebug() << "Default switch statement reached for device width! D:";
+        length = SETDEF_DEVICE_WIDTH;
+    }
+    return (QLineF(0, 0, 0, (1016.0*length)));
+}
+
+void MainWindow::sceneScaleWidth()
+{
+    ui->graphicsView_view->fitInView(
+        plotScene.sceneRect(),
+        Qt::KeepAspectRatio);
+    handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
+    return;
+}
+
+void MainWindow::sceneScale11()
+{
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
+
+    handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
+}
+
+void MainWindow::sceneSetup()
+{
+    QPen pen;
+    QSettings settings;
 
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
     int yDpi = ui->graphicsView_view->physicalDpiY();
 
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    // Auto-position scene to bottom left of view.
+    ui->graphicsView_view->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+    // Set up new graphics view.
+    plotScene.clear();
+
     // Draw origin
-    QPen originPen;
-    originPen.setColor(QColor(150, 150, 150));
-    originPen.setWidth(2);
-    plotScene.addLine(0, 0, xDpi, 0, originPen);
-    plotScene.addLine(0, 0, 0, -yDpi, originPen);
+    pen.setCosmetic(true);
+    pen.setColor(QColor(150, 150, 150));
+    pen.setWidth(2);
+    plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
 
-    do_updatePens();
-
-    // scale is the value set by our user
-    double scale = 1.0;
-    // Factor is the conversion from HP Graphic Unit to pixels
-    double xFactor = (xDpi / 1016.0 * scale);
-    double yFactor = (yDpi / 1016.0 * scale);
-
-    QList<QLine> lines_down;
-    lines_down.clear();
-    QList<QLine> lines_up;
-    lines_up.clear();
-
-    for (int i = 0; i < objList.length(); i++)
-    {
-        // Get a list of qlines
-        objList[i].gen_line_lists();
-        lines_down = objList[i].lineListDown;
-        lines_up = objList[i].lineListUp;
-
-        // Transform qlines to be upright
-        for (int i = 0; i < lines_down.length(); i++)
-        {
-            int x, y;
-            x = lines_down[i].x1();
-            y = lines_down[i].y1();
-            x = x*xFactor;
-            y = y*(-1)*yFactor;
-            lines_down[i].setP1(QPoint(x, y));
-            x = lines_down[i].x2();
-            x = x*xFactor;
-            y = lines_down[i].y2();
-            y = y*(-1)*yFactor;
-            lines_down[i].setP2(QPoint(x, y));
-        }
-
-        for (int i = 0; i < lines_up.length(); i++)
-        {
-            int x, y;
-            x = lines_up[i].x1();
-            x = x*xFactor;
-            y = lines_up[i].y1();
-            y = y*(-1)*yFactor;
-            lines_up[i].setP1(QPoint(x, y));
-            x = lines_up[i].x2();
-            x = x*xFactor;
-            y = lines_up[i].y2();
-            y = y*(-1)*yFactor;
-            lines_up[i].setP2(QPoint(x, y));
-        }
-
-        // Write qlines to the scene
-        for (int i = 0; i < objList.length(); i++)
-        {
-            for (int l = 0; l < lines_down.length(); l++)
-            {
-                plotScene.addLine(lines_down[l], downPen);
-            }
-            for (int l = 0; l < lines_up.length(); l++)
-            {
-                plotScene.addLine(lines_up[l], upPen);
-            }
-        }
-    }
+    // Width line
+    widthLine = plotScene.addLine(get_widthLine(), pen);
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
-    label->setRotation(90);
-    QRectF labelRect = label->boundingRect();
-    label->setY(label->y() - labelRect.width());
-    plotScene.addText("(0,0)");
-    QString scaleText = "View Scale: " + QString::number(scale);
-    QGraphicsTextItem * scaleTextItem = plotScene.addText(scaleText);
-    QRectF scaleTextItemRect = scaleTextItem->boundingRect();
-    scaleTextItem->setY(scaleTextItem->y() + scaleTextItemRect.height());
+    label->setTransform(itemToScene * viewFlip);
+    label->setRotation(-90);
+    label->moveBy(-1 * label->mapRectToScene(label->boundingRect()).width(), 0);
 
-    // Set scene rectangle to match new items
-    plotScene.setSceneRect(plotScene.itemsBoundingRect());
-    //plotScene.addRect(plotScene.sceneRect(), downPen);
+    QGraphicsTextItem * originText = plotScene.addText("(0,0)");
+    originText->setTransform(itemToScene * viewFlip);
+
+    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 
     // Set scene to view
-    ui->graphicsView_view->setSceneRect(plotScene.sceneRect());
     ui->graphicsView_view->show();
+
+    sceneSetSceneRect();
 }
 
-void MainWindow::do_loadFile()
+void MainWindow::deleteHpglFile(hpgl_file * _hpgl)
 {
-    if (inputFile.isOpen())
+    file_uid _file = _hpgl->name;
+    QModelIndex modelIndex;
+
+    // Remove from listView
+    for (int i = 0; i < listModel->rowCount(); ++i)
     {
-        inputFile.close();
-    }
-    QString filePath = ui->lineEdit_filePath->text();
-    if (filePath.isEmpty())
-    {
-        return;
-    }
-    inputFile.setFileName(filePath);
-    inputFile.open(QIODevice::ReadOnly);
-    objList.clear();
-    //ui->textBrowser_read->clear();
-
-    QString buffer = "";
-    QTextStream fstream(&inputFile);
-    buffer = fstream.readAll();
-    objList.push_back(hpgl_obj(buffer));
-
-    settings->setValue("mainwindow/filePath", filePath);
-
-    do_drawView();
-}
-
-void MainWindow::do_plot()
-{
-    // Variables
-    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
-    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
-
-    qDebug() << "Cut speed: " << cutSpeed;
-    qDebug() << "Travel speed: " << travelSpeed;
-
-    hpgl_obj obj;
-    QString printThis;
-    int cmdCount;
-    QString command;
-    double time;
-    QProcess process;
-
-    qDebug() << "Plotting file!";
-    if (serialBuffer.isNull() || !serialBuffer->isOpen() || objList.isEmpty())
-    {
-        ui->textBrowser_console->append(timeStamp() + "Can't plot!");
-        return;
-    }
-
-    // explain the situation
-    if (settings->value("cutter/axis", SETDEF_DEVICE_SPEED_TRAVEL).toBool())
-    {
-        qDebug() << "Cutting with axis speed delay";
-    }
-    else
-    {
-        qDebug() << "Cutting with absolute speed delay";
-    }
-    qDebug() << "Cutter speed: " << cutSpeed;
-
-    for (int i = 0; i < objList.count(); i++)
-    {
-        obj = objList.at(i);
-        cmdCount = obj.cmdCount();
-        for (int cmd_index = 0; cmd_index < cmdCount; cmd_index++)
+        modelIndex = listModel->index(i);
+//        qDebug() << "listview deletion: " << listModel->data(modelIndex, Qt::DisplayRole).toString();
+//        qDebug() << " vs: " << (_file.path+", "+QString::number(_file.uid));
+        if (listModel->data(modelIndex, Qt::DisplayRole).toString() == (_file.path+", "+QString::number(_file.uid)))
         {
-            printThis = obj.cmdPrint(cmd_index);
-            if (printThis == "OOB")
-            {
-                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-                //ui->textBrowser_console->append("(try the auto translation button)");
-                ui->textBrowser_console->append("(An X or Y value is less than zero)");
-                return;
-            }
-            serialBuffer->write(printThis.toStdString().c_str());
-            if (settings->value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
-            {
-                serialBuffer->flush();
-                command = "sleep ";
-                time = obj.cmdLenHyp(cmd_index);
-//                time = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//                time = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-                qDebug() << "- distance: " << time;
-                if (obj.cmdGet(cmd_index).opcode == "PD")
-                {
-                    time = time / speedTranslate(cutSpeed);
-                    qDebug() << "- PD, speedTranslate: " << speedTranslate(cutSpeed);
-                }
-                else if (obj.cmdGet(cmd_index).opcode == "PU")
-                {
-                    time = time / speedTranslate(travelSpeed);
-                    qDebug() << "- PU, speedTranslate: " << speedTranslate(travelSpeed);
-                }
-                qDebug() << "- sleep time: " << time;
-                if (time == 0)
-                    continue;
-                command += QString::number(time);
-                qDebug() << "Starting sleep command: sleep " << time;
-                process.start(command);
-                process.waitForFinished(60000); // Waits for up to 60s
-                qDebug() << "Done with sleep command";
-            }
+            qDebug() << "Removing listview row: " << i;
+            listModel->removeRow(i);
+            break;
         }
     }
-    qDebug() << "Done plotting.";
-}
 
-double MainWindow::speedTranslate(int setting_speed)
-{
-    // I will never be a real engineer
-//    return((0.5*setting_speed) + 30);
-    return((0.3*setting_speed) + 70);
-    //return((0.52*setting_speed) + 24.8);
-}
-
-void MainWindow::handle_objectTransform()
-{
-    QTransform Tscale, Trotate, Ttranslate;
-    double scale = ui->doubleSpinBox_objScale->value();
-    double rotation = ui->doubleSpinBox_objRotation->value();
-    int translateX = ui->spinBox_objTranslationX->value();
-    int translateY = ui->spinBox_objTranslationY->value();
-
-    Tscale.scale(scale, scale);
-    Trotate.rotate(rotation);
-    Ttranslate.translate(translateX, translateY);
-
-    //qDebug() << "MATRIX: " << transform;
-
-    for (int i = 0; i < objList.count(); i++)
+    for (int i = 0; i < hpglList.length(); ++i)
     {
-        objList[i].cmdTransformScale = Tscale;
-        objList[i].cmdTransformRotate = Trotate;
-        objList[i].cmdTransformTranslate = Ttranslate;
+        if (hpglList[i]->name == _file)
+        {
+            // Remove from graphicsView
+            for (int i2 = 0; i2 < hpglList[i]->hpgl_items.length(); ++i2)
+            {
+                hpglList[i]->hpgl_items_group->removeFromGroup(static_cast<QGraphicsItem*>(hpglList[i]->hpgl_items[i2]));
+                plotScene.removeItem(hpglList[i]->hpgl_items[i2]);
+            }
+            delete hpglList[i]->hpgl_items_group;
+            hpglList[i]->hpgl_items.clear();
+            hpglList.remove(i);
+            break;
+        }
     }
-    do_drawView();
 }
+
+hpgl_file * MainWindow::createHpglFile(file_uid _file)
+{
+    hpgl_file * newFile;
+
+    qDebug() << "Creating hpgl_file for: " << _file.path << ", " << _file.uid;
+
+    // Set up hpgl_file
+    newFile = new hpgl_file;
+    newFile->hpgl_items_group = new QGraphicsItemGroup;
+    newFile->hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
+    newFile->hpgl_items_group->setFlag(QGraphicsItem::ItemIsSelectable, true);
+    newFile->name = _file;
+
+    newFile->hpgl_items.clear();
+    plotScene.addItem(newFile->hpgl_items_group);
+
+    // Add to listView
+    int numRows = listModel->rowCount();
+    listModel->insertRows(numRows, 1);
+    QModelIndex index = listModel->index(numRows);
+    listModel->setData(index, newFile->name.path+", "+QString::number(newFile->name.uid), Qt::DisplayRole);
+    ui->listView->setCurrentIndex(index);
+
+    hpglList.push_back(newFile);
+    return(hpglList.last());
+}
+
+void MainWindow::sceneSetSceneRect()
+{
+    qreal marginX, marginY;
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    // Quarter inch margins
+    marginX = (xDpi / 4.0) * (1016.0 / xDpi);
+    marginY = (yDpi / 4.0) * (1016.0 / yDpi);
+
+    qDebug() << "Setting scene rect.";
+
+    QRectF srect = plotScene.itemsBoundingRect();
+
+    if (srect.x() < 0)
+    {
+        srect.setX(0);
+    }
+    if (srect.y() < 0)
+    {
+        srect.setY(0);
+    }
+
+    plotScene.setSceneRect(srect.marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+
+    return;
+
+    QRectF _rect = plotScene.sceneRect();
+    QRectF _ViewRect = ui->graphicsView_view->rect();
+
+    _ViewRect = itemToScene.mapRect(_ViewRect);
+
+    qDebug() << "Graphics view: " << ui->graphicsView_view->rect().width() << "," << ui->graphicsView_view->rect().height();
+    qDebug() << "Graphics view: " << ui->graphicsView_view->size().width() << "," << ui->graphicsView_view->size().height();
+    qDebug() << "Scene size: " << plotScene.sceneRect().width() << "," << plotScene.sceneRect().height();
+
+//    plotScene.addRect(ui->graphicsView_view->rect())->setTransform(itemToScene);
+
+    if (_rect.width() < _ViewRect.width())
+    {
+        _rect.setWidth(ui->graphicsView_view->rect().width());
+        qDebug() << "Increasing scene width." << _rect.width();
+        plotScene.setSceneRect(_rect);
+    }
+    if (_rect.height() < ui->graphicsView_view->rect().height())
+    {
+        _rect.setHeight(ui->graphicsView_view->rect().height());
+        qDebug() << "Increasing scene height: " << _rect.height();
+        plotScene.setSceneRect(_rect);
+    }
+}
+
+void MainWindow::sceneConstrainItems()
+{
+    int modCount;
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    QTransform sceneToItem;
+    sceneToItem.scale(xDpi/1016.0, yDpi/1016.0);
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
+        modCount = 0;
+        if (hpglList.at(i)->hpgl_items_group == NULL)
+        {
+            qDebug() << "Serious issue somewhere with hpglList. hpgl_items_group is missing!";
+            return;
+        }
+        QPointF pos = hpglList.at(i)->hpgl_items_group->pos();
+        if (pos.x() < 0)
+        {
+            ++modCount;
+            pos.setX(0);
+        }
+
+        QPointF _point = widthLine->mapToScene(widthLine->line().p2());
+        if (pos.y() < 0)
+        {
+            ++modCount;
+            pos.setY(0);
+        }
+        else if ((pos.y() + hpglList.at(i)->hpgl_items_group->boundingRect().height()) >
+                 _point.y())
+        {
+            ++modCount;
+            pos.setY(_point.y() - hpglList.at(i)->hpgl_items_group->boundingRect().height());
+        }
+
+
+        if (modCount)
+        {
+            hpglList[i]->hpgl_items_group->setPos(pos);
+        }
+    }
+}
+
+void MainWindow::do_loadFile(file_uid _file)
+{
+    QSettings settings;
+
+    settings.setValue("mainwindow/filePath", _file.path);
+
+    createHpglFile(_file);
+
+    emit please_plotter_loadFile(_file);
+}
+
+void MainWindow::addPolygon(file_uid _file, QPolygonF poly)
+{
+    // Variables
+    QPen pen;
+    // physicalDpi is the number of pixels in an inch
+//    int xDpi = ui->graphicsView_view->physicalDpiX();
+//    int yDpi = ui->graphicsView_view->physicalDpiY();
+//    int avgDpi = (xDpi + yDpi) / 2.0;
+
+    // Set downPen
+    get_pen(&pen, "down");
+//    pen.setWidth(pen.widthF() * (1016.0 / avgDpi));
+
+    for (int i = 0; i < hpglList.length(); ++i)
+    {
+        if (_file == hpglList.at(i)->name)
+        {
+            hpglList[i]->hpgl_items.push_back(plotScene.addPolygon(poly, pen));
+            hpglList[i]->hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(hpglList[i]->hpgl_items.last()));
+            break;
+        }
+    }
+}
+
+
+
 
 
 

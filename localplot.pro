@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport designer
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -13,17 +13,25 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    hpgl_obj.cpp \
     dialogabout.cpp \
     dialogsettings.cpp \
-    settings.cpp
+    settings.cpp \
+    ancilla.cpp \
+    etc.cpp \
+    hpglgraphicsview.cpp
 
 HEADERS  += mainwindow.h \
-    hpgl_obj.h \
     dialogabout.h \
     dialogsettings.h \
-    settings.h
+    settings.h \
+    ancilla.h \
+    etc.h \
+    hpglgraphicsview.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \
     dialogsettings.ui
+
+DISTFILES += \
+    hpgl_filec \
+    hpgl_fileh

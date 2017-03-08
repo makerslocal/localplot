@@ -1,3 +1,7 @@
+/**
+ * DialogAbout - UI for localplot information and contributors
+ * Christopher Bero <bigbero@gmail.com>
+ */
 #include "dialogabout.h"
 #include "ui_dialogabout.h"
 
