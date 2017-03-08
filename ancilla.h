@@ -59,6 +59,7 @@ signals:
     void fileClosed();
     void hpglParsingDone();
     void statusUpdate(QString _consoleStatus);
+    void statusUpdate(QString text, QColor textColor);
 
 private:
     double lenHyp(const QPolygonF _poly);

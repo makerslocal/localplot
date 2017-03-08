@@ -162,7 +162,7 @@ void AncillaryThread::do_beginPlot(QVector<hpgl_file*> * _hpglList)
 
     if (_port.isNull() || !_port->isOpen() || hpglList->isEmpty())
     {
-        emit statusUpdate("Can't plot!");
+        emit statusUpdate("Can't plot!", Qt::darkRed);
         return;
     }
 
@@ -190,7 +190,7 @@ void AncillaryThread::do_plotNext()
 
     if (hpglList_index >= hpglList->length())
     {
-        qDebug() << "No more hpgl files left.";
+        emit statusUpdate("No more hpgl files left to plot.");
         closeSerial();
         emit plottingDone();
         return;
@@ -204,7 +204,8 @@ void AncillaryThread::do_plotNext()
     }
     if (cancelPlotFlag == true)
     {
-        qDebug() << "Bailing out of plot, cancelled!";
+        emit statusUpdate("Bailing out of plot, cancelled!", Qt::darkRed);
+        closeSerial();
         emit plottingCancelled();
         return;
     }

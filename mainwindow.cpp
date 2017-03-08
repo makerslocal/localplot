@@ -72,7 +72,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&ancillaryThreadInstance, SIGNAL(finished()), this, SLOT(handle_ancillaThreadQuit()));
     connect(&ancillaryThreadInstance, SIGNAL(finished()), ancilla, SLOT(deleteLater()));
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(sceneSetSceneRect()));
-    connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_ancillaThreadStatus(QString)));
+    connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_newConsoleText(QString)));
+    connect(ancilla, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
     connect(this, SIGNAL(please_plotter_doPlot(QVector<hpgl_file *> *)),
             ancilla, SLOT(do_beginPlot(QVector<hpgl_file *> *)));
@@ -197,19 +198,28 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
  * Worker thread slots
  ******************************************************************************/
 
+void MainWindow::handle_newConsoleText(QString text, QColor textColor)
+{
+    QColor originalColor = ui->textBrowser_console->textColor();
+    ui->textBrowser_console->append(timeStamp());
+    ui->textBrowser_console->setTextColor(textColor);
+    ui->textBrowser_console->append("- " + text);
+    ui->textBrowser_console->setTextColor(originalColor);
+}
+
+void MainWindow::handle_newConsoleText(QString text)
+{
+    ui->textBrowser_console->append(timeStamp() + "\n- " + text);
+}
+
 void MainWindow::handle_ancillaThreadStart()
 {
-    ui->textBrowser_console->append(timeStamp() + "Ancillary thread started \\o/");
+    handle_newConsoleText("Ancillary thread started \\o/", Qt::darkGreen);
 }
 
 void MainWindow::handle_ancillaThreadQuit()
 {
-    ui->textBrowser_console->append(timeStamp() + "Ancillary thread stopped.");
-}
-
-void MainWindow::handle_ancillaThreadStatus(QString _consoleText)
-{
-    ui->textBrowser_console->append(timeStamp() + _consoleText);
+    handle_newConsoleText("Ancillary thread stopped.");
 }
 
 void MainWindow::do_plot()

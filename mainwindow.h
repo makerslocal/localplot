@@ -23,6 +23,7 @@
 #include <QModelIndexList>
 #include <QStringListModel>
 #include <QMainWindow>
+#include <QTextBrowser>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -69,6 +70,8 @@ private slots:
     void handle_plotCancelled();
     void handle_plotFinished();
     void handle_plottingPercent(int percent);
+    void handle_newConsoleText(QString text, QColor textColor);
+    void handle_newConsoleText(QString text);
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
 
@@ -86,7 +89,6 @@ private slots:
     void do_cancelPlot();
     void handle_ancillaThreadStart();
     void handle_ancillaThreadQuit();
-    void handle_ancillaThreadStatus(QString _consoleText);
 
     QLineF get_widthLine();
     void sceneScaleWidth();
