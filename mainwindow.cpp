@@ -214,7 +214,17 @@ void MainWindow::handle_ancillaThreadStatus(QString _consoleText)
 
 void MainWindow::do_plot()
 {
-    emit please_plotter_doPlot(&hpglList);
+    if (ui->pushButton_doPlot->text() == "Plot!")
+    {
+        emit please_plotter_doPlot(&hpglList);
+        ui->pushButton_doPlot->setText("Cancel");
+    }
+    else
+    {
+        emit please_plotter_cancelPlot();
+        ui->pushButton_doPlot->setText("Plot!");
+    }
+
 }
 
 void MainWindow::do_cancelPlot()
