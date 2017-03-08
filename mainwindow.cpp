@@ -121,6 +121,8 @@ MainWindow::~MainWindow()
     {
         deleteHpglFile(hpglList[i]);
     }
+    plotScene.clear();
+    plotScene.deleteLater();
 
     delete ui;
 }
