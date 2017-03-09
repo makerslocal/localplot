@@ -39,6 +39,8 @@ Some bugfixes and minor features:
 
 ### Future
 
+#### v0.4.1
+
 #### Unsorted ToDo:
 
 * Run perimeter command.
@@ -50,6 +52,8 @@ Some bugfixes and minor features:
 * Auto arrange (bin packing).
 * Export to USB plotter.
 * Export to printer.
+* Tiling (QBrush) grid background
+* Side rulers?
 
 <br><br><br><br>
 
