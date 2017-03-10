@@ -31,6 +31,7 @@
 #include "ancilla.h"
 #include "etc.h"
 #include "hpglgraphicsview.h"
+#include "hpgllistmodel.h"
 
 namespace Ui {
 class MainWindow;
@@ -50,9 +51,9 @@ public:
 signals:
     void please_plotter_openSerial();
     void please_plotter_closeSerial();
-    void please_plotter_doPlot(QVector<hpgl_file *> *);
+    void please_plotter_doPlot(hpglListModel *);
     void please_plotter_cancelPlot();
-    void please_plotter_loadFile(file_uid _file);
+    void please_plotter_loadFile(const QPersistentModelIndex, const hpglListModel *);
 
 /*
  * do_      for ui/proc action
@@ -79,11 +80,11 @@ private slots:
     // View/Scene
     void sceneSetup();
     void get_pen(QPen *_pen, QString _name);
-    void deleteHpglFile(hpgl_file *_hpgl);
     void sceneSetSceneRect();
     void sceneConstrainItems();
-    void addPolygon(file_uid _file, QPolygonF poly);
-    hpgl_file *createHpglFile(file_uid _file);
+    void addPolygon(QPersistentModelIndex index, QPolygonF poly);
+    QPersistentModelIndex createHpglFile(file_uid _file);
+    void setItemSelected(QGraphicsItemGroup * group, bool selected);
 
     // plotter thread
     void do_plot();
@@ -103,8 +104,7 @@ private:
     QGraphicsScene plotScene;
     QThread ancillaryThreadInstance;
     QPointer<AncillaryThread> ancilla;
-    QVector<hpgl_file *> hpglList;
-    QStringListModel * listModel;
+    hpglListModel hpglModel;
     QGraphicsLineItem * widthLine;
 };
 

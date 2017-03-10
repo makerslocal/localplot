@@ -18,7 +18,8 @@ SOURCES += main.cpp\
     settings.cpp \
     ancilla.cpp \
     etc.cpp \
-    hpglgraphicsview.cpp
+    hpglgraphicsview.cpp \
+    hpgllistmodel.cpp
 
 HEADERS  += mainwindow.h \
     dialogabout.h \
@@ -26,7 +27,8 @@ HEADERS  += mainwindow.h \
     settings.h \
     ancilla.h \
     etc.h \
-    hpglgraphicsview.h
+    hpglgraphicsview.h \
+    hpgllistmodel.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \

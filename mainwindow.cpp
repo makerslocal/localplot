@@ -48,8 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ancilla->moveToThread(&ancillaryThreadInstance);
 
     // Setup listView and listModel
-    listModel = new QStringListModel(this);
-    ui->listView->setModel(listModel);
+    ui->listView->setModel(&hpglModel);
     ui->listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
@@ -75,21 +74,21 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_listViewClick()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_newConsoleText(QString)));
     connect(ancilla, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-    connect(ancilla, SIGNAL(newPolygon(file_uid, QPolygonF)), this, SLOT(addPolygon(file_uid, QPolygonF)));
+    connect(ancilla, SIGNAL(newPolygon(QPersistentModelIndex, QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex, QPolygonF)));
     connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
     connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
     connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
-    connect(this, SIGNAL(please_plotter_doPlot(QVector<hpgl_file *> *)),
-            ancilla, SLOT(do_beginPlot(QVector<hpgl_file *> *)));
+    connect(this, SIGNAL(please_plotter_doPlot(hpglListModel *)),
+            ancilla, SLOT(do_beginPlot(hpglListModel *)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
-    connect(this, SIGNAL(please_plotter_loadFile(file_uid)), ancilla, SLOT(do_loadFile(file_uid)));
+    connect(this, SIGNAL(please_plotter_loadFile(const QPersistentModelIndex, const hpglListModel *)), ancilla, SLOT(do_loadFile(const QPersistentModelIndex, const hpglListModel *)));
 
     // View/scene
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
     connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
 
-    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
-            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
+//    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
+//            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
 
     ui->graphicsView_view->setScene(&plotScene);
 
@@ -117,9 +116,9 @@ MainWindow::~MainWindow()
     ancillaryThreadInstance.quit();
     ancillaryThreadInstance.wait();
 
-    for (int i = (hpglList.length() - 1); i >= 0; --i)
+    for (int i = (hpglModel.rowCount() - 1); i >= 0; --i)
     {
-        deleteHpglFile(hpglList[i]);
+        hpglModel.removeRow(i);
     }
     plotScene.clear();
     plotScene.deleteLater();
@@ -232,7 +231,7 @@ void MainWindow::do_plot()
 {
     if (ui->pushButton_doPlot->text() == "Plot!")
     {
-        emit please_plotter_doPlot(&hpglList);
+        emit please_plotter_doPlot(&hpglModel);
     }
     else
     {
@@ -277,6 +276,22 @@ void MainWindow::handle_plotFinished()
     handle_newConsoleText("Plotting Done.");
 }
 
+void MainWindow::setItemSelected(QGraphicsItemGroup * group, bool selected)
+{
+    QModelIndex index;
+    QVector<QGraphicsPolygonItem *> items;
+    QPen _pen;
+
+    index = group->data(QMODELINDEX_KEY).value<QModelIndex>();
+    items = hpglModel.data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem*>>();
+    get_pen(&_pen, "down");
+
+    group->setSelected(selected);
+    group->setZValue(selected ? 1 : -1);
+
+    _pen.setColor(_pen.color().lighter(120));
+}
+
 void MainWindow::handle_plotSceneSelectionChanged()
 {
     QList<QGraphicsItem*> list;
@@ -286,38 +301,39 @@ void MainWindow::handle_plotSceneSelectionChanged()
 
     ui->listView->selectionModel()->clearSelection();
 
-    for (int i = 0; i < hpglList.length(); ++i)
+    for (int i = 0; i < hpglModel.rowCount(); ++i)
     {
         selectedFlag = false;
+        QModelIndex index = hpglModel.index(i);
+        QGraphicsItemGroup * itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
         for (int i2 = 0 ; i2 < list.length(); ++i2)
         {
-            if (list.at(i2) == hpglList.at(i)->hpgl_items_group)
+            if (list.at(i2) == itemGroup)
             {
-                QModelIndex index;
-                index = listModel->index(i);
                 ui->listView->selectionModel()->select(index, QItemSelectionModel::Select);
-                hpglList[i]->hpgl_items_group->setZValue(1);
+                itemGroup->setZValue(1);
                 QPen _selectedPen;
                 get_pen(&_selectedPen, "down");
                 _selectedPen.setColor(_selectedPen.color().lighter(120));
-                for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
-                {
-                    hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
-                }
+//                for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
+//                {
+//                    hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
+//                }
                 selectedFlag = true;
                 break;
             }
         }
         if (selectedFlag == false)
         {
-            hpglList[i]->hpgl_items_group->setSelected(false);
-            hpglList[i]->hpgl_items_group->setZValue(-1);
+            itemGroup->setSelected(false);
+            itemGroup->setZValue(-1);
             QPen _selectedPen;
             get_pen(&_selectedPen, "down");
-            for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
-            {
-                hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
-            }
+//            for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
+//            {
+//                hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
+//            }
         }
     }
 }
@@ -329,37 +345,39 @@ void MainWindow::handle_listViewClick()
 
     list = ui->listView->selectionModel()->selectedIndexes();
 
-    for (int i = 0; i < hpglList.length(); ++i)
+    for (int i = 0; i < hpglModel.rowCount(); ++i)
     {
         selectedFlag = false;
+        QModelIndex index = hpglModel.index(i);
+        QGraphicsItemGroup * itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
         for (int i2 = 0 ; i2 < list.length(); ++i2)
         {
-            if (list.at(i2).data(Qt::DisplayRole).toString() ==
-                    (hpglList.at(i)->name.path+", "+QString::number(hpglList.at(i)->name.uid)))
+            if (list.at(i2) == index)
             {
-                hpglList[i]->hpgl_items_group->setSelected(true);
-                hpglList[i]->hpgl_items_group->setZValue(1);
+                itemGroup->setSelected(true);
+                itemGroup->setZValue(1);
                 QPen _selectedPen;
                 get_pen(&_selectedPen, "down");
                 _selectedPen.setColor(_selectedPen.color().lighter(120));
-                for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
-                {
-                    hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
-                }
+//                for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
+//                {
+//                    hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
+//                }
                 selectedFlag = true;
                 break;
             }
         }
         if (selectedFlag == false)
         {
-            hpglList[i]->hpgl_items_group->setSelected(false);
-            hpglList[i]->hpgl_items_group->setZValue(-1);
+            itemGroup->setSelected(false);
+            itemGroup->setZValue(-1);
             QPen _selectedPen;
             get_pen(&_selectedPen, "down");
-            for (int i3 = 0; i3 < hpglList[i]->hpgl_items.length(); ++i3)
-            {
-                hpglList[i]->hpgl_items[i3]->setPen(_selectedPen);
-            }
+//            for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
+//            {
+//                hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
+//            }
         }
     }
 }
@@ -381,13 +399,16 @@ void MainWindow::handle_selectFileBtn()
 
     settings.setValue("mainwindow/filePath", _file.path);
 
-    if (hpglList.isEmpty())
+    _file.filename = _file.path.split("/").last();
+
+    if (hpglModel.rowCount() == 0)
     {
         _file.uid = 0;
     }
     else
     {
-        _file.uid = hpglList.last()->name.uid + 1;
+        QModelIndex index = hpglModel.index(hpglModel.rowCount()-1);
+        _file.uid = hpglModel.data(index, hpglUserRoles::role_uid).toInt() + 1;
     }
 
     do_loadFile(_file);
@@ -399,11 +420,13 @@ void MainWindow::handle_deleteFileBtn()
 
     list = ui->listView->selectionModel()->selectedIndexes();
 
-    for (int i = (hpglList.length() - 1); i >= 0 ; --i)
+    for (int i = (hpglModel.rowCount() - 1); i >= 0 ; --i)
     {
-        if (hpglList.at(i)->hpgl_items_group->isSelected())
+        QModelIndex index = hpglModel.index(i);
+        if (hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>()->isSelected())
         {
-            deleteHpglFile(hpglList.at(i));
+            hpglModel.removeRow(i);
         }
     }
     sceneSetSceneRect();
@@ -512,68 +535,31 @@ void MainWindow::sceneSetup()
     sceneSetSceneRect();
 }
 
-void MainWindow::deleteHpglFile(hpgl_file * _hpgl)
+QPersistentModelIndex MainWindow::createHpglFile(file_uid _file)
 {
-    file_uid _file = _hpgl->name;
-    QModelIndex modelIndex;
-
-    // Remove from listView
-    for (int i = 0; i < listModel->rowCount(); ++i)
-    {
-        modelIndex = listModel->index(i);
-//        qDebug() << "listview deletion: " << listModel->data(modelIndex, Qt::DisplayRole).toString();
-//        qDebug() << " vs: " << (_file.path+", "+QString::number(_file.uid));
-        if (listModel->data(modelIndex, Qt::DisplayRole).toString() == (_file.path+", "+QString::number(_file.uid)))
-        {
-            qDebug() << "Removing listview row: " << i;
-            listModel->removeRow(i);
-            break;
-        }
-    }
-
-    for (int i = 0; i < hpglList.length(); ++i)
-    {
-        if (hpglList[i]->name == _file)
-        {
-            // Remove from graphicsView
-            for (int i2 = 0; i2 < hpglList[i]->hpgl_items.length(); ++i2)
-            {
-                hpglList[i]->hpgl_items_group->removeFromGroup(static_cast<QGraphicsItem*>(hpglList[i]->hpgl_items[i2]));
-                plotScene.removeItem(hpglList[i]->hpgl_items[i2]);
-            }
-            delete hpglList[i]->hpgl_items_group;
-            hpglList[i]->hpgl_items.clear();
-            hpglList.remove(i);
-            break;
-        }
-    }
-}
-
-hpgl_file * MainWindow::createHpglFile(file_uid _file)
-{
-    hpgl_file * newFile;
-
-    qDebug() << "Creating hpgl_file for: " << _file.path << ", " << _file.uid;
-
-    // Set up hpgl_file
-    newFile = new hpgl_file;
-    newFile->hpgl_items_group = new QGraphicsItemGroup;
-    newFile->hpgl_items_group->setFlag(QGraphicsItem::ItemIsMovable, true);
-    newFile->hpgl_items_group->setFlag(QGraphicsItem::ItemIsSelectable, true);
-    newFile->name = _file;
-
-    newFile->hpgl_items.clear();
-    plotScene.addItem(newFile->hpgl_items_group);
+//    qDebug() << "Creating hpgl_file for: " << _file.path << ", " << _file.uid;
 
     // Add to listView
-    int numRows = listModel->rowCount();
-    listModel->insertRows(numRows, 1);
-    QModelIndex index = listModel->index(numRows);
-    listModel->setData(index, newFile->name.path+", "+QString::number(newFile->name.uid), Qt::DisplayRole);
+    int numRows = hpglModel.rowCount();
+    if (!hpglModel.insertRows(numRows, 1))
+    {
+        qDebug() << "Insert row failed.";
+        return(QModelIndex());
+    }
+
+    QPersistentModelIndex index = QPersistentModelIndex(hpglModel.index(numRows));
+    if (!hpglModel.setData(index, QVariant::fromValue(_file), hpglUserRoles::role_name))
+    {
+        qDebug() << "Setdata failed.";
+        return(QModelIndex());
+    }
+
+    plotScene.addItem(hpglModel.data(index, hpglUserRoles::role_hpgl_items_group).value<QGraphicsItemGroup*>());
+    hpglModel.setGroupFlag(index, QGraphicsItem::ItemIsMovable, true);
+    hpglModel.setGroupFlag(index, QGraphicsItem::ItemIsSelectable, true);
     ui->listView->setCurrentIndex(index);
 
-    hpglList.push_back(newFile);
-    return(hpglList.last());
+    return(index);
 }
 
 void MainWindow::sceneSetSceneRect()
@@ -644,15 +630,14 @@ void MainWindow::sceneConstrainItems()
     QTransform sceneToItem;
     sceneToItem.scale(xDpi/1016.0, yDpi/1016.0);
 
-    for (int i = 0; i < hpglList.length(); ++i)
+    for (int i = 0; i < hpglModel.rowCount(); ++i)
     {
+        QModelIndex index = hpglModel.index(i);
         modCount = 0;
-        if (hpglList.at(i)->hpgl_items_group == NULL)
-        {
-            qDebug() << "Serious issue somewhere with hpglList. hpgl_items_group is missing!";
-            return;
-        }
-        QPointF pos = hpglList.at(i)->hpgl_items_group->pos();
+
+        QPointF pos = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>()->pos();
+
         if (pos.x() < 0)
         {
             ++modCount;
@@ -665,17 +650,20 @@ void MainWindow::sceneConstrainItems()
             ++modCount;
             pos.setY(0);
         }
-        else if ((pos.y() + hpglList.at(i)->hpgl_items_group->boundingRect().height()) >
+        else if ((pos.y() + hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                  .value<QGraphicsItemGroup*>()->boundingRect().height()) >
                  _point.y())
         {
             ++modCount;
-            pos.setY(_point.y() - hpglList.at(i)->hpgl_items_group->boundingRect().height());
+            pos.setY(_point.y() - hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                     .value<QGraphicsItemGroup*>()->boundingRect().height());
         }
 
 
         if (modCount)
         {
-            hpglList[i]->hpgl_items_group->setPos(pos);
+            hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                            .value<QGraphicsItemGroup*>()->setPos(pos);
         }
     }
 }
@@ -686,33 +674,20 @@ void MainWindow::do_loadFile(file_uid _file)
 
     settings.setValue("mainwindow/filePath", _file.path);
 
-    createHpglFile(_file);
+    QPersistentModelIndex index = createHpglFile(_file);
 
-    emit please_plotter_loadFile(_file);
+    emit please_plotter_loadFile(index, &hpglModel);
 }
 
-void MainWindow::addPolygon(file_uid _file, QPolygonF poly)
+void MainWindow::addPolygon(QPersistentModelIndex index, QPolygonF poly)
 {
     // Variables
     QPen pen;
-    // physicalDpi is the number of pixels in an inch
-//    int xDpi = ui->graphicsView_view->physicalDpiX();
-//    int yDpi = ui->graphicsView_view->physicalDpiY();
-//    int avgDpi = (xDpi + yDpi) / 2.0;
 
     // Set downPen
     get_pen(&pen, "down");
-//    pen.setWidth(pen.widthF() * (1016.0 / avgDpi));
 
-    for (int i = 0; i < hpglList.length(); ++i)
-    {
-        if (_file == hpglList.at(i)->name)
-        {
-            hpglList[i]->hpgl_items.push_back(plotScene.addPolygon(poly, pen));
-            hpglList[i]->hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(hpglList[i]->hpgl_items.last()));
-            break;
-        }
-    }
+    hpglModel.setData(index, QVariant::fromValue(plotScene.addPolygon(poly, pen)), hpglUserRoles::role_hpgl_items);
 }
 
 

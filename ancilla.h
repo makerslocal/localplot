@@ -14,6 +14,7 @@
 
 #include "settings.h"
 #include "etc.h"
+#include "hpgllistmodel.h"
 
 namespace std {
 class AncillaryThread;
@@ -37,14 +38,14 @@ public:
 
 public slots:
     void do_run(); // kickstart
-    void do_beginPlot(QVector<hpgl_file *> *_hpglList);
+    void do_beginPlot(hpglListModel *model);
     void do_cancelPlot();
-    int do_loadFile(const file_uid _file);
+    int do_loadFile(const QPersistentModelIndex index, const hpglListModel *model);
 
 private slots:
     void do_plotNext();
     QString print(QPolygonF hpgl_poly, QPointF offset);
-    void parseHPGL(file_uid _file, QString * hpgl_text);
+    void parseHPGL(const QPersistentModelIndex index, QString * hpgl_text);
 
 signals:
     void plottingStarted();
@@ -52,7 +53,7 @@ signals:
     void plottingCancelled();
     void plottingProgress(int percentComplete);
     void plottingEta(double seconds);
-    void newPolygon(file_uid file, QPolygonF hpglItem);
+    void newPolygon(QPersistentModelIndex index, QPolygonF hpglItem);
     void serialOpened();
     void serialClosed();
     void fileOpened();
@@ -73,7 +74,7 @@ private:
     // plotting
     QPointer<QSerialPort> _port;
 //    QVector<QGraphicsPolygonItem *> hpgl_items;
-    QVector<hpgl_file *> * hpglList;
+    hpglListModel * hpglModel;
     int hpglList_index, hpgl_obj_index;
 };
 

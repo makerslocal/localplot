@@ -142,7 +142,7 @@ void AncillaryThread::do_cancelPlot()
     cancelPlotFlag = true;
 }
 
-void AncillaryThread::do_beginPlot(QVector<hpgl_file*> * _hpglList)
+void AncillaryThread::do_beginPlot(hpglListModel * model)
 {
     // Variables
 //    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
@@ -150,7 +150,7 @@ void AncillaryThread::do_beginPlot(QVector<hpgl_file*> * _hpglList)
     QPointer<QSerialPort> _port;
     QSettings settings;
 
-    hpglList = _hpglList;
+    hpglModel = model;
     hpglList_index = 0;
     hpgl_obj_index = 0;
     cancelPlotFlag = false;
@@ -158,9 +158,9 @@ void AncillaryThread::do_beginPlot(QVector<hpgl_file*> * _hpglList)
 
     emit statusUpdate("Plotting file!");
 
-    emit statusUpdate("There are " + QString::number(hpglList->length()) + " hpgl items to plot.");
+    emit statusUpdate("There are " + QString::number(hpglModel->rowCount()) + " hpgl items to plot.");
 
-    if (_port.isNull() || !_port->isOpen() || hpglList->isEmpty())
+    if (_port.isNull() || !_port->isOpen() || hpglModel->rowCount() == 0)
     {
         emit statusUpdate("Can't plot!", Qt::darkRed);
         return;
@@ -188,20 +188,22 @@ void AncillaryThread::do_plotNext()
     QSettings settings;
     double time = 0;
 
-    if (hpglList_index >= hpglList->length())
+    if (hpglList_index >= hpglModel->rowCount())
     {
         emit statusUpdate("No more hpgl files left to plot.");
         closeSerial();
         emit plottingDone();
         return;
     }
-    if (hpgl_obj_index >= hpglList->at(hpglList_index)->hpgl_items.length())
+    QModelIndex index = hpglModel->index(hpglList_index);
+    if (hpgl_obj_index >= hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().length())
     {
         hpglList_index++;
         hpgl_obj_index = 0;
         do_plotNext();
         return;
     }
+    index = hpglModel->index(hpglList_index);
     if (cancelPlotFlag == true)
     {
         emit statusUpdate("Bailing out of plot, cancelled!", Qt::darkRed);
@@ -213,13 +215,15 @@ void AncillaryThread::do_plotNext()
 //    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
 //    qDebug() << "Total file count: " << hpglList->count();
 
-    int progress = (((double)hpglList_index+((double)hpgl_obj_index/(hpglList->at(hpglList_index)->hpgl_items.count()-1)))/(hpglList->count()))*100;
+    int progress = (((double)hpglList_index+((double)hpgl_obj_index/(hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().count()-1)))/(hpglModel->rowCount()))*100;
     emit plottingProgress(progress);
 
-    qDebug() << "Offset: " << hpglList->at(hpglList_index)->hpgl_items_group->pos();
+    qDebug() << "Offset: " << hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>()->pos();
 
-    QString printThis = print(hpglList->at(hpglList_index)->hpgl_items.at(hpgl_obj_index)->polygon(),
-                              hpglList->at(hpglList_index)->hpgl_items_group->pos());
+    QString printThis = print(hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().at(hpgl_obj_index)->polygon(),
+                              hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
+                                              .value<QGraphicsItemGroup*>()->pos());
     if (printThis == "OOB")
     {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
@@ -229,7 +233,7 @@ void AncillaryThread::do_plotNext()
         return;
     }
 
-    if (hpglList_index == (hpglList->count()-1) && hpgl_obj_index == (hpglList->at(hpglList_index)->hpgl_items.length()-1))
+    if (hpglList_index == (hpglModel->rowCount()-1) && hpgl_obj_index == (hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().length()-1))
     {
         printThis += "PU0,0;SP0;IN;"; // Ending commands
     }
@@ -238,7 +242,7 @@ void AncillaryThread::do_plotNext()
     if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         _port->flush();
-        time = plotTime(hpglList->at(hpglList_index)->hpgl_items.at(hpgl_obj_index)->polygon());
+        time = plotTime(hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().at(hpgl_obj_index)->polygon());
         qDebug() << "- sleep time: " << time;
     }
     else
@@ -353,10 +357,12 @@ double AncillaryThread::plotTime(const QLineF _line)
     return(retval);
 }
 
-int AncillaryThread::do_loadFile(const file_uid _file)
+int AncillaryThread::do_loadFile(const QPersistentModelIndex index, const hpglListModel * model)
 {
     QFile inputFile;
     QString buffer;
+
+    file_uid _file = model->data(index, hpglUserRoles::role_name).value<file_uid>();
 
     if (_file.path.isEmpty())
     {
@@ -378,14 +384,14 @@ int AncillaryThread::do_loadFile(const file_uid _file)
     inputFile.close();
     emit statusUpdate("File closed.");
 
-    parseHPGL(_file, &buffer);
+    parseHPGL(index, &buffer);
     emit statusUpdate("HPGL finished parsing.");
     emit hpglParsingDone();
     return 0;
 }
 
 // Modifies input string, warning!
-void AncillaryThread::parseHPGL(file_uid _file, QString * hpgl_text)
+void AncillaryThread::parseHPGL(const QPersistentModelIndex index, QString * hpgl_text)
 {
     QPointF tail(0, 0);
 
@@ -445,7 +451,7 @@ void AncillaryThread::parseHPGL(file_uid _file, QString * hpgl_text)
 //                    newCmd.coordList.push_back(QPoint(newX, newY));
 //                }
             }
-            emit newPolygon(_file, newItem);
+            emit newPolygon(index, newItem);
         }
         else if (opcode == "IN")
         {
