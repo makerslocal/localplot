@@ -1,6 +1,7 @@
 #include "hpgllistmodel.h"
 
 hpglListModel::hpglListModel(QObject *parent)
+    :QAbstractListModel(parent)
 {
     hpglData.clear();
 }
@@ -38,7 +39,7 @@ QVariant hpglListModel::data(const QModelIndex &index, int role) const
             return( QVariant::fromValue(hpglData.at(index.row())->name) );
             break;
         case hpglUserRoles::role_hpgl_items:
-            return( QVariant::fromValue(hpglData.at(index.row())->hpgl_items) );
+            return( QVariant::fromValue(&(hpglData.at(index.row())->hpgl_items)) );
             break;
         case hpglUserRoles::role_hpgl_items_group:
             return( QVariant::fromValue(hpglData.at(index.row())->hpgl_items_group) );
@@ -78,17 +79,21 @@ bool hpglListModel::setData(const QModelIndex &index, const QVariant &value, int
         case hpglUserRoles::role_filename:
             hpglData[index.row()]->name.filename = value.toString();
             changedRoles.push_back(Qt::DisplayRole);
+            changedRoles.push_back(hpglUserRoles::role_filename);
             break;
         case hpglUserRoles::role_path:
             hpglData[index.row()]->name.path = value.toString();
+            changedRoles.push_back(hpglUserRoles::role_path);
             break;
         case hpglUserRoles::role_uid:
             hpglData[index.row()]->name.uid = value.toInt();
+            changedRoles.push_back(hpglUserRoles::role_uid);
             break;
         case hpglUserRoles::role_name:
             qDebug() << "Changing name of : " << index.row();
             hpglData[index.row()]->name = value.value<file_uid>();
             changedRoles.push_back(Qt::DisplayRole);
+            changedRoles.push_back(hpglUserRoles::role_name);
             break;
         case hpglUserRoles::role_hpgl_items:
         {
@@ -96,10 +101,12 @@ bool hpglListModel::setData(const QModelIndex &index, const QVariant &value, int
             hpglData[index.row()]->hpgl_items.push_back(_poly);
             hpglData[index.row()]->hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(_poly));
 //            hpglData[index.row()]->hpgl_items = value.value<QVector<QGraphicsPolygonItem *>>();
+            changedRoles.push_back(hpglUserRoles::role_hpgl_items);
             break;
         }
         case hpglUserRoles::role_hpgl_items_group:
             hpglData[index.row()]->hpgl_items_group = value.value<QGraphicsItemGroup*>();
+            changedRoles.push_back(hpglUserRoles::role_hpgl_items_group);
             break;
         default:
             return(false);
@@ -184,14 +191,15 @@ bool hpglListModel::insertRows(int row, int count, const QModelIndex &parent)
 
 bool hpglListModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-    if (count < 0 || row < 0 || (row+count) >= hpglData.length())
+    qDebug() << "removerows: " << row << count << parent << hpglData.length();
+    if (count <= 0 || row < 0 || (row+count-1) >= hpglData.length())
     {
         return false;
     }
     beginRemoveRows(parent, row, (row + count - 1));
     for (int i = (row+count-1); i >= row; --i)
     {
-        delete hpglData[i]->hpgl_items_group;
+//        delete hpglData[i]->hpgl_items_group;
         hpglData[i]->hpgl_items.clear();
         delete hpglData[i];
         hpglData.remove(i);

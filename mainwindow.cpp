@@ -74,7 +74,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ancilla, SIGNAL(hpglParsingDone()), this, SLOT(handle_listViewClick()));
     connect(ancilla, SIGNAL(statusUpdate(QString)), this, SLOT(handle_newConsoleText(QString)));
     connect(ancilla, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-    connect(ancilla, SIGNAL(newPolygon(QPersistentModelIndex, QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex, QPolygonF)));
+    connect(ancilla, SIGNAL(newPolygon(QPersistentModelIndex, QPolygonF)),
+            this, SLOT(addPolygon(QPersistentModelIndex, QPolygonF)));
     connect(ancilla, SIGNAL(plottingCancelled()), this, SLOT(handle_plotCancelled()));
     connect(ancilla, SIGNAL(plottingDone()), this, SLOT(handle_plotFinished()));
     connect(ancilla, SIGNAL(plottingStarted()), this, SLOT(handle_plotStarted()));
@@ -294,46 +295,38 @@ void MainWindow::setItemSelected(QGraphicsItemGroup * group, bool selected)
 
 void MainWindow::handle_plotSceneSelectionChanged()
 {
-    QList<QGraphicsItem*> list;
-    bool selectedFlag = false;
-
-    list = plotScene.selectedItems();
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QVector<QGraphicsPolygonItem *> * items;
+    QPen _selectedPen;
 
     ui->listView->selectionModel()->clearSelection();
 
     for (int i = 0; i < hpglModel.rowCount(); ++i)
     {
-        selectedFlag = false;
-        QModelIndex index = hpglModel.index(i);
-        QGraphicsItemGroup * itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+        index = hpglModel.index(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
                 .value<QGraphicsItemGroup*>();
-        for (int i2 = 0 ; i2 < list.length(); ++i2)
+        items = hpglModel.data(index, hpglUserRoles::role_hpgl_items)
+                .value<QVector<QGraphicsPolygonItem*>*>();
+
+        get_pen(&_selectedPen, "down");
+
+        if (itemGroup->isSelected())
         {
-            if (list.at(i2) == itemGroup)
-            {
-                ui->listView->selectionModel()->select(index, QItemSelectionModel::Select);
-                itemGroup->setZValue(1);
-                QPen _selectedPen;
-                get_pen(&_selectedPen, "down");
-                _selectedPen.setColor(_selectedPen.color().lighter(120));
-//                for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
-//                {
-//                    hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
-//                }
-                selectedFlag = true;
-                break;
-            }
+            ui->listView->selectionModel()->select(index, QItemSelectionModel::Select);
+            itemGroup->setZValue(1);
+            _selectedPen.setColor(_selectedPen.color().lighter(120));
         }
-        if (selectedFlag == false)
+        else
         {
-            itemGroup->setSelected(false);
+            ui->listView->selectionModel()->select(index, QItemSelectionModel::Deselect);
             itemGroup->setZValue(-1);
-            QPen _selectedPen;
-            get_pen(&_selectedPen, "down");
-//            for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
-//            {
-//                hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
-//            }
+        }
+
+        for (int i3 = 0; i3 < items->length(); ++i3)
+        {
+            (*items)[i3]->setPen(_selectedPen);
         }
     }
 }
@@ -341,43 +334,39 @@ void MainWindow::handle_plotSceneSelectionChanged()
 void MainWindow::handle_listViewClick()
 {
     QModelIndexList list;
-    bool selectedFlag = false;
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QVector<QGraphicsPolygonItem *> * items;
+    QPen _selectedPen;
 
     list = ui->listView->selectionModel()->selectedIndexes();
+    QItemSelectionModel * selectionmodel = ui->listView->selectionModel();
 
     for (int i = 0; i < hpglModel.rowCount(); ++i)
     {
-        selectedFlag = false;
-        QModelIndex index = hpglModel.index(i);
-        QGraphicsItemGroup * itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+        index = hpglModel.index(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
                 .value<QGraphicsItemGroup*>();
-        for (int i2 = 0 ; i2 < list.length(); ++i2)
+        items = hpglModel.data(index, hpglUserRoles::role_hpgl_items)
+                .value<QVector<QGraphicsPolygonItem*>*>();
+
+        get_pen(&_selectedPen, "down");
+
+        if (selectionmodel->isSelected(index))
         {
-            if (list.at(i2) == index)
-            {
-                itemGroup->setSelected(true);
-                itemGroup->setZValue(1);
-                QPen _selectedPen;
-                get_pen(&_selectedPen, "down");
-                _selectedPen.setColor(_selectedPen.color().lighter(120));
-//                for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
-//                {
-//                    hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
-//                }
-                selectedFlag = true;
-                break;
-            }
+            itemGroup->setSelected(true);
+            itemGroup->setZValue(1);
+            _selectedPen.setColor(_selectedPen.color().lighter(120));
         }
-        if (selectedFlag == false)
+        else
         {
             itemGroup->setSelected(false);
             itemGroup->setZValue(-1);
-            QPen _selectedPen;
-            get_pen(&_selectedPen, "down");
-//            for (int i3 = 0; i3 < hpglModel[i]->hpgl_items.length(); ++i3)
-//            {
-//                hpglModel[i]->hpgl_items[i3]->setPen(_selectedPen);
-//            }
+        }
+
+        for (int i3 = 0; i3 < items->length(); ++i3)
+        {
+            (*items)[i3]->setPen(_selectedPen);
         }
     }
 }
@@ -417,19 +406,27 @@ void MainWindow::handle_selectFileBtn()
 void MainWindow::handle_deleteFileBtn()
 {
     QModelIndexList list;
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QVector<QGraphicsPolygonItem *> * items;
 
     list = ui->listView->selectionModel()->selectedIndexes();
 
-    for (int i = (hpglModel.rowCount() - 1); i >= 0 ; --i)
+    for (int i = list.length()-1; i >= 0; --i)
     {
-        QModelIndex index = hpglModel.index(i);
-        if (hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
-                .value<QGraphicsItemGroup*>()->isSelected())
+        index = list.at(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
+        items = hpglModel.data(index, hpglUserRoles::role_hpgl_items)
+                .value<QVector<QGraphicsPolygonItem*>*>();
+        for (int i2 = items->length()-1; i2 >= 0; --i2)
         {
-            hpglModel.removeRow(i);
+            plotScene.removeItem(items->at(i2));
         }
+        plotScene.destroyItemGroup(itemGroup);
+//        plotScene.removeItem(group);
+        hpglModel.removeRow(list[i].row());
     }
-    sceneSetSceneRect();
 }
 
 void MainWindow::handle_plottingPercent(int percent)
@@ -554,7 +551,8 @@ QPersistentModelIndex MainWindow::createHpglFile(file_uid _file)
         return(QModelIndex());
     }
 
-    plotScene.addItem(hpglModel.data(index, hpglUserRoles::role_hpgl_items_group).value<QGraphicsItemGroup*>());
+    QGraphicsItemGroup * newGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group).value<QGraphicsItemGroup*>();
+    plotScene.addItem(newGroup);
     hpglModel.setGroupFlag(index, QGraphicsItem::ItemIsMovable, true);
     hpglModel.setGroupFlag(index, QGraphicsItem::ItemIsSelectable, true);
     ui->listView->setCurrentIndex(index);

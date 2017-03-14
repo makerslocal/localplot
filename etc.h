@@ -31,6 +31,7 @@ Q_DECLARE_METATYPE(QGraphicsItemGroup*)
 Q_DECLARE_METATYPE(file_uid)
 Q_DECLARE_METATYPE(hpgl_file)
 Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>)
+Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>*)
 Q_DECLARE_METATYPE(QGraphicsPolygonItem *)
 
 

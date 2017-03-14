@@ -13,6 +13,7 @@
 #include "etc.h"
 
 #define QMODELINDEX_KEY (1)
+#define QPLOTSCENE_KEY (2)
 
 enum hpglUserRoles {
     role_first = Qt::UserRole+100, // unused
