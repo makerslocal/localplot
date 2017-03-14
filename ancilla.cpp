@@ -253,6 +253,10 @@ void AncillaryThread::do_plotNext()
     {
         _port->flush();
         time = plotTime(items->at(hpgl_obj_index)->polygon());
+        QLineF last_line;
+        last_line.p1() = last_point;
+        last_line.p2() = items->at(hpgl_obj_index)->polygon().first();
+        time += plotTime(last_line);
         qDebug() << "- sleep time: " << time;
     }
     else
@@ -300,6 +304,8 @@ QString AncillaryThread::print(QPolygonF hpgl_poly, QPointF offset)
         }
     }
     retval += ";";
+
+    last_point = hpgl_poly.last();
 
     return(retval);
 }

@@ -77,6 +77,7 @@ private:
 //    QVector<QGraphicsPolygonItem *> hpgl_items;
     hpglListModel * hpglModel;
     int hpglList_index, hpgl_obj_index;
+    QPointF last_point;
 };
 
 #endif // PLOTTER_H
