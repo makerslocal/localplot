@@ -10,6 +10,7 @@
 #include <QSerialPortInfo>
 #include <QPolygonF>
 #include <QGraphicsPolygonItem>
+#include <QVector>
 #include <QtMath>
 
 #include "settings.h"

@@ -187,6 +187,11 @@ void AncillaryThread::do_plotNext()
 {
     QSettings settings;
     double time = 0;
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QVector<QGraphicsPolygonItem*> * items;
+
+    qDebug() << "list: " << hpglList_index;
 
     if (hpglList_index >= hpglModel->rowCount())
     {
@@ -195,8 +200,14 @@ void AncillaryThread::do_plotNext()
         emit plottingDone();
         return;
     }
-    QModelIndex index = hpglModel->index(hpglList_index);
-    if (hpgl_obj_index >= hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().length())
+
+    index = hpglModel->index(hpglList_index);
+    itemGroup = hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
+            .value<QGraphicsItemGroup*>();
+    items = hpglModel->data(index, hpglUserRoles::role_hpgl_items)
+            .value<QVector<QGraphicsPolygonItem*>*>();
+
+    if (hpgl_obj_index >= items->length())
     {
         hpglList_index++;
         hpgl_obj_index = 0;
@@ -215,15 +226,14 @@ void AncillaryThread::do_plotNext()
 //    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
 //    qDebug() << "Total file count: " << hpglList->count();
 
-    int progress = (((double)hpglList_index+((double)hpgl_obj_index/(hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().count()-1)))/(hpglModel->rowCount()))*100;
+    int progress = (((double)hpglList_index+((double)hpgl_obj_index/(items->count()-1)))/(hpglModel->rowCount()))*100;
     emit plottingProgress(progress);
 
     qDebug() << "Offset: " << hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
                 .value<QGraphicsItemGroup*>()->pos();
 
-    QString printThis = print(hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().at(hpgl_obj_index)->polygon(),
-                              hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
-                                              .value<QGraphicsItemGroup*>()->pos());
+    QString printThis = print(items->at(hpgl_obj_index)->polygon(),
+                              itemGroup->pos());
     if (printThis == "OOB")
     {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
@@ -233,7 +243,7 @@ void AncillaryThread::do_plotNext()
         return;
     }
 
-    if (hpglList_index == (hpglModel->rowCount()-1) && hpgl_obj_index == (hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().length()-1))
+    if (hpglList_index == (hpglModel->rowCount()-1) && hpgl_obj_index == (items->length()-1))
     {
         printThis += "PU0,0;SP0;IN;"; // Ending commands
     }
@@ -242,7 +252,7 @@ void AncillaryThread::do_plotNext()
     if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         _port->flush();
-        time = plotTime(hpglModel->data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem *>>().at(hpgl_obj_index)->polygon());
+        time = plotTime(items->at(hpgl_obj_index)->polygon());
         qDebug() << "- sleep time: " << time;
     }
     else
