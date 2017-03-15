@@ -1,5 +1,10 @@
 #include "hpgllistmodel.h"
 
+bool operator==(const file_uid& lhs, const file_uid& rhs)
+{
+    return(lhs.path == rhs.path && lhs.uid == rhs.uid);
+}
+
 hpglListModel::hpglListModel(QObject *parent)
     :QAbstractListModel(parent)
 {
