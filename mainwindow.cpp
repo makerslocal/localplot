@@ -83,7 +83,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(please_plotter_doPlot(hpglListModel *)),
             ancilla, SLOT(do_beginPlot(hpglListModel *)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), ancilla, SLOT(do_cancelPlot()));
-    connect(this, SIGNAL(please_plotter_loadFile(const QPersistentModelIndex, const hpglListModel *)), ancilla, SLOT(do_loadFile(const QPersistentModelIndex, const hpglListModel *)));
+    connect(this, SIGNAL(please_plotter_loadFile(const QPersistentModelIndex, const hpglListModel *)),
+            ancilla, SLOT(do_loadFile(const QPersistentModelIndex, const hpglListModel *)));
 
     // View/scene
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
@@ -91,10 +92,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 //    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
 //            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
-
-    ui->graphicsView_view->setScene(&plotScene);
-
-    sceneSetup();
 
     ui->pushButton_doPlot->setEnabled(true);
     ui->pushButton_fileRemove->setEnabled(true);
@@ -116,13 +113,21 @@ MainWindow::MainWindow(QWidget *parent) :
     progressBar_plotting = new QProgressBar;
     label_eta = new QLabel;
     label_status = new QLabel;
+    label_zoom = new QLabel;
     label_eta->setText("ETA: NA");
     label_status->setText("Status label created.");
-    statusBar()->addPermanentWidget(label_status, 2);
+    label_zoom->setText("Zoom: NA");
+    statusBar()->addPermanentWidget(label_status);
     statusBar()->addPermanentWidget(statusBarDivider());
-    statusBar()->addPermanentWidget(progressBar_plotting, 2);
+    statusBar()->addPermanentWidget(progressBar_plotting);
     statusBar()->addPermanentWidget(statusBarDivider());
-    statusBar()->addPermanentWidget(label_eta, 1);
+    statusBar()->addPermanentWidget(label_eta);
+    statusBar()->addPermanentWidget(statusBarDivider());
+    statusBar()->addPermanentWidget(label_zoom);
+
+    ui->graphicsView_view->setScene(&plotScene);
+
+    sceneSetup();
 }
 
 MainWindow::~MainWindow()
@@ -225,6 +230,11 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
 /*******************************************************************************
  * Worker thread slots
  ******************************************************************************/
+
+void MainWindow::handle_zoomChanged(QString text)
+{
+    label_zoom->setText("Zoom: " + text);
+}
 
 void MainWindow::handle_newConsoleText(QString text, QColor textColor)
 {
@@ -473,7 +483,7 @@ void MainWindow::sceneScaleWidth()
         plotScene.sceneRect(),
         Qt::KeepAspectRatio);
     handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
-    return;
+    handle_zoomChanged("Vinyl width");
 }
 
 void MainWindow::sceneScale11()
@@ -490,6 +500,7 @@ void MainWindow::sceneScale11()
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 
     handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
+    handle_zoomChanged("Actual size");
 }
 
 void MainWindow::sceneScaleContain()
@@ -519,14 +530,15 @@ void MainWindow::sceneScaleContain()
                 .value<QGraphicsItemGroup*>();
 
         QRectF compRect = itemGroup->boundingRect();
+        QPointF compPoint = itemGroup->pos();
 
-        if ((compRect.x()+compRect.width()) > newrect.width())
+        if ((compPoint.x()+compRect.width()) > newrect.width())
         {
-            newrect.setWidth(compRect.x()+compRect.width());
+            newrect.setWidth(compPoint.x()+compRect.width());
         }
-        if ((compRect.y()+compRect.height()) > newrect.height())
+        if ((compPoint.y()+compRect.height()) > newrect.height())
         {
-            newrect.setHeight(compRect.y()+compRect.height());
+            newrect.setHeight(compPoint.y()+compRect.height());
         }
     }
 
@@ -536,6 +548,7 @@ void MainWindow::sceneScaleContain()
     ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
+    handle_zoomChanged("Show all items");
 }
 
 void MainWindow::sceneSetup()
@@ -577,12 +590,11 @@ void MainWindow::sceneSetup()
     QGraphicsTextItem * originText = plotScene.addText("(0,0)");
     originText->setTransform(itemToScene * viewFlip);
 
-    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
-
     // Set scene to view
     ui->graphicsView_view->show();
 
     sceneSetSceneRect();
+    sceneScale11();
 }
 
 QPersistentModelIndex MainWindow::createHpglFile(file_uid _file)

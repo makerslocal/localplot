@@ -205,7 +205,7 @@
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>&amp;View</string>
+     <string>&amp;Zoom</string>
     </property>
     <addaction name="action1_1"/>
     <addaction name="actionAll"/>
@@ -246,17 +246,17 @@
   </action>
   <action name="action1_1">
    <property name="text">
-    <string>&amp;1:1</string>
+    <string>Actual Size</string>
    </property>
   </action>
   <action name="actionAll">
    <property name="text">
-    <string>Vinyl</string>
+    <string>&amp;Vinyl</string>
    </property>
   </action>
   <action name="actionItems">
    <property name="text">
-    <string>Items</string>
+    <string>&amp;Items</string>
    </property>
   </action>
  </widget>

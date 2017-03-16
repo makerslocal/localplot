@@ -80,6 +80,7 @@ private slots:
     void handle_plottingPercent(int percent);
     void handle_newConsoleText(QString text, QColor textColor);
     void handle_newConsoleText(QString text);
+    void handle_zoomChanged(QString text);
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
 
@@ -119,6 +120,7 @@ private:
     QProgressBar * progressBar_plotting;
     QLabel * label_eta;
     QLabel * label_status;
+    QLabel * label_zoom;
 };
 
 #endif // MAINWINDOW_H
