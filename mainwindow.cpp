@@ -64,6 +64,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
+    connect(ui->toolButton_rotateLeft, SIGNAL(clicked(bool)), this, SLOT(handle_rotateLeftBtn()));
+    connect(ui->actionContain_Selected_Items, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContainSelected()));
 
     // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
@@ -446,6 +448,11 @@ void MainWindow::handle_deleteFileBtn()
     }
 }
 
+void MainWindow::handle_rotateLeftBtn()
+{
+    rotateSelectedItems(90);
+}
+
 void MainWindow::handle_plottingPercent(int percent)
 {
     progressBar_plotting->setValue(percent);
@@ -542,13 +549,83 @@ void MainWindow::sceneScaleContain()
         }
     }
 
-//    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
-//    plotScene.setSceneRect(newrect);
-//    ui->graphicsView_view->setSceneRect(newrect);
     ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");
+}
+
+void MainWindow::sceneScaleContainSelected()
+{
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QRectF newrect;
+    QModelIndexList selectedItems = ui->listView->selectionModel()->selectedIndexes();
+
+    newrect.setX(0);
+    newrect.setY(0);
+    newrect.setWidth(0);
+    newrect.setHeight(0);
+
+    for (int i = 0; i < selectedItems.length(); ++i)
+    {
+        index = selectedItems.at(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
+
+        QRectF compRect = itemGroup->boundingRect();
+        QPointF compPoint = itemGroup->pos();
+
+        if ((compPoint.x()+compRect.width()) > newrect.width())
+        {
+            newrect.setWidth(compPoint.x()+compRect.width());
+        }
+        if ((compPoint.y()+compRect.height()) > newrect.height())
+        {
+            newrect.setHeight(compPoint.y()+compRect.height());
+        }
+    }
+
+    ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
+
+    handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
+    handle_zoomChanged("Show all items");
+}
+
+void MainWindow::rotateSelectedItems(qreal rotation)
+{
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QTransform transform;
+    qreal translateWidth, translateheight;
+
+    ui->listView->selectionModel()->clearSelection();
+
+    for (int i = 0; i < hpglModel.rowCount(); ++i)
+    {
+        index = hpglModel.index(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
+
+        if (itemGroup->isSelected())
+        {
+            translateWidth = itemGroup->boundingRect().width();
+            translateheight = itemGroup->boundingRect().height();
+            transform.translate(translateWidth/2.0, translateheight/2.0);
+            transform.rotate(rotation);
+            transform.translate(-translateWidth/2.0, -translateheight/2.0);
+            itemGroup->setTransform(itemGroup->transform() * transform);
+        }
+    }
 }
 
 void MainWindow::sceneSetup()
@@ -696,35 +773,45 @@ void MainWindow::sceneConstrainItems()
     for (int i = 0; i < hpglModel.rowCount(); ++i)
     {
         QModelIndex index = hpglModel.index(i);
+        QPointF pos;
+        QRectF rect;
+        QGraphicsItemGroup * itemGroup;
         modCount = 0;
 
-        QPointF pos = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
-                .value<QGraphicsItemGroup*>()->pos();
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
+        pos = itemGroup->pos();
+        rect = itemGroup->sceneBoundingRect();
 
-        if (pos.x() < 0)
+//        qDebug() << "debug: " << rect << pos;
+
+//        return;
+
+        if (rect.x() < 0)
         {
             ++modCount;
-            pos.setX(0);
+//            rect.setX(0);
+            pos.setX(pos.x() + qFabs(rect.x()));
         }
 
         QPointF _point = widthLine->mapToScene(widthLine->line().p2());
-        if (pos.y() < 0)
+        if (rect.y() < 0)
         {
             ++modCount;
-            pos.setY(0);
+//            rect.setY(0);
+            pos.setY(pos.y() + qFabs(rect.y()));
         }
-        else if ((pos.y() + hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
-                  .value<QGraphicsItemGroup*>()->boundingRect().height()) >
+        else if ((rect.y() + rect.height()) >
                  _point.y())
         {
             ++modCount;
-            pos.setY(_point.y() - hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
-                     .value<QGraphicsItemGroup*>()->boundingRect().height());
+//            rect.setY(_point.y() - rect.height());
+            pos.setY(pos.y() - ((rect.y() + rect.height()) - _point.y()));
         }
+
         if (modCount)
         {
-            hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
-                            .value<QGraphicsItemGroup*>()->setPos(pos);
+            itemGroup->setPos(pos);
         }
     }
 }

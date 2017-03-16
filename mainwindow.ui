@@ -48,9 +48,12 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
            <item row="0" column="0">
-            <widget class="QToolButton" name="toolButton">
+            <widget class="QToolButton" name="toolButton_rotateLeft">
              <property name="text">
               <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset theme="edit-undo"/>
              </property>
             </widget>
            </item>
@@ -210,6 +213,7 @@
     <addaction name="action1_1"/>
     <addaction name="actionAll"/>
     <addaction name="actionItems"/>
+    <addaction name="actionContain_Selected_Items"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -251,12 +255,17 @@
   </action>
   <action name="actionAll">
    <property name="text">
-    <string>&amp;Vinyl</string>
+    <string>Contain &amp;Vinyl</string>
    </property>
   </action>
   <action name="actionItems">
    <property name="text">
-    <string>&amp;Items</string>
+    <string>Contain All &amp;Items</string>
+   </property>
+  </action>
+  <action name="actionContain_Selected_Items">
+   <property name="text">
+    <string>Contain Selected Items</string>
    </property>
   </action>
  </widget>

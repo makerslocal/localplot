@@ -31,6 +31,8 @@
 #include <QLabel>
 #include <QFrame>
 #include <QSplitter>
+#include <QGraphicsLineItem>
+#include <QToolButton>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -74,6 +76,7 @@ private slots:
     // UI
     void handle_selectFileBtn();
     void handle_deleteFileBtn();
+    void handle_rotateLeftBtn();
     void handle_plotStarted();
     void handle_plotCancelled();
     void handle_plotFinished();
@@ -83,6 +86,7 @@ private slots:
     void handle_zoomChanged(QString text);
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
+    void rotateSelectedItems(qreal rotation);
 
     // View/Scene
     void sceneSetup();
@@ -102,6 +106,7 @@ private slots:
     void sceneScaleWidth();
     void sceneScale11();
     void sceneScaleContain();
+    void sceneScaleContainSelected();
 
 protected:
     void closeEvent(QCloseEvent *event);
