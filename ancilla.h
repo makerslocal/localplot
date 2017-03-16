@@ -45,7 +45,7 @@ public slots:
 
 private slots:
     void do_plotNext();
-    QString print(QPolygonF hpgl_poly, QPointF offset);
+    QString print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup);
     void parseHPGL(const QPersistentModelIndex index, QString * hpgl_text);
 
 signals:

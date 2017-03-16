@@ -233,7 +233,7 @@ void AncillaryThread::do_plotNext()
                 .value<QGraphicsItemGroup*>()->pos();
 
     QString printThis = print(items->at(hpgl_obj_index)->polygon(),
-                              itemGroup->pos());
+                              itemGroup);
     if (printThis == "OOB")
     {
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
@@ -268,26 +268,24 @@ void AncillaryThread::do_plotNext()
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
 }
 
-QString AncillaryThread::print(QPolygonF hpgl_poly, QPointF offset)
+QString AncillaryThread::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup)
 {
     QString retval = "";
-
-    // Scene offset incurred from dragging
-//    QPointF offset = hpgl_poly.pos();
-    hpgl_poly.translate(offset.x(), offset.y());
+    QPointF point;
 
     // Create PU command
+    point = itemGroup->mapToScene(hpgl_poly.first());
     retval += "PU";
-    retval += QString::number(static_cast<int>(hpgl_poly.first().x()));
+    retval += QString::number(static_cast<int>(point.x()));
     retval += ",";
-    retval += QString::number(static_cast<int>(hpgl_poly.first().y()));
+    retval += QString::number(static_cast<int>(point.y()));
     retval += ";";
 
     // Create PD command
     retval += "PD";
     for (int idx = 1; idx < hpgl_poly.count(); idx++)
     {
-        QPointF point = hpgl_poly.at(idx);
+        point = itemGroup->mapToScene(hpgl_poly.at(idx));
 
         if (point.x() < 0 || point.y() < 0)
         {
