@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
     connect(ui->action1_1, SIGNAL(triggered(bool)), this, SLOT(sceneScale11()));
     connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
+    connect(ui->actionItems, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContain()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
@@ -110,6 +111,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Kickstart worker thread
     ancillaryThreadInstance.start();
+
+    // Setup statusbar
+    progressBar_plotting = new QProgressBar;
+    label_eta = new QLabel;
+    label_status = new QLabel;
+    label_eta->setText("ETA: NA");
+    label_status->setText("Status label created.");
+    statusBar()->addPermanentWidget(label_status, 2);
+    statusBar()->addPermanentWidget(statusBarDivider());
+    statusBar()->addPermanentWidget(progressBar_plotting, 2);
+    statusBar()->addPermanentWidget(statusBarDivider());
+    statusBar()->addPermanentWidget(label_eta, 1);
 }
 
 MainWindow::~MainWindow()
@@ -133,6 +146,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
     settings.setValue("mainwindow/geometry", saveGeometry());
     settings.setValue("mainwindow/windowState", saveState());
     QMainWindow::closeEvent(event);
+}
+
+QFrame * MainWindow::statusBarDivider()
+{
+    QFrame * line;
+    line = new QFrame(this);
+    line->setFrameShape(QFrame::VLine);
+    line->setFrameShadow(QFrame::Sunken);
+    return line;
 }
 
 /*******************************************************************************
@@ -206,16 +228,16 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
 
 void MainWindow::handle_newConsoleText(QString text, QColor textColor)
 {
-    QColor originalColor = ui->textBrowser_console->textColor();
-    ui->textBrowser_console->append(timeStamp());
-    ui->textBrowser_console->setTextColor(textColor);
-    ui->textBrowser_console->append("- " + text);
-    ui->textBrowser_console->setTextColor(originalColor);
+    qDebug() << timeStamp() << text;
+    label_status->setText(text);
+    label_status->setStyleSheet("QLabel { color : "+textColor.name()+"; }");
 }
 
 void MainWindow::handle_newConsoleText(QString text)
 {
-    ui->textBrowser_console->append(timeStamp() + "\n- " + text);
+    qDebug() << timeStamp() << text;
+    label_status->setText(text);
+    label_status->setStyleSheet("QLabel { color : #000; }");
 }
 
 void MainWindow::handle_ancillaThreadStart()
@@ -253,7 +275,7 @@ void MainWindow::handle_plotStarted()
     ui->pushButton_fileSelect->setEnabled(false);
     ui->graphicsView_view->setEnabled(false);
     ui->actionLoad_File->setEnabled(false);
-    ui->progressBar_plotting->setValue(0);
+    progressBar_plotting->setValue(0);
     handle_newConsoleText("Plotting started.");
 }
 
@@ -264,6 +286,7 @@ void MainWindow::handle_plotCancelled()
     ui->pushButton_fileSelect->setEnabled(true);
     ui->graphicsView_view->setEnabled(true);
     ui->actionLoad_File->setEnabled(true);
+    progressBar_plotting->setValue(0);
     handle_newConsoleText("Plotting cancelled.");
 }
 
@@ -275,22 +298,6 @@ void MainWindow::handle_plotFinished()
     ui->graphicsView_view->setEnabled(true);
     ui->actionLoad_File->setEnabled(true);
     handle_newConsoleText("Plotting Done.");
-}
-
-void MainWindow::setItemSelected(QGraphicsItemGroup * group, bool selected)
-{
-    QModelIndex index;
-    QVector<QGraphicsPolygonItem *> items;
-    QPen _pen;
-
-    index = group->data(QMODELINDEX_KEY).value<QModelIndex>();
-    items = hpglModel.data(index, hpglUserRoles::role_hpgl_items).value<QVector<QGraphicsPolygonItem*>>();
-    get_pen(&_pen, "down");
-
-    group->setSelected(selected);
-    group->setZValue(selected ? 1 : -1);
-
-    _pen.setColor(_pen.color().lighter(120));
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()
@@ -431,7 +438,7 @@ void MainWindow::handle_deleteFileBtn()
 
 void MainWindow::handle_plottingPercent(int percent)
 {
-    ui->progressBar_plotting->setValue(percent);
+    progressBar_plotting->setValue(percent);
 }
 
 /*******************************************************************************
@@ -483,6 +490,52 @@ void MainWindow::sceneScale11()
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
 
     handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
+}
+
+void MainWindow::sceneScaleContain()
+{
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
+    // Transforms
+    QTransform hpglToPx, itemToScene, viewFlip;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
+    viewFlip.scale(1, -1);
+
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QRectF newrect;
+
+    newrect.setX(0);
+    newrect.setY(0);
+    newrect.setWidth(0);
+    newrect.setHeight(0);
+
+    for (int i = 0; i < hpglModel.rowCount(); ++i)
+    {
+        index = hpglModel.index(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
+
+        QRectF compRect = itemGroup->boundingRect();
+
+        if ((compRect.x()+compRect.width()) > newrect.width())
+        {
+            newrect.setWidth(compRect.x()+compRect.width());
+        }
+        if ((compRect.y()+compRect.height()) > newrect.height())
+        {
+            newrect.setHeight(compRect.y()+compRect.height());
+        }
+    }
+
+//    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
+//    plotScene.setSceneRect(newrect);
+//    ui->graphicsView_view->setSceneRect(newrect);
+    ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
+
+    handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
 }
 
 void MainWindow::sceneSetup()
@@ -656,8 +709,6 @@ void MainWindow::sceneConstrainItems()
             pos.setY(_point.y() - hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
                      .value<QGraphicsItemGroup*>()->boundingRect().height());
         }
-
-
         if (modCount)
         {
             hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)

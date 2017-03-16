@@ -25,6 +25,12 @@
 #include <QMainWindow>
 #include <QTextBrowser>
 #include <QMenuBar>
+#include <QStatusBar>
+#include <QToolBar>
+#include <QProgressBar>
+#include <QLabel>
+#include <QFrame>
+#include <QSplitter>
 
 #include "hpgl.h"
 #include "settings.h"
@@ -84,7 +90,6 @@ private slots:
     void sceneConstrainItems();
     void addPolygon(QPersistentModelIndex index, QPolygonF poly);
     QPersistentModelIndex createHpglFile(file_uid _file);
-    void setItemSelected(QGraphicsItemGroup * group, bool selected);
 
     // plotter thread
     void do_plot();
@@ -95,17 +100,25 @@ private slots:
     QLineF get_widthLine();
     void sceneScaleWidth();
     void sceneScale11();
+    void sceneScaleContain();
 
 protected:
     void closeEvent(QCloseEvent *event);
 
 private:
+    QFrame * statusBarDivider();
+
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
     QThread ancillaryThreadInstance;
     QPointer<AncillaryThread> ancilla;
     hpglListModel hpglModel;
     QGraphicsLineItem * widthLine;
+
+    // Status bar
+    QProgressBar * progressBar_plotting;
+    QLabel * label_eta;
+    QLabel * label_status;
 };
 
 #endif // MAINWINDOW_H
