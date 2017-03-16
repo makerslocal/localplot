@@ -15,13 +15,6 @@
 #define QMODELINDEX_KEY (1)
 #define QPLOTSCENE_KEY (2)
 
-Q_DECLARE_METATYPE(QGraphicsItemGroup*)
-Q_DECLARE_METATYPE(file_uid)
-Q_DECLARE_METATYPE(hpgl_file)
-Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>)
-Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>*)
-Q_DECLARE_METATYPE(QGraphicsPolygonItem *)
-
 // hpgl structs
 struct file_uid {
     QString filename;
@@ -35,6 +28,13 @@ struct hpgl_file {
     QGraphicsItemGroup * hpgl_items_group;
 };
 bool operator==(const file_uid& lhs, const file_uid& rhs);
+
+Q_DECLARE_METATYPE(QGraphicsItemGroup*)
+Q_DECLARE_METATYPE(file_uid)
+Q_DECLARE_METATYPE(hpgl_file)
+Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>)
+Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>*)
+Q_DECLARE_METATYPE(QGraphicsPolygonItem *)
 
 enum hpglUserRoles {
     role_first = Qt::UserRole+100, // unused
