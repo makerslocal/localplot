@@ -65,7 +65,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
     connect(ui->toolButton_rotateLeft, SIGNAL(clicked(bool)), this, SLOT(handle_rotateLeftBtn()));
+    connect(ui->toolButton_rotateRight, SIGNAL(clicked(bool)), this, SLOT(handle_rotateRightBtn()));
     connect(ui->actionContain_Selected_Items, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContainSelected()));
+    connect(ui->toolButton_flipX, SIGNAL(clicked(bool)), this, SLOT(handle_flipXbtn()));
+    connect(ui->toolButton_flipY, SIGNAL(clicked(bool)), this, SLOT(handle_flipYbtn()));
 
     // Connect thread
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
@@ -453,6 +456,21 @@ void MainWindow::handle_rotateLeftBtn()
     rotateSelectedItems(90);
 }
 
+void MainWindow::handle_rotateRightBtn()
+{
+    rotateSelectedItems(-90);
+}
+
+void MainWindow::handle_flipXbtn()
+{
+    scaleSelectedItems(-1, 1);
+}
+
+void MainWindow::handle_flipYbtn()
+{
+    scaleSelectedItems(1, -1);
+}
+
 void MainWindow::handle_plottingPercent(int percent)
 {
     progressBar_plotting->setValue(percent);
@@ -622,6 +640,33 @@ void MainWindow::rotateSelectedItems(qreal rotation)
             translateheight = itemGroup->boundingRect().height();
             transform.translate(translateWidth/2.0, translateheight/2.0);
             transform.rotate(rotation);
+            transform.translate(-translateWidth/2.0, -translateheight/2.0);
+            itemGroup->setTransform(itemGroup->transform() * transform);
+        }
+    }
+}
+
+void MainWindow::scaleSelectedItems(qreal x, qreal y)
+{
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    QTransform transform;
+    qreal translateWidth, translateheight;
+
+    ui->listView->selectionModel()->clearSelection();
+
+    for (int i = 0; i < hpglModel.rowCount(); ++i)
+    {
+        index = hpglModel.index(i);
+        itemGroup = hpglModel.data(index, hpglUserRoles::role_hpgl_items_group)
+                .value<QGraphicsItemGroup*>();
+
+        if (itemGroup->isSelected())
+        {
+            translateWidth = itemGroup->boundingRect().width();
+            translateheight = itemGroup->boundingRect().height();
+            transform.translate(translateWidth/2.0, translateheight/2.0);
+            transform.scale(x, y);
             transform.translate(-translateWidth/2.0, -translateheight/2.0);
             itemGroup->setTransform(itemGroup->transform() * transform);
         }

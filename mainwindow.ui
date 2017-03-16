@@ -47,13 +47,41 @@
            <string>Tools</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
+           <item row="2" column="0">
+            <widget class="QToolButton" name="toolButton_flipX">
+             <property name="text">
+              <string>Flip X</string>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="0">
             <widget class="QToolButton" name="toolButton_rotateLeft">
              <property name="text">
-              <string>...</string>
+              <string>Rotate Left</string>
              </property>
              <property name="icon">
               <iconset theme="edit-undo"/>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QToolButton" name="toolButton_flipY">
+             <property name="text">
+              <string>Flip Y</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QToolButton" name="toolButton_rotateRight">
+             <property name="text">
+              <string>Rotate Right</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QToolButton" name="toolButton_autoArrange">
+             <property name="text">
+              <string>Auto Arrange</string>
              </property>
             </widget>
            </item>

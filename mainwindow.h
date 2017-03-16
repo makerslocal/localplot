@@ -77,6 +77,9 @@ private slots:
     void handle_selectFileBtn();
     void handle_deleteFileBtn();
     void handle_rotateLeftBtn();
+    void handle_rotateRightBtn();
+    void handle_flipXbtn();
+    void handle_flipYbtn();
     void handle_plotStarted();
     void handle_plotCancelled();
     void handle_plotFinished();
@@ -87,6 +90,7 @@ private slots:
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
     void rotateSelectedItems(qreal rotation);
+    void scaleSelectedItems(qreal x, qreal y);
 
     // View/Scene
     void sceneSetup();
