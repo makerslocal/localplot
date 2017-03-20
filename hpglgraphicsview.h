@@ -6,8 +6,10 @@
 #define HPGLGRAPHICSVIEW_H
 
 #include <QtCore>
+#include <QApplication>
 #include <QGraphicsView>
 #include <QMouseEvent>
+#include <QTransform>
 
 namespace std {
 class hpglGraphicsView;
@@ -25,6 +27,7 @@ signals:
 
 protected:
     void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 };
 
 #endif // HPGLGRAPHICSVIEW_H
