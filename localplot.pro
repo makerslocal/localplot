@@ -16,19 +16,21 @@ SOURCES += main.cpp\
     dialogabout.cpp \
     dialogsettings.cpp \
     settings.cpp \
-    ancilla.cpp \
-    etc.cpp \
     hpglgraphicsview.cpp \
-    hpgllistmodel.cpp
+    hpgllistmodel.cpp \
+    extplot.cpp \
+    exteta.cpp \
+    extloadfile.cpp
 
 HEADERS  += mainwindow.h \
     dialogabout.h \
     dialogsettings.h \
     settings.h \
-    ancilla.h \
-    etc.h \
     hpglgraphicsview.h \
-    hpgllistmodel.h
+    hpgllistmodel.h \
+    extplot.h \
+    exteta.h \
+    extloadfile.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \

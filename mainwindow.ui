@@ -59,9 +59,6 @@
              <property name="text">
               <string>Rotate Left</string>
              </property>
-             <property name="icon">
-              <iconset theme="edit-undo"/>
-             </property>
             </widget>
            </item>
            <item row="3" column="0">
@@ -128,7 +125,14 @@
             </layout>
            </item>
            <item>
-            <widget class="QListView" name="listView"/>
+            <widget class="QListView" name="listView">
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::ExtendedSelection</enum>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -278,7 +282,7 @@
   </action>
   <action name="action1_1">
    <property name="text">
-    <string>Actual Size</string>
+    <string>&amp;Actual Size</string>
    </property>
   </action>
   <action name="actionAll">
@@ -293,7 +297,7 @@
   </action>
   <action name="actionContain_Selected_Items">
    <property name="text">
-    <string>Contain Selected Items</string>
+    <string>&amp;Contain Selected Items</string>
    </property>
   </action>
  </widget>

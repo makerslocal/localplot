@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
 
     // Required setup to pass custom item in signal/slot.
     qRegisterMetaType<file_uid>("file_uid");
+    qRegisterMetaType<hpglListModel*>("hpglListModel*");
 
     return a.exec();
 }

@@ -9,8 +9,9 @@
 #include <QAbstractListModel>
 #include <QAbstractItemModel>
 #include <QGraphicsItemGroup>
-
-#include "etc.h"
+#include <QGraphicsRectItem>
+#include <QMutex>
+#include <QMutexLocker>
 
 #define QMODELINDEX_KEY (1)
 #define QPLOTSCENE_KEY (2)
@@ -26,26 +27,10 @@ struct hpgl_file {
     file_uid name;
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QGraphicsItemGroup * hpgl_items_group;
+    QGraphicsRectItem * cutoutBox;
+    QMutex mutex;
 };
 bool operator==(const file_uid& lhs, const file_uid& rhs);
-
-Q_DECLARE_METATYPE(QGraphicsItemGroup*)
-Q_DECLARE_METATYPE(file_uid)
-Q_DECLARE_METATYPE(hpgl_file)
-Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>)
-Q_DECLARE_METATYPE(QVector<QGraphicsPolygonItem *>*)
-Q_DECLARE_METATYPE(QGraphicsPolygonItem *)
-
-enum hpglUserRoles {
-    role_first = Qt::UserRole+100, // unused
-    role_filename,
-    role_path,
-    role_uid,
-    role_name,
-    role_hpgl_items,
-    role_hpgl_items_group,
-    role_last // unused
-};
 
 namespace std {
 class hpglListModel;
@@ -54,13 +39,17 @@ class hpglListModel;
 class hpglListModel : public QAbstractListModel
 {
     Q_OBJECT
-    QVector<hpgl_file *> hpglData;
 
 public:
     explicit hpglListModel(QObject *parent = 0);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
+    bool dataGroup(const QPersistentModelIndex index, QMutex *&retLocker,
+                    QGraphicsItemGroup *&itemGroup);
+    bool dataItemsGroup(const QPersistentModelIndex index, QMutex *&retLocker,
+                        QGraphicsItemGroup *&itemGroup, QVector<QGraphicsPolygonItem *> *&items);
+    bool dataItems(const QPersistentModelIndex index, QMutex *&retLocker, QVector<QGraphicsPolygonItem *> *&items);
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     bool setGroupFlag(const QModelIndex &index, QGraphicsItem::GraphicsItemFlag flag, bool flagValue);
     QModelIndex index(int row, int column = 0, const QModelIndex &parent = QModelIndex()) const;
@@ -68,7 +57,12 @@ public:
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());
-//    Qt::ItemFlags flags(const QModelIndex &index) const;
+    void addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem * poly);
+    void constrainItems(QPointF bottomLeft, QPointF topLeft);
+    bool setFileUid(const QModelIndex &index, const file_uid filename);
+
+private:
+    QVector<hpgl_file *> hpglData;
 };
 
 #endif // HPGLLISTMODEL_H

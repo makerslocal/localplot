@@ -4,12 +4,6 @@
  */
 #include "etc.h"
 
-
-QString timeStamp()
-{
-    return(QTime::currentTime().toString("[HH:mm ss.zzz]"));
-}
-
 /**
  * @brief get_nextInt
  * Returns integer from section of string.
@@ -29,11 +23,4 @@ int get_nextInt(QString input, int * index)
         tmp = input[++*index];
     }
     return(atoi(buffer.toStdString().c_str()));
-}
-
-double speedTranslate(int setting_speed)
-{
-//    return((0.5*setting_speed) + 30);
-    return((0.3*setting_speed) + 70);
-//    return((0.52*setting_speed) + 24.8);
 }

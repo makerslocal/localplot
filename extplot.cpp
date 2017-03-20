@@ -2,24 +2,19 @@
  * Ancilla - worker thread
  * Christopher Bero <bigbero@gmail.com>
  */
-#include "ancilla.h"
+#include "extplot.h"
 
-AncillaryThread::AncillaryThread()
+ExtPlot::ExtPlot(hpglListModel * model)
 {
-    // Instantiation happens on thread start (do_run).
+    hpglModel = model;
 }
 
-AncillaryThread::~AncillaryThread()
+ExtPlot::~ExtPlot()
 {
     closeSerial();
 }
 
-void AncillaryThread::do_run()
-{
-    //?
-}
-
-QPointer<QSerialPort> AncillaryThread::openSerial()
+QPointer<QSerialPort> ExtPlot::openSerial()
 {
     QSettings settings;
     QString _portLocation = settings.value("serial/port", SETDEF_SERIAL_PORT).toString();
@@ -126,7 +121,7 @@ QPointer<QSerialPort> AncillaryThread::openSerial()
     return (_port);
 }
 
-void AncillaryThread::closeSerial()
+void ExtPlot::closeSerial()
 {
     if (!_port.isNull())
     {
@@ -137,12 +132,12 @@ void AncillaryThread::closeSerial()
     emit serialClosed(); //handle_serialClosed();
 }
 
-void AncillaryThread::do_cancelPlot()
+void ExtPlot::cancel()
 {
     cancelPlotFlag = true;
 }
 
-void AncillaryThread::do_beginPlot(hpglListModel * model)
+void ExtPlot::process()
 {
     // Variables
 //    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
@@ -150,7 +145,6 @@ void AncillaryThread::do_beginPlot(hpglListModel * model)
     QPointer<QSerialPort> _port;
     QSettings settings;
 
-    hpglModel = model;
     hpglList_index = 0;
     hpgl_obj_index = 0;
     cancelPlotFlag = false;
@@ -176,14 +170,12 @@ void AncillaryThread::do_beginPlot(hpglListModel * model)
         emit statusUpdate("Cutting with absolute speed delay");
     }
 
-    emit plottingStarted();
-
     _port->write("IN;SP1;");
 
     do_plotNext();
 }
 
-void AncillaryThread::do_plotNext()
+void ExtPlot::do_plotNext()
 {
     QSettings settings;
     double time = 0;
@@ -197,15 +189,25 @@ void AncillaryThread::do_plotNext()
     {
         emit statusUpdate("No more hpgl files left to plot.");
         closeSerial();
-        emit plottingDone();
+        emit finished();
         return;
     }
 
     index = hpglModel->index(hpglList_index);
-    itemGroup = hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
-            .value<QGraphicsItemGroup*>();
-    items = hpglModel->data(index, hpglUserRoles::role_hpgl_items)
-            .value<QVector<QGraphicsPolygonItem*>*>();
+    QMutex * mutex;
+    hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
+    QMutexLocker rowLocker(mutex);
+
+    if (itemGroup == NULL)
+    {
+        qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
+        return;
+    }
+    if (items == NULL)
+    {
+        qDebug() << "Error: items is null in scenescalecontainselected().";
+        return;
+    }
 
     if (hpgl_obj_index >= items->length())
     {
@@ -219,18 +221,17 @@ void AncillaryThread::do_plotNext()
     {
         emit statusUpdate("Bailing out of plot, cancelled!", Qt::darkRed);
         closeSerial();
-        emit plottingCancelled();
+        emit finished();
         return;
     }
 
 //    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
 //    qDebug() << "Total file count: " << hpglList->count();
 
-    int progress = (((double)hpglList_index+((double)hpgl_obj_index/(items->count()-1)))/(hpglModel->rowCount()))*100;
-    emit plottingProgress(progress);
+    int progressPercent = (((double)hpglList_index+((double)hpgl_obj_index/(items->count()-1)))/(hpglModel->rowCount()))*100;
+    emit progress(progressPercent);
 
-    qDebug() << "Offset: " << hpglModel->data(index, hpglUserRoles::role_hpgl_items_group)
-                .value<QGraphicsItemGroup*>()->pos();
+    qDebug() << "Offset: " << itemGroup->pos();
 
     QString printThis = print(items->at(hpgl_obj_index)->polygon(),
                               itemGroup);
@@ -239,7 +240,7 @@ void AncillaryThread::do_plotNext()
 //                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
         //ui->textBrowser_console->append("(try the auto translation button)");
 //                ui->textBrowser_console->append("(An X or Y value is less than zero)");
-        emit plottingCancelled();
+        emit finished();
         return;
     }
 
@@ -252,23 +253,23 @@ void AncillaryThread::do_plotNext()
     if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
     {
         _port->flush();
-        time = plotTime(items->at(hpgl_obj_index)->polygon());
+        time = ExtEta::plotTime(items->at(hpgl_obj_index)->polygon());
         QLineF last_line;
         last_line.p1() = last_point;
-        last_line.p2() = items->at(hpgl_obj_index)->polygon().first();
-        time += plotTime(last_line);
+        last_line.p2() = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().first());
+        time += ExtEta::plotTime(last_line);
         qDebug() << "- sleep time: " << time;
     }
     else
     {
-        //
+        // leave time as 0
     }
 
     ++hpgl_obj_index;
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
 }
 
-QString AncillaryThread::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup)
+QString ExtPlot::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup)
 {
     QString retval = "";
     QPointF point;
@@ -303,184 +304,19 @@ QString AncillaryThread::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGro
     }
     retval += ";";
 
-    last_point = hpgl_poly.last();
+    last_point = itemGroup->mapToScene(hpgl_poly.last());
 
     return(retval);
 }
 
-/**
- * @brief AncillaryThread::lenHyp
- * @return - the length (in mm) of the hypotenuse of the command's line segments
- */
-double AncillaryThread::lenHyp(const QPolygonF _poly)
+void ExtPlot::statusUpdate(QString _consoleStatus)
 {
-    QPointF prev;
-    QPointF curr;
-    double mm = 0;
-    prev.setX(0);
-    prev.setY(0);
-
-    for (int i = 0; i < _poly.length(); i++)
-    {
-        qreal x, y;
-        curr = _poly.at(i);
-        x = qFabs(curr.x() - prev.x());
-        y = qFabs(curr.y() - prev.y());
-        mm += qSqrt(x*x + y*y);
-        prev.setX(curr.x());
-        prev.setY(curr.y());
-    }
-
-    mm = mm * 0.025; // convert graphics units to mm
-    return(mm);
+    emit statusUpdate(_consoleStatus, Qt::black);
 }
 
-double AncillaryThread::plotTime(const QPolygonF _poly)
-{
-    double retval = 0;
-    QSettings settings;
 
-    retval = lenHyp(_poly);
 
-    if (retval <= 0)
-    {
-        return(retval);
-    }
 
-    retval = retval / speedTranslate(settings.value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt());
-
-    return(retval);
-}
-
-double AncillaryThread::plotTime(const QLineF _line)
-{
-    double retval = 0;
-    QSettings settings;
-
-    retval = _line.length();
-//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
-
-    if (retval <= 0)
-    {
-        return(retval);
-    }
-
-    retval = retval / speedTranslate(settings.value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt());
-
-    return(retval);
-}
-
-int AncillaryThread::do_loadFile(const QPersistentModelIndex index, const hpglListModel * model)
-{
-    QFile inputFile;
-    QString buffer;
-
-    file_uid _file = model->data(index, hpglUserRoles::role_name).value<file_uid>();
-
-    if (_file.path.isEmpty())
-    {
-        qDebug() << "File path is empty.";
-        return 1;
-    }
-
-    inputFile.setFileName(_file.path);
-    if (!inputFile.open(QIODevice::ReadOnly))
-    {
-        // failed to open
-        qDebug() << "Failed to open file.";
-        return 1;
-    }
-    emit statusUpdate("File opened.");
-
-    QTextStream fstream(&inputFile);
-    buffer = fstream.readAll();
-    inputFile.close();
-    emit statusUpdate("File closed.");
-
-    parseHPGL(index, &buffer);
-    emit statusUpdate("HPGL finished parsing.");
-    emit hpglParsingDone();
-    return 0;
-}
-
-// Modifies input string, warning!
-void AncillaryThread::parseHPGL(const QPersistentModelIndex index, QString * hpgl_text)
-{
-    QPointF tail(0, 0);
-
-    hpgl_text->remove('\n');
-    int numCmds = hpgl_text->count(';');
-    for (int i = 0; i < numCmds; i++)
-    {
-        QPolygonF newItem;
-        QString cmdText;
-        QString opcode;
-        int pen;
-
-        cmdText = hpgl_text->section(';', i, i);
-
-        qDebug() << "====\n= Processing command: ";
-
-        // Get opcode, first two characters
-        opcode = cmdText.mid(0, 2);
-
-        qDebug() << "= " << opcode;
-
-        // Parse opcode
-        if (opcode == "PU")
-        {
-            // Pen up - we assume a single line (two points)
-            int commaCount, newX, newY;
-            cmdText.remove(0,2);
-            commaCount = cmdText.count(',');
-//            qDebug() << "= Comma count: " << commaCount;
-            int i = commaCount - 1;
-            newX = cmdText.section(',', i, i).toInt();
-            i++;
-            newY = cmdText.section(',', i, i).toInt();
-            tail.setX(newX);
-            tail.setY(newY);
-        }
-        else if (opcode == "PD")
-        {
-            // Pen down
-            cmdText.remove(0,2);
-            int commaCount = cmdText.count(',');
-//            qDebug() << "= Comma count: " << commaCount;
-            newItem << tail; // Begin from last PU location
-            for (int i = 0; i < commaCount; i++)
-            {
-                //qDebug() << "processing coord: " << text.at(i) << endl;
-                int newX = cmdText.section(',', i, i).toInt();
-                i++;
-                int newY = cmdText.section(',', i, i).toInt();
-//                qDebug() << "= Found x: " << newX << " y: " << newY;
-                newItem << QPointF(newX, newY);
-//                if (i < (commaCount-2) && ((i+1) % 500) == 0)
-//                {
-//                    qDebug() << "Breaking line";
-//                    cmdList.push_back(newCmd);
-//                    newCmd.coordList.clear();
-//                    newCmd.coordList.push_back(QPoint(newX, newY));
-//                }
-            }
-            emit newPolygon(index, newItem);
-        }
-        else if (opcode == "IN")
-        {
-            // Begin plotting (automatically handled)
-        }
-        else if (opcode == "SP")
-        {
-            // Set pen
-            pen = cmdText.mid(2,1).toInt();
-            qDebug() << "[" << QString::number(pen) << "]";
-        }
-        int progress = ((double)i/(numCmds-1))*100;
-        emit plottingProgress(progress);
-    }
-}
 
 
 

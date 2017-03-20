@@ -34,12 +34,14 @@
 #include <QGraphicsLineItem>
 #include <QToolButton>
 
-#include "hpgl.h"
 #include "settings.h"
-#include "ancilla.h"
-#include "etc.h"
+#include "extplot.h"
+#include "extloadfile.h"
+#include "exteta.h"
 #include "hpglgraphicsview.h"
 #include "hpgllistmodel.h"
+
+QString timeStamp();
 
 namespace Ui {
 class MainWindow;
@@ -62,6 +64,7 @@ signals:
     void please_plotter_doPlot(hpglListModel *);
     void please_plotter_cancelPlot();
     void please_plotter_loadFile(const QPersistentModelIndex, const hpglListModel *);
+    void please_plotter_procEta(hpglListModel *);
 
 /*
  * do_      for ui/proc action
@@ -69,7 +72,6 @@ signals:
  * handle_  for ui update
  */
 private slots:
-    void do_loadFile(file_uid _file);
     void do_openDialogAbout();
     void do_openDialogSettings();
 
@@ -81,7 +83,6 @@ private slots:
     void handle_flipXbtn();
     void handle_flipYbtn();
     void handle_plotStarted();
-    void handle_plotCancelled();
     void handle_plotFinished();
     void handle_plottingPercent(int percent);
     void handle_newConsoleText(QString text, QColor textColor);
@@ -89,8 +90,17 @@ private slots:
     void handle_zoomChanged(QString text);
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
+    void handle_plottingEta(double eta);
+
+    // Item transformations
     void rotateSelectedItems(qreal rotation);
     void scaleSelectedItems(qreal x, qreal y);
+
+    // View Zooming
+    void sceneScaleWidth();
+    void sceneScale11();
+    void sceneScaleContain();
+    void sceneScaleContainSelected();
 
     // View/Scene
     void sceneSetup();
@@ -98,30 +108,23 @@ private slots:
     void sceneSetSceneRect();
     void sceneConstrainItems();
     void addPolygon(QPersistentModelIndex index, QPolygonF poly);
-    QPersistentModelIndex createHpglFile(file_uid _file);
+    void newFileToScene(QPersistentModelIndex _index);
 
     // plotter thread
     void do_plot();
     void do_cancelPlot();
-    void handle_ancillaThreadStart();
-    void handle_ancillaThreadQuit();
-
-    QLineF get_widthLine();
-    void sceneScaleWidth();
-    void sceneScale11();
-    void sceneScaleContain();
-    void sceneScaleContainSelected();
+    void do_procEta();
 
 protected:
     void closeEvent(QCloseEvent *event);
 
 private:
     QFrame * statusBarDivider();
+    QPersistentModelIndex createHpglFile(file_uid _file);
+    QLineF get_widthLine();
 
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
-    QThread ancillaryThreadInstance;
-    QPointer<AncillaryThread> ancilla;
     hpglListModel hpglModel;
     QGraphicsLineItem * widthLine;
 

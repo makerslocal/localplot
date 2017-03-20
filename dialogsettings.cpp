@@ -79,6 +79,8 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->spinBox_deviceWidth->setValue(settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt());
     ui->comboBox_deviceWidthType->setCurrentIndex(settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt());
     ui->tabWidget->setCurrentIndex(settings.value("dialogsettings/index", SETDEF_DIALLOGSETTINGS_INDEX).toInt());
+    ui->checkBox_enableCutoutBoxes->setChecked(settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool());
+    ui->doubleSpinBox_cutoutBoxesPadding->setValue(settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble());
     if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         ui->radioButton_XonXoff->setChecked(true);
@@ -165,6 +167,10 @@ DialogSettings::DialogSettings(QWidget *parent) :
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(do_saveAndClose())); // Save settings
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(close())); // Discard settings
 
+    connect(ui->comboBox_deviceWidthType, SIGNAL(currentIndexChanged(int)), this, SLOT(handle_unitsChanged()));
+
+    handle_unitsChanged();
+
     do_drawDemoView();
 }
 
@@ -178,6 +184,28 @@ void DialogSettings::closeEvent(QCloseEvent *event)
     QSettings settings;
     settings.setValue("dialogsettings/geometry", saveGeometry());
     QDialog::closeEvent(event);
+}
+
+void DialogSettings::handle_unitsChanged()
+{
+    int currentIndex;
+    currentIndex = ui->comboBox_deviceWidthType->currentIndex();
+    QString labelText;
+
+    if (currentIndex == deviceWidth_t::INCH)
+    {
+        labelText = "Inches";
+    }
+    else if (currentIndex == deviceWidth_t::CM)
+    {
+        labelText = "Centimeters";
+    }
+    else
+    {
+        labelText = "[Error]";
+    }
+    ui->label_deviceWidth->setText(labelText);
+    ui->label_cutoutBoxPadding->setText(labelText);
 }
 
 void DialogSettings::do_settingsClear()
@@ -242,6 +270,8 @@ void DialogSettings::do_saveAndClose()
         settings.setValue("speed/travel", ui->spinBox_deviceTravelSpeed->value());
         settings.setValue("width", ui->spinBox_deviceWidth->value());
         settings.setValue("width/type", ui->comboBox_deviceWidthType->currentData().toInt());
+        settings.setValue("cutoutboxes", ui->checkBox_enableCutoutBoxes->isChecked());
+        settings.setValue("cutoutboxes/padding", ui->doubleSpinBox_cutoutBoxesPadding->value());
     }
     settings.endGroup();
 

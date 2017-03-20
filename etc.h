@@ -10,8 +10,7 @@
 #include <QGraphicsPolygonItem>
 #include <QVector>
 
-QString timeStamp();
+
 int get_nextInt(QString input, int * index);
-double speedTranslate(int setting_speed);
 
 #endif // ETC_H

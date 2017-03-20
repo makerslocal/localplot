@@ -48,6 +48,8 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
 #define SETDEF_DEVICE_SPEED_TRAVEL  (150)
 #define SETDEF_DEVICE_WIDTH         (36)
 #define SETDEF_DEVICE_WDITH_TYPE    (deviceWidth_t::INCH)
+#define SETDEF_DEVICE_CUTOUTBOXES   (false)
+#define SETDEF_DEVICE_CUTOUTBOXES_PADDING (0.25)
 
 #define SETDEF_MAINWINDOW_FILEPATH  ("")
 #define SETDEF_DIALLOGSETTINGS_INDEX (1)
@@ -85,6 +87,8 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  * - - travel (int)
  * - width (int)
  * - - type (enum)
+ * - cutoutboxes (bool)
+ * - - padding (double)
  *
  * mainwindow
  * - filePath (string)

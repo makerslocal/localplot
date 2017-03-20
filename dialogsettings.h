@@ -12,6 +12,8 @@
 #include <QDialog>
 #include <QComboBox>
 #include <QSpinBox>
+#include <QLabel>
+#include <QCheckBox>
 
 #include "settings.h"
 
@@ -35,6 +37,8 @@ public slots:
     void do_settingsClear();
     void do_settingsPrint();
     void do_writeLineEditSerialPort();
+
+    void handle_unitsChanged();
 
 protected:
     void closeEvent(QCloseEvent *event);
