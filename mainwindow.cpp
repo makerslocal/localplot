@@ -54,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->toolButton_rotateRight, SIGNAL(clicked(bool)), this, SLOT(handle_rotateRightBtn()));
     connect(ui->toolButton_flipX, SIGNAL(clicked(bool)), this, SLOT(handle_flipXbtn()));
     connect(ui->toolButton_flipY, SIGNAL(clicked(bool)), this, SLOT(handle_flipYbtn()));
+    connect(ui->toolButton_autoArrange, SIGNAL(clicked(bool)), this, SLOT(do_binpack()));
 
     // Connect UI actions
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -259,6 +260,82 @@ void MainWindow::do_plot()
         emit please_plotter_cancelPlot();
     }
 
+}
+
+void MainWindow::do_binpack()
+{
+    if (ui->pushButton_doPlot->text() == "Plot!")
+    {
+        // Load file in new thread
+        QThread * workerThread = new QThread;
+        ExtBinPack * worker = new ExtBinPack(&hpglModel);
+        worker->moveToThread(workerThread);
+        connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
+        connect(workerThread, SIGNAL(started()), this, SLOT(handle_plotStarted()));
+        connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+        connect(workerThread, SIGNAL(finished()), this, SLOT(handle_plotFinished()));
+        connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
+        connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+        connect(worker, SIGNAL(packedRect(QPersistentModelIndex,QRectF)), this, SLOT(handle_packedRect(QPersistentModelIndex,QRectF)));
+        connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+        connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+        connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
+        workerThread->start();
+    }
+    else
+    {
+        emit please_plotter_cancelPlot();
+    }
+
+}
+
+void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
+{
+    QGraphicsItemGroup * itemGroup;
+    itemGroup = NULL;
+    QMutex * mutex;
+    hpglModel.dataGroup(index, mutex, itemGroup);
+    if (!mutex->tryLock())
+    {
+        qDebug() << "Mutex already locked, giving up.";
+        return;
+    }
+
+    if (itemGroup == NULL)
+    {
+        qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
+        mutex->unlock();
+        return;
+    }
+
+    if (static_cast<int>(itemGroup->sceneBoundingRect().width()) != static_cast<int>(rect.width())
+            && static_cast<int>(itemGroup->sceneBoundingRect().width()) == static_cast<int>(rect.height()))
+    {
+        int translateWidth, translateheight;
+        QTransform transform;
+        translateWidth = itemGroup->boundingRect().width();
+        translateheight = itemGroup->boundingRect().height();
+        transform.translate(translateWidth/2.0, translateheight/2.0);
+        transform.rotate(90);
+        transform.translate(-translateWidth/2.0, -translateheight/2.0);
+        itemGroup->setTransform(itemGroup->transform() * transform);
+        mutex->unlock();
+        sceneConstrainItems();
+        mutex->lock();
+    }
+    QPointF posFinal, posItem, posScene;
+    QRectF grect;
+    posFinal = QPointF(rect.x(), rect.y());
+    posItem = itemGroup->pos();
+    grect = itemGroup->sceneBoundingRect();
+    posScene = grect.topLeft();
+    qDebug() << posFinal << posItem << posScene;
+    posItem.setX(posItem.x() + (posFinal.x() - posScene.x()));
+    posItem.setY(posItem.y() + (posFinal.y() - posScene.y()));
+    qDebug() << posItem;
+    itemGroup->setPos(posItem);
+
+    mutex->unlock();
 }
 
 void MainWindow::do_cancelPlot()

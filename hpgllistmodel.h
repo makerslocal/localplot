@@ -12,6 +12,7 @@
 #include <QGraphicsRectItem>
 #include <QMutex>
 #include <QMutexLocker>
+#include <math.h>
 
 #define QMODELINDEX_KEY (1)
 #define QPLOTSCENE_KEY (2)
@@ -60,6 +61,7 @@ public:
     void addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem * poly);
     void constrainItems(QPointF bottomLeft, QPointF topLeft);
     bool setFileUid(const QModelIndex &index, const file_uid filename);
+    void sort();
 
 private:
     QVector<hpgl_file *> hpglData;

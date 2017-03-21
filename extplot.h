@@ -1,5 +1,5 @@
 /**
- * Ancilla - worker thread header
+ * ExtPlot - worker thread header
  * Christopher Bero <bigbero@gmail.com>
  */
 #ifndef EXTPLOT_H

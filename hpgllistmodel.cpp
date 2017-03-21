@@ -233,7 +233,11 @@ void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
         QGraphicsItemGroup * itemGroup;
         modCount = 0;
 
-        QMutexLocker locker(&(hpglData[i]->mutex));
+        if (!hpglData[i]->mutex.tryLock())
+        {
+            qDebug() << "Mutex already locked, giving up.";
+            return;
+        }
 
         itemGroup = hpglData.at(i)->hpgl_items_group;
         pos = itemGroup->pos();
@@ -261,9 +265,30 @@ void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
         {
             itemGroup->setPos(pos);
         }
+        hpglData[i]->mutex.unlock();
     }
 }
 
+void hpglListModel::sort()
+{
+    bool swapped;
+    do
+    {
+        swapped = false;
+        for (int i = 1; i < hpglData.length(); ++i)
+        {
+            int max1, max2;
+            max1 = qMax(hpglData.at(i-1)->hpgl_items_group->boundingRect().width(), hpglData.at(i-1)->hpgl_items_group->boundingRect().height());
+            max2 = qMax(hpglData.at(i)->hpgl_items_group->boundingRect().width(), hpglData.at(i)->hpgl_items_group->boundingRect().height());
+            qDebug() << max1 << max2;
+            if (max1 < max2)
+            {
+                hpglData.move(i, i-1);
+                swapped = true;
+            }
+        }
+    } while (swapped);
+}
 
 
 

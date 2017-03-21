@@ -1,9 +1,9 @@
 /**
- * ExtLoadFile - worker thread header
+ * ExtBinPack - worker thread header
  * Christopher Bero <bigbero@gmail.com>
  */
-#ifndef EXTLOADFILE_H
-#define EXTLOADFILE_H
+#ifndef EXTBINPACK_H
+#define EXTBINPACK_H
 
 #include <QtCore>
 #include <QSerialPort>
@@ -15,35 +15,35 @@
 
 #include "settings.h"
 #include "hpgllistmodel.h"
+#include "RectangleBinPack/ShelfBinPack.h"
+#include "mainwindow.h"
 
 namespace std {
-class ExtLoadFile;
+class ExtBinPack;
 }
 
-class ExtLoadFile : public QObject
+class ExtBinPack : public QObject
 {
     Q_OBJECT
 
 public:
-    ExtLoadFile(hpglListModel * model);
-    ~ExtLoadFile();
+    ExtBinPack(hpglListModel * model);
+    ~ExtBinPack();
 
 public slots:
     void process();
+    void cancel();
 
 signals:
     void progress(int percent);
-    void newPolygon(QPersistentModelIndex index, QPolygonF poly);
-    void finished(QPersistentModelIndex index);
+    void finished();
     void statusUpdate(QString text, QColor textColor);
+    void packedRect(QPersistentModelIndex index, QRectF rect);
 
 private:
-    bool parseHPGL(const QPersistentModelIndex index, QString * hpgl_text);
-    QPersistentModelIndex createHpglFile(file_uid _file);
-
     void statusUpdate(QString _consoleStatus);
     hpglListModel * hpglModel;
-    QString filePath;
+    bool cancelFlag;
 };
 
-#endif // EXTLOADFILE_H
+#endif // EXTBINPACK_H

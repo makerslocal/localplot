@@ -20,7 +20,10 @@ SOURCES += main.cpp\
     hpgllistmodel.cpp \
     extplot.cpp \
     exteta.cpp \
-    extloadfile.cpp
+    extloadfile.cpp \
+    RectangleBinPack/ShelfBinPack.cpp \
+    RectangleBinPack/GuillotineBinPack.cpp \
+    extbinpack.cpp
 
 HEADERS  += mainwindow.h \
     dialogabout.h \
@@ -30,7 +33,11 @@ HEADERS  += mainwindow.h \
     hpgllistmodel.h \
     extplot.h \
     exteta.h \
-    extloadfile.h
+    extloadfile.h \
+    RectangleBinPack/Rect.h \
+    RectangleBinPack/ShelfBinPack.h \
+    RectangleBinPack/GuillotineBinPack.h \
+    extbinpack.h
 
 FORMS    += mainwindow.ui \
     dialogabout.ui \

@@ -40,6 +40,7 @@
 #include "exteta.h"
 #include "hpglgraphicsview.h"
 #include "hpgllistmodel.h"
+#include "extbinpack.h"
 
 QString timeStamp();
 
@@ -54,6 +55,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    static QLineF get_widthLine();
 
 /*
  * please_  for signals to threads
@@ -109,11 +111,13 @@ private slots:
     void sceneConstrainItems();
     void addPolygon(QPersistentModelIndex index, QPolygonF poly);
     void newFileToScene(QPersistentModelIndex _index);
+    void handle_packedRect(QPersistentModelIndex index, QRectF rect);
 
     // plotter thread
     void do_plot();
     void do_cancelPlot();
     void do_procEta();
+    void do_binpack();
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -121,7 +125,6 @@ protected:
 private:
     QFrame * statusBarDivider();
     QPersistentModelIndex createHpglFile(file_uid _file);
-    QLineF get_widthLine();
 
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
