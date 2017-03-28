@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/icon">
+        <file>images/icons/rotate_left.png</file>
+        <file>images/icons/bin_pack.png</file>
+        <file>images/icons/flip_horizontal.png</file>
+        <file>images/icons/flip_vertical.png</file>
+        <file>images/icons/rotate_right.png</file>
+    </qresource>
+</RCC>

@@ -36,7 +36,10 @@
 #include <QImage>
 #include <QBrush>
 #include <QPixmap>
+
 #include <qmath.h>
+
+#include "qmqtt-master/src/mqtt/qmqtt.h"
 
 #include "settings.h"
 #include "extplot.h"
@@ -142,6 +145,8 @@ private:
     QLabel * label_eta;
     QLabel * label_status;
     QLabel * label_zoom;
+
+    QMQTT::Client *client = new QMQTT::Client(QHostAddress::LocalHost, 1883);
 };
 
 #endif // MAINWINDOW_H

@@ -50,11 +50,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_cancel, SIGNAL(clicked(bool)), this, SLOT(handle_cancelBtn()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
     connect(ui->pushButton_duplicateFile, SIGNAL(clicked(bool)), this, SLOT(handle_duplicateFileBtn()));
-    connect(ui->toolButton_rotateLeft, SIGNAL(clicked(bool)), this, SLOT(handle_rotateLeftBtn()));
-    connect(ui->toolButton_rotateRight, SIGNAL(clicked(bool)), this, SLOT(handle_rotateRightBtn()));
-    connect(ui->toolButton_flipX, SIGNAL(clicked(bool)), this, SLOT(handle_flipXbtn()));
-    connect(ui->toolButton_flipY, SIGNAL(clicked(bool)), this, SLOT(handle_flipYbtn()));
-    connect(ui->toolButton_autoArrange, SIGNAL(clicked(bool)), this, SLOT(do_binpack()));
+    connect(ui->actionRotate_Left, SIGNAL(triggered(bool)), this, SLOT(handle_rotateLeftBtn()));
+    connect(ui->actionRotate_Right, SIGNAL(triggered(bool)), this, SLOT(handle_rotateRightBtn()));
+    connect(ui->actionFlip_Horizontal, SIGNAL(triggered(bool)), this, SLOT(handle_flipXbtn()));
+    connect(ui->actionFlip_Vertical, SIGNAL(triggered(bool)), this, SLOT(handle_flipYbtn()));
+    connect(ui->actionAuto_Arrange, SIGNAL(triggered(bool)), this, SLOT(do_binpack()));
 
     // Connect UI actions
     connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -111,6 +111,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
     connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
+
+    ui->toolBar->setHidden(false);
 
     sceneSetup();
 }
@@ -805,7 +807,6 @@ void MainWindow::sceneSetGrid()
         gridY = ((yDpi*size) / my);
     }
 
-    qDebug() << "grid: " << gridX << gridY << mx << my;
     QImage grid(gridX, gridY, QImage::Format_RGB32);
     QRgb value;
 
@@ -828,7 +829,6 @@ void MainWindow::sceneSetGrid()
 
     QBrush gridBrush(grid);
 
-    qDebug() << hpglToPx << _transform;
     gridBrush.setTransform((_transform.inverted()));
 
     ui->graphicsView_view->setBackgroundBrush(gridBrush);
