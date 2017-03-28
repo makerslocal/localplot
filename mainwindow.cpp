@@ -184,6 +184,7 @@ void MainWindow::do_openDialogSettings()
     newwindow->setWindowTitle("localplot settings");
     newwindow->exec();
     widthLine->setLine(get_widthLine());
+    sceneSetGrid();
 }
 
 /*******************************************************************************
@@ -779,6 +780,7 @@ void MainWindow::sceneSetGrid()
     QSettings settings;
     if (!settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool())
     {
+        ui->graphicsView_view->setBackgroundBrush(Qt::NoBrush);
         return;
     }
     int size = settings.value("mainwindow/grid/size", SETDEF_MAINWINDOW_GRID_SIZE).toInt();
@@ -794,8 +796,8 @@ void MainWindow::sceneSetGrid()
     int gridX, gridY;
     if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
     {
-        gridX = ((xDpi*size*2.54) / mx);
-        gridY = ((yDpi*size*2.54) / my);
+        gridX = (((xDpi*size)/2.54) / mx);
+        gridY = (((yDpi*size)/2.54) / my);
     }
     else
     {
