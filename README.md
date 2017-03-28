@@ -24,5 +24,5 @@ If there's a feature you'd like to see, tell us and we'll look into it.
 
 If there's a bug, tell us and we'll (try to) remove it.
 
-If there's not a bug, tell us and we'll add one. Wait, scratch that.
+If there's not a bug, tell us and we'll add one.
 
