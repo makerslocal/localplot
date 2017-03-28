@@ -52,6 +52,8 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
 #define SETDEF_DEVICE_CUTOUTBOXES_PADDING (0.25)
 
 #define SETDEF_MAINWINDOW_FILEPATH  ("")
+#define SETDEF_MAINWINDOW_GRID (true)
+#define SETDEF_MAINWINDOW_GRID_SIZE (1)
 #define SETDEF_DIALLOGSETTINGS_INDEX (1)
 
 #define SETDEF_SERIAL_PORT      ("")
@@ -94,6 +96,8 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  * - filePath (string)
  * - windowState (bytearray)
  * - geometry (bytearray)
+ * - grid (bool)
+ * - - size (int)
  *
  * dialogsettings
  * - index (int)

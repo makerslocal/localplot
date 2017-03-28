@@ -775,6 +775,13 @@ void MainWindow::sceneScaleWidth()
 
 void MainWindow::sceneSetGrid(int xDpi, int yDpi, QTransform _transform)
 {
+    QSettings settings;
+    if (!settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool())
+    {
+        return;
+    }
+    int size = settings.value("mainwindow/grid/size", SETDEF_MAINWINDOW_GRID_SIZE).toInt();
+
     QTransform hpglToPx;
     hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
 
@@ -784,8 +791,17 @@ void MainWindow::sceneSetGrid(int xDpi, int yDpi, QTransform _transform)
     my = hpglToPx.m22() / qAbs(_transform.m22());
 
     int gridX, gridY;
-    gridX = (xDpi / mx);
-    gridY = (yDpi / my);
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        gridX = ((xDpi*size*2.54) / mx);
+        gridY = ((yDpi*size*2.54) / my);
+    }
+    else
+    {
+        gridX = ((xDpi*size) / mx);
+        gridY = ((yDpi*size) / my);
+    }
+
     qDebug() << "grid: " << gridX << gridY << mx << my;
     QImage grid(gridX, gridY, QImage::Format_RGB32);
     QRgb value;
