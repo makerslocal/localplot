@@ -82,6 +82,7 @@ private slots:
     void handle_deleteFileBtn();
     void handle_rotateLeftBtn();
     void handle_rotateRightBtn();
+    void handle_duplicateFileBtn();
     void handle_flipXbtn();
     void handle_flipYbtn();
     void handle_plotStarted();
@@ -128,7 +129,7 @@ private:
 
     Ui::MainWindow *ui;
     QGraphicsScene plotScene;
-    hpglListModel hpglModel;
+    hpglListModel * hpglModel;
     QGraphicsLineItem * widthLine;
 
     // Status bar

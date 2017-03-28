@@ -12,10 +12,12 @@
 #include <QGraphicsRectItem>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QGraphicsScene>
 #include <math.h>
 
+#include "settings.h"
+
 #define QMODELINDEX_KEY (1)
-#define QPLOTSCENE_KEY (2)
 
 // hpgl structs
 struct file_uid {
@@ -54,6 +56,7 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     bool setGroupFlag(const QModelIndex &index, QGraphicsItem::GraphicsItemFlag flag, bool flagValue);
     QModelIndex index(int row, int column = 0, const QModelIndex &parent = QModelIndex()) const;
+    void duplicateSelectedRows();
     bool insertRow(int row, const QModelIndex &parent = QModelIndex());
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
@@ -62,6 +65,10 @@ public:
     void constrainItems(QPointF bottomLeft, QPointF topLeft);
     bool setFileUid(const QModelIndex &index, const file_uid filename);
     void sort();
+
+signals:
+    void newPolygon(QPersistentModelIndex,QPolygonF);
+    void newFileToScene(QPersistentModelIndex);
 
 private:
     QVector<hpgl_file *> hpglData;

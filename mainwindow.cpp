@@ -43,13 +43,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    // Setup listView and listModel
-    ui->listView->setModel(&hpglModel);
-
     // Connect UI buttons
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
     connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
+    connect(ui->pushButton_duplicateFile, SIGNAL(clicked(bool)), this, SLOT(handle_duplicateFileBtn()));
     connect(ui->toolButton_rotateLeft, SIGNAL(clicked(bool)), this, SLOT(handle_rotateLeftBtn()));
     connect(ui->toolButton_rotateRight, SIGNAL(clicked(bool)), this, SLOT(handle_rotateRightBtn()));
     connect(ui->toolButton_flipX, SIGNAL(clicked(bool)), this, SLOT(handle_flipXbtn()));
@@ -105,15 +103,21 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->addPermanentWidget(label_zoom);
 
     ui->graphicsView_view->setScene(&plotScene);
+    hpglModel = new hpglListModel(this);
+    // Setup listView and listModel
+    ui->listView->setModel(hpglModel);
+
+    connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
+    connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
 
     sceneSetup();
 }
 
 MainWindow::~MainWindow()
 {
-    for (int i = (hpglModel.rowCount() - 1); i >= 0; --i)
+    for (int i = (hpglModel->rowCount() - 1); i >= 0; --i)
     {
-        hpglModel.removeRow(i);
+        hpglModel->removeRow(i);
     }
     plotScene.clear();
     plotScene.deleteLater();
@@ -266,14 +270,14 @@ void MainWindow::do_binpack()
 {
     if (ui->pushButton_doPlot->text() == "Plot!")
     {
-        // Load file in new thread
+        // Process in new thread
         QThread * workerThread = new QThread;
-        ExtBinPack * worker = new ExtBinPack(&hpglModel);
+        ExtBinPack * worker = new ExtBinPack(hpglModel);
         worker->moveToThread(workerThread);
         connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
-        connect(workerThread, SIGNAL(started()), this, SLOT(handle_plotStarted()));
+        connect(workerThread, SIGNAL(started()), this, SLOT(handle_extStarted()));
         connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(workerThread, SIGNAL(finished()), this, SLOT(handle_plotFinished()));
+        connect(workerThread, SIGNAL(finished()), this, SLOT(handle_extFinished()));
         connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
         connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
         connect(worker, SIGNAL(packedRect(QPersistentModelIndex,QRectF)), this, SLOT(handle_packedRect(QPersistentModelIndex,QRectF)));
@@ -294,7 +298,9 @@ void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
     QGraphicsItemGroup * itemGroup;
     itemGroup = NULL;
     QMutex * mutex;
-    hpglModel.dataGroup(index, mutex, itemGroup);
+    QSettings settings;
+
+    hpglModel->dataGroup(index, mutex, itemGroup);
     if (!mutex->tryLock())
     {
         qDebug() << "Mutex already locked, giving up.";
@@ -343,23 +349,31 @@ void MainWindow::do_cancelPlot()
     emit please_plotter_cancelPlot();
 }
 
-void MainWindow::handle_plotStarted()
+void MainWindow::handle_duplicateFileBtn()
 {
-    ui->pushButton_doPlot->setText("Cancel");
-    ui->pushButton_fileRemove->setEnabled(false);
-    ui->pushButton_fileSelect->setEnabled(false);
-    ui->graphicsView_view->setEnabled(false);
-    ui->actionLoad_File->setEnabled(false);
-    progressBar_plotting->setValue(0);
+    hpglModel->duplicateSelectedRows();
 }
 
-void MainWindow::handle_plotFinished()
+void MainWindow::do_enableUI(bool enabled)
 {
-    ui->pushButton_doPlot->setText("Plot!");
-    ui->pushButton_fileRemove->setEnabled(true);
-    ui->pushButton_fileSelect->setEnabled(true);
-    ui->graphicsView_view->setEnabled(true);
-    ui->actionLoad_File->setEnabled(true);
+    ui->pushButton_fileRemove->setEnabled(enabled);
+    ui->pushButton_fileSelect->setEnabled(enabled);
+    ui->graphicsView_view->setEnabled(enabled);
+    ui->actionLoad_File->setEnabled(enabled);
+//    progressBar_plotting->setValue(0);
+    ui->pushButton_doPlot->setEnabled(enabled);
+    ui->pushButton_jogPerimeter->setEnabled(enabled);
+    ui->pushButton_cancel->setEnabled(!enabled);
+}
+
+void MainWindow::handle_extStarted()
+{
+    do_enableUI(false);
+}
+
+void MainWindow::handle_extFinished()
+{
+    do_enableUI(true);
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()

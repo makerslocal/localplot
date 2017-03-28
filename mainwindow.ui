@@ -110,6 +110,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QPushButton" name="pushButton_duplicateFile">
+               <property name="text">
+                <string>Duplicate</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="pushButton_fileSelect">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">

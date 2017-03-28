@@ -147,6 +147,60 @@ int hpglListModel::rowCount(const QModelIndex &parent) const
     return hpglData.length();
 }
 
+void hpglListModel::duplicateSelectedRows()
+{
+
+    QModelIndex _index;
+    QVector<QPersistentModelIndex> indexes;
+
+    for (int i = 0; i < hpglData.length(); ++i)
+    {
+        _index = index(i);
+        if (!hpglData[i]->mutex.tryLock())
+        {
+            qDebug() << "Mutex already locked, giving up.";
+            return;
+        }
+
+        if (hpglData.at(i)->hpgl_items_group->isSelected())
+        {
+            indexes.push_back(_index);
+        }
+
+        hpglData[i]->mutex.unlock();
+    }
+
+    for (int i = 0; i < indexes.length(); ++i)
+    {
+        QPersistentModelIndex _index = indexes.at(i);
+        QString oldName;
+
+        oldName = data(_index, Qt::DisplayRole).toString();
+        if (!hpglData[i]->mutex.tryLock())
+        {
+            qDebug() << "Mutex already locked, giving up.";
+            return;
+        }
+
+        int newRow = hpglData.length();
+        insertRow(newRow);
+        QPersistentModelIndex newIndex = index(newRow);
+
+        hpglData[i]->mutex.unlock();
+        setData(newIndex, oldName, Qt::DisplayRole);
+//        mutex->lock();
+        for (int i2 = 0; i2 < hpglData[i]->hpgl_items.length(); ++i2)
+        {
+            QPolygonF polygon = hpglData[i]->hpgl_items.at(i2)->polygon();
+//            addPolygon(newIndex, polygon);
+            newPolygon(newIndex, polygon);
+        }
+//        mutex->unlock();
+//        newFileToScene(newIndex);
+        newFileToScene(newIndex);
+    }
+}
+
 bool hpglListModel::insertRow(int row, const QModelIndex &parent)
 {
     return insertRows(row, 1, parent);
