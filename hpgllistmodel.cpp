@@ -130,6 +130,18 @@ bool hpglListModel::setGroupFlag(const QModelIndex &index, QGraphicsItem::Graphi
     return false;
 }
 
+bool hpglListModel::setCutoutBox(const QModelIndex &index, QGraphicsRectItem * boxrect)
+{
+    if (index.isValid() && index.row() >= 0 && index.row() < hpglData.length())
+    {
+        QMutexLocker locker(&(hpglData[index.row()]->mutex));
+        hpglData[index.row()]->hpgl_items_group->addToGroup(boxrect);
+        hpglData[index.row()]->cutoutBox = boxrect;
+        return true;
+    }
+    return false;
+}
+
 QModelIndex hpglListModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (row >= 0 && row < hpglData.length())
@@ -349,7 +361,7 @@ void hpglListModel::sort()
 void hpglListModel::rotateSelectedItems(qreal rotation)
 {
     QModelIndex _index;
-    qreal translateWidth, translateheight;
+    qreal translateWidth, translateheight, xOffset, yOffset;
 
     for (int i = 0; i < rowCount(); ++i)
     {
@@ -360,9 +372,11 @@ void hpglListModel::rotateSelectedItems(qreal rotation)
 
         if (itemGroup->isSelected())
         {
+            xOffset = itemGroup->boundingRect().x();
+            yOffset = itemGroup->boundingRect().y();
             translateWidth = itemGroup->boundingRect().width();
             translateheight = itemGroup->boundingRect().height();
-            itemGroup->setTransformOriginPoint(translateWidth/2.0, translateheight/2.0);
+            itemGroup->setTransformOriginPoint((translateWidth/2.0)+xOffset, (translateheight/2.0)+yOffset);
             itemGroup->setRotation(itemGroup->rotation() + rotation);
         }
     }

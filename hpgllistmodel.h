@@ -69,6 +69,7 @@ public:
     // Item transformations
     void rotateSelectedItems(qreal rotation);
     void scaleSelectedItems(qreal x, qreal y);
+    bool setCutoutBox(const QModelIndex &index, QGraphicsRectItem * boxrect);
 
 signals:
     void newPolygon(QPersistentModelIndex,QPolygonF);

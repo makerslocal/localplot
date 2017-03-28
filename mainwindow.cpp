@@ -621,6 +621,7 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
 {
     QGraphicsItemGroup * itemGroup = NULL;
     ui->listView->setCurrentIndex(_index);
+    QSettings settings;
 
     QMutex * mutex;
     hpglModel->dataGroup(_index, mutex, itemGroup);
@@ -632,13 +633,34 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
         return;
     }
 
+    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
+    {
+        double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+        if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+        {
+            padding = padding * 2.54;
+        }
+        padding = padding * 1016.0;
+        QRectF cutoutRect = itemGroup->boundingRect();
+        cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
+        cutoutRect.moveTo(0, 0);
+        itemGroup->moveBy(padding, padding);
+        rowLocker.unlock();
+        addPolygon(_index, static_cast<QPolygonF>(cutoutRect));
+        rowLocker.relock();
+    }
+
     plotScene.addItem(itemGroup);
     rowLocker.unlock();
 
     hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsMovable, true);
     hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsSelectable, true);
 
-    handle_listViewClick();
+    itemGroup->setSelected(true);
+    rowLocker.unlock();
+
+    handle_plotSceneSelectionChanged();
+    sceneConstrainItems();
     sceneSetSceneRect();
 }
 
