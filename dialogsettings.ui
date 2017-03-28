@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -546,6 +546,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_5">
+         <property name="toolTip">
+          <string>Grids are approximate.</string>
+         </property>
          <property name="title">
           <string>Grid</string>
          </property>
@@ -581,6 +584,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_viewGridUnits">
+              <property name="toolTip">
+               <string>Units set by &quot;View-&gt;Units&quot;</string>
+              </property>
               <property name="text">
                <string>N/A</string>
               </property>
@@ -677,6 +683,9 @@
               </item>
               <item>
                <widget class="QLabel" name="label_cutoutBoxPadding">
+                <property name="toolTip">
+                 <string>Units set by &quot;View-&gt;Units&quot;</string>
+                </property>
                 <property name="text">
                  <string>N/A</string>
                 </property>
@@ -829,6 +838,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_deviceWidth">
+              <property name="toolTip">
+               <string>Units set by &quot;View-&gt;Units&quot;</string>
+              </property>
               <property name="text">
                <string>N/A</string>
               </property>
