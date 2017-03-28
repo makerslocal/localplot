@@ -46,10 +46,10 @@ Rewrite that switches from list to data model. Smaller, more task specific threa
 * Auto arrange (bin packing).
 * Run perimeter command.
 * Rotations/scaling on individual hpgl files.
+* Generate cutout boxes.
 
 #### Unsorted ToDo:
 
-* Generate cutout boxes.
 * Alert when done.
 * Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
 * Export to USB plotter.

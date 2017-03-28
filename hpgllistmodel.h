@@ -30,7 +30,6 @@ struct hpgl_file {
     file_uid name;
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QGraphicsItemGroup * hpgl_items_group;
-    QGraphicsRectItem * cutoutBox;
     QMutex mutex;
 };
 bool operator==(const file_uid& lhs, const file_uid& rhs);
@@ -69,7 +68,6 @@ public:
     // Item transformations
     void rotateSelectedItems(qreal rotation);
     void scaleSelectedItems(qreal x, qreal y);
-    bool setCutoutBox(const QModelIndex &index, QGraphicsRectItem * boxrect);
 
 signals:
     void newPolygon(QPersistentModelIndex,QPolygonF);

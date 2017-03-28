@@ -130,18 +130,6 @@ bool hpglListModel::setGroupFlag(const QModelIndex &index, QGraphicsItem::Graphi
     return false;
 }
 
-bool hpglListModel::setCutoutBox(const QModelIndex &index, QGraphicsRectItem * boxrect)
-{
-    if (index.isValid() && index.row() >= 0 && index.row() < hpglData.length())
-    {
-        QMutexLocker locker(&(hpglData[index.row()]->mutex));
-        hpglData[index.row()]->hpgl_items_group->addToGroup(boxrect);
-        hpglData[index.row()]->cutoutBox = boxrect;
-        return true;
-    }
-    return false;
-}
-
 QModelIndex hpglListModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (row >= 0 && row < hpglData.length())
@@ -250,7 +238,6 @@ bool hpglListModel::insertRows(int row, int count, const QModelIndex &parent)
             newFile->name.uid = hpglData.last()->name.uid + 1;
         }
         newFile->hpgl_items.clear();
-        newFile->cutoutBox = NULL;
         hpglData.insert(i, newFile);
     }
     endInsertRows();
