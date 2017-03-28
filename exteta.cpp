@@ -66,9 +66,7 @@ double ExtEta::plotTime(const QLineF _line)
     double retval = 0;
     QSettings settings;
 
-    retval = _line.length();
-//    retval = fmax(obj.cmdLenX(cmd_index), obj.cmdLenY(cmd_index));
-//    retval = (obj.cmdLenX(cmd_index) + obj.cmdLenY(cmd_index));
+    retval = _line.length() * 0.025;
 
     if (retval <= 0)
     {
@@ -114,9 +112,11 @@ void ExtEta::process()
         {
             QPolygonF poly = items->at(i2)->polygon();
             pu_line.setP2(itemGroup->mapToScene(poly.first()));
+//            qDebug() << pu_line;
             time += plotTime(pu_line);
             time += plotTime(poly);
-            qDebug() << "File: " << i << ", Object: " << i2 << ", time: " << time;
+//            qDebug() << "File: " << i << ", Object: " << i2 << ", time: " << time;
+            pu_line.setP1(itemGroup->mapToScene(poly.last()));
         }
         emit progress((int)(100 * ((qreal)i / (hpglModel->rowCount()-1))));
     }

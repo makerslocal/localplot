@@ -8,6 +8,7 @@ bool operator==(const file_uid& lhs, const file_uid& rhs)
 hpglListModel::hpglListModel(QObject *parent)
     :QAbstractListModel(parent)
 {
+    modelParent = parent;
     hpglData.clear();
 }
 
@@ -268,6 +269,7 @@ void hpglListModel::addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem
 {
     if (!index.isValid())
     {
+        qDebug() << "Error invalid index.";
         return;
     }
 
@@ -342,6 +344,53 @@ void hpglListModel::sort()
             }
         }
     } while (swapped);
+}
+
+void hpglListModel::rotateSelectedItems(qreal rotation)
+{
+    QModelIndex _index;
+    qreal translateWidth, translateheight;
+
+    for (int i = 0; i < rowCount(); ++i)
+    {
+        _index = index(i);
+        QMutexLocker rowLocker(&(hpglData[i]->mutex));
+
+        QGraphicsItemGroup * itemGroup = hpglData.at(i)->hpgl_items_group;
+
+        if (itemGroup->isSelected())
+        {
+            translateWidth = itemGroup->boundingRect().width();
+            translateheight = itemGroup->boundingRect().height();
+            itemGroup->setTransformOriginPoint(translateWidth/2.0, translateheight/2.0);
+            itemGroup->setRotation(itemGroup->rotation() + rotation);
+        }
+    }
+}
+
+void hpglListModel::scaleSelectedItems(qreal x, qreal y)
+{
+    QModelIndex _index;
+    QTransform transform;
+    qreal translateWidth, translateheight;
+
+    for (int i = 0; i < rowCount(); ++i)
+    {
+        _index = index(i);
+        QMutexLocker rowLocker(&(hpglData[i]->mutex));
+
+        QGraphicsItemGroup * itemGroup = hpglData.at(i)->hpgl_items_group;
+
+        if (itemGroup->isSelected())
+        {
+            translateWidth = itemGroup->boundingRect().width();
+            translateheight = itemGroup->boundingRect().height();
+            transform.translate(translateWidth/2.0, translateheight/2.0);
+            transform.scale(x, y);
+            transform.translate(-translateWidth/2.0, -translateheight/2.0);
+            itemGroup->setTransform(itemGroup->transform() * transform);
+        }
+    }
 }
 
 

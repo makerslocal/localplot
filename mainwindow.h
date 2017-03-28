@@ -83,10 +83,13 @@ private slots:
     void handle_rotateLeftBtn();
     void handle_rotateRightBtn();
     void handle_duplicateFileBtn();
+    void handle_plotFileBtn();
+    void handle_cancelBtn();
+    void handle_jogPerimeterBtn();
     void handle_flipXbtn();
     void handle_flipYbtn();
-    void handle_plotStarted();
-    void handle_plotFinished();
+    void handle_extStarted();
+    void handle_extFinished();
     void handle_plottingPercent(int percent);
     void handle_newConsoleText(QString text, QColor textColor);
     void handle_newConsoleText(QString text);
@@ -94,10 +97,7 @@ private slots:
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
     void handle_plottingEta(double eta);
-
-    // Item transformations
-    void rotateSelectedItems(qreal rotation);
-    void scaleSelectedItems(qreal x, qreal y);
+    void do_enableUI(bool enabled);
 
     // View Zooming
     void sceneScaleWidth();
@@ -115,7 +115,7 @@ private slots:
     void handle_packedRect(QPersistentModelIndex index, QRectF rect);
 
     // plotter thread
-    void do_plot();
+    void do_plot(bool jogPerimeter);
     void do_cancelPlot();
     void do_procEta();
     void do_binpack();

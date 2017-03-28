@@ -86,7 +86,20 @@ void ExtBinPack::process()
             return;
         }
 
-        rbp::Rect thisrect = packer.Insert(itemGroup->boundingRect().width(), itemGroup->boundingRect().height(), rbp::ShelfBinPack::ShelfChoiceHeuristic::ShelfBestHeightFit);
+        QMarginsF margin;
+        double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+        if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+        {
+            padding = padding * 2.54;
+        }
+        padding = padding * 1016.0;
+
+        margin.setTop(padding);
+        margin.setRight(padding);
+
+        rbp::Rect thisrect = packer.Insert(itemGroup->boundingRect().marginsAdded(margin).width(),
+                                           itemGroup->boundingRect().marginsAdded(margin).height(),
+                                           rbp::ShelfBinPack::ShelfChoiceHeuristic::ShelfBestHeightFit);
 
         QRectF rect;
         rect.setX(thisrect.y);

@@ -52,7 +52,8 @@ public:
                     QGraphicsItemGroup *&itemGroup);
     bool dataItemsGroup(const QPersistentModelIndex index, QMutex *&retLocker,
                         QGraphicsItemGroup *&itemGroup, QVector<QGraphicsPolygonItem *> *&items);
-    bool dataItems(const QPersistentModelIndex index, QMutex *&retLocker, QVector<QGraphicsPolygonItem *> *&items);
+    bool dataItems(const QPersistentModelIndex index, QMutex *&retLocker,
+                   QVector<QGraphicsPolygonItem *> *&items);
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     bool setGroupFlag(const QModelIndex &index, QGraphicsItem::GraphicsItemFlag flag, bool flagValue);
     QModelIndex index(int row, int column = 0, const QModelIndex &parent = QModelIndex()) const;
@@ -65,6 +66,9 @@ public:
     void constrainItems(QPointF bottomLeft, QPointF topLeft);
     bool setFileUid(const QModelIndex &index, const file_uid filename);
     void sort();
+    // Item transformations
+    void rotateSelectedItems(qreal rotation);
+    void scaleSelectedItems(qreal x, qreal y);
 
 signals:
     void newPolygon(QPersistentModelIndex,QPolygonF);
@@ -72,6 +76,7 @@ signals:
 
 private:
     QVector<hpgl_file *> hpglData;
+    QObject * modelParent;
 };
 
 #endif // HPGLLISTMODEL_H

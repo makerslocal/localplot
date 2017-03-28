@@ -6,6 +6,14 @@
 
 ExtPlot::ExtPlot(hpglListModel * model)
 {
+    runPerimeterFlag = false;
+    hpglModel = model;
+}
+
+ExtPlot::ExtPlot(hpglListModel * model, QRectF _perimeter)
+{
+    runPerimeterFlag = true;
+    perimeterRect = _perimeter;
     hpglModel = model;
 }
 
@@ -19,7 +27,6 @@ QPointer<QSerialPort> ExtPlot::openSerial()
     QSettings settings;
     QString _portLocation = settings.value("serial/port", SETDEF_SERIAL_PORT).toString();
     QSerialPortInfo _deviceInfo;
-//    QPointer<QSerialPort> _port;
 
     for (int i = 0; i < _deviceInfo.availablePorts().count(); i++)
     {
@@ -140,8 +147,6 @@ void ExtPlot::cancel()
 void ExtPlot::process()
 {
     // Variables
-//    int cutSpeed = settings->value("device/speed/cut", SETDEF_DEVICE_SPEED_CUT).toInt();
-//    int travelSpeed = settings->value("device/speed/travel", SETDEF_DEVICE_SPEED_TRAVEL).toInt();
     QPointer<QSerialPort> _port;
     QSettings settings;
 
@@ -157,6 +162,55 @@ void ExtPlot::process()
     if (_port.isNull() || !_port->isOpen() || hpglModel->rowCount() == 0)
     {
         emit statusUpdate("Can't plot!", Qt::darkRed);
+        emit finished();
+        return;
+    }
+
+    qDebug() << "do perim: " << runPerimeterFlag;
+    if (runPerimeterFlag)
+    {
+        QModelIndex index;
+        QGraphicsItemGroup * itemGroup;
+
+        index = hpglModel->index(hpglList_index);
+        QMutex * mutex;
+        hpglModel->dataGroup(index, mutex, itemGroup);
+        QMutexLocker rowLocker(mutex);
+
+        if (itemGroup == NULL)
+        {
+            qDebug() << "Error: itemgroup is null in do_plotnext().";
+            emit finished();
+            return;
+        }
+        QPointF point;
+        QString retval = "IN;SP1;PU";
+        point = itemGroup->mapToScene(perimeterRect.topLeft());
+        retval += QString::number(static_cast<int>(point.x()));
+        retval += ",";
+        retval += QString::number(static_cast<int>(point.y()));
+        retval += ",";
+        point = itemGroup->mapToScene(perimeterRect.topRight());
+        retval += QString::number(static_cast<int>(point.x()));
+        retval += ",";
+        retval += QString::number(static_cast<int>(point.y()));
+        retval += ",";
+        point = itemGroup->mapToScene(perimeterRect.bottomRight());
+        retval += QString::number(static_cast<int>(point.x()));
+        retval += ",";
+        retval += QString::number(static_cast<int>(point.y()));
+        retval += ",";
+        point = itemGroup->mapToScene(perimeterRect.bottomLeft());
+        retval += QString::number(static_cast<int>(point.x()));
+        retval += ",";
+        retval += QString::number(static_cast<int>(point.y()));
+        retval += ";";
+        retval += "PU0,0;SP0;IN;";
+        qDebug() << "perimeter: " << retval;
+        _port->write(retval.toStdString().c_str());
+        _port->flush();
+        closeSerial();
+        emit finished();
         return;
     }
 
@@ -183,8 +237,6 @@ void ExtPlot::do_plotNext()
     QGraphicsItemGroup * itemGroup;
     QVector<QGraphicsPolygonItem*> * items;
 
-    qDebug() << "list: " << hpglList_index;
-
     if (hpglList_index >= hpglModel->rowCount())
     {
         emit statusUpdate("No more hpgl files left to plot.");
@@ -200,12 +252,12 @@ void ExtPlot::do_plotNext()
 
     if (itemGroup == NULL)
     {
-        qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
+        qDebug() << "Error: itemgroup is null in do_plotnext().";
         return;
     }
     if (items == NULL)
     {
-        qDebug() << "Error: items is null in scenescalecontainselected().";
+        qDebug() << "Error: items is null in do_plotnext().";
         return;
     }
 
@@ -231,15 +283,10 @@ void ExtPlot::do_plotNext()
     int progressPercent = (((double)hpglList_index+((double)hpgl_obj_index/(items->count()-1)))/(hpglModel->rowCount()))*100;
     emit progress(progressPercent);
 
-    qDebug() << "Offset: " << itemGroup->pos();
-
     QString printThis = print(items->at(hpgl_obj_index)->polygon(),
                               itemGroup);
     if (printThis == "OOB")
     {
-//                ui->textBrowser_console->append("ERROR: Object Out Of Bounds! Cannot Plot! D:");
-        //ui->textBrowser_console->append("(try the auto translation button)");
-//                ui->textBrowser_console->append("(An X or Y value is less than zero)");
         emit finished();
         return;
     }
@@ -255,10 +302,10 @@ void ExtPlot::do_plotNext()
         _port->flush();
         time = ExtEta::plotTime(items->at(hpgl_obj_index)->polygon());
         QLineF last_line;
-        last_line.p1() = last_point;
-        last_line.p2() = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().first());
+        last_line.setP1(last_point);
+        last_line.setP2(itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().first()));
         time += ExtEta::plotTime(last_line);
-        qDebug() << "- sleep time: " << time;
+        last_point = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().last());
     }
     else
     {
@@ -303,8 +350,6 @@ QString ExtPlot::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup)
         }
     }
     retval += ";";
-
-    last_point = itemGroup->mapToScene(hpgl_poly.last());
 
     return(retval);
 }

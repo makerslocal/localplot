@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1374</width>
-    <height>1164</height>
+    <width>1760</width>
+    <height>1288</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -147,12 +147,29 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
+           <widget class="QPushButton" name="pushButton_jogPerimeter">
+            <property name="text">
+             <string>Jog Perimeter</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_cancel">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Cancel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_doPlot">
             <property name="enabled">
              <bool>false</bool>
             </property>
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -225,7 +242,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1374</width>
+     <width>1760</width>
      <height>44</height>
     </rect>
    </property>

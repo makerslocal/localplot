@@ -26,7 +26,8 @@ class ExtPlot : public QObject
     Q_OBJECT
 
 public:
-    ExtPlot(hpglListModel *model);
+    ExtPlot(hpglListModel * model);
+    ExtPlot(hpglListModel * model, QRectF _perimeter);
     ~ExtPlot();
 
 public slots:
@@ -35,6 +36,7 @@ public slots:
 
 private slots:
     void do_plotNext();
+//    void do_jogPerimeter();
     QString print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup);
 
 signals:
@@ -50,6 +52,8 @@ private:
     QPointer<QSerialPort> openSerial();
     void closeSerial();
     bool cancelPlotFlag;
+    bool runPerimeterFlag;
+    QRectF perimeterRect;
 
     // plotting
     QPointer<QSerialPort> _port;

@@ -45,7 +45,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Connect UI buttons
     connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(do_plot()));
+    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(handle_plotFileBtn()));
+    connect(ui->pushButton_jogPerimeter, SIGNAL(clicked(bool)), this, SLOT(handle_jogPerimeterBtn()));
+    connect(ui->pushButton_cancel, SIGNAL(clicked(bool)), this, SLOT(handle_cancelBtn()));
     connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
     connect(ui->pushButton_duplicateFile, SIGNAL(clicked(bool)), this, SLOT(handle_duplicateFileBtn()));
     connect(ui->toolButton_rotateLeft, SIGNAL(clicked(bool)), this, SLOT(handle_rotateLeftBtn()));
@@ -240,30 +242,97 @@ void MainWindow::handle_newConsoleText(QString text)
     label_status->setStyleSheet("QLabel { color : #000; }");
 }
 
-void MainWindow::do_plot()
+void MainWindow::handle_jogPerimeterBtn()
 {
-    if (ui->pushButton_doPlot->text() == "Plot!")
+    do_plot(true);
+}
+
+void MainWindow::handle_plotFileBtn()
+{
+    do_plot(false);
+}
+
+void MainWindow::handle_cancelBtn()
+{
+    emit please_plotter_cancelPlot();
+}
+
+void MainWindow::do_plot(bool jogPerimeter)
+{
+    ExtPlot * worker;
+    if (jogPerimeter)
     {
-        // Load file in new thread
-        QThread * workerThread = new QThread;
-        ExtPlot * worker = new ExtPlot(&hpglModel);
-        worker->moveToThread(workerThread);
-        connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
-        connect(workerThread, SIGNAL(started()), this, SLOT(handle_plotStarted()));
-        connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(workerThread, SIGNAL(finished()), this, SLOT(handle_plotFinished()));
-        connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
-        connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
-        connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-        connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
-        workerThread->start();
+        QRectF perimeter;
+        QModelIndex index;
+        QGraphicsItemGroup * itemGroup;
+        qreal x1, y1, x2, y2;
+
+        for (int i = 0; i < hpglModel->rowCount(); ++i)
+        {
+            index = hpglModel->index(i);
+            itemGroup = NULL;
+            QMutex * mutex;
+            hpglModel->dataGroup(index, mutex, itemGroup);
+            if (!mutex->tryLock())
+            {
+                qDebug() << "Mutex already locked, giving up.";
+                return;
+            }
+
+            if (itemGroup == NULL)
+            {
+                qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
+                mutex->unlock();
+                return;
+            }
+
+            itemGroup->mapRectToScene(itemGroup->boundingRect()).getCoords(&x1, &y1, &x2, &y2);
+            if (x1 < perimeter.x())
+            {
+                perimeter.setX(x1);
+            }
+            if (y1 < perimeter.y())
+            {
+                perimeter.setY(y1);
+            }
+            if (x2 > (perimeter.x() + perimeter.width()))
+            {
+                perimeter.setWidth(x2 - perimeter.width());
+            }
+            if (y2 > (perimeter.y() + perimeter.height()))
+            {
+                perimeter.setHeight(y2 - perimeter.y());
+            }
+            if (perimeter.x() < 0)
+            {
+                perimeter.setX(0);
+            }
+            if (perimeter.y() < 0)
+            {
+                perimeter.setY(0);
+            }
+            mutex->unlock();
+        }
+        worker = new ExtPlot(hpglModel, perimeter);
     }
     else
     {
-        emit please_plotter_cancelPlot();
+        worker = new ExtPlot(hpglModel);
     }
 
+    // Process in new thread
+    QThread * workerThread = new QThread;
+    worker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
+    connect(workerThread, SIGNAL(started()), this, SLOT(handle_extStarted()));
+    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(workerThread, SIGNAL(finished()), this, SLOT(handle_extFinished()));
+    connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
+    connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+    connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
+    workerThread->start();
 }
 
 void MainWindow::do_binpack()
@@ -290,7 +359,6 @@ void MainWindow::do_binpack()
     {
         emit please_plotter_cancelPlot();
     }
-
 }
 
 void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
@@ -314,8 +382,15 @@ void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
         return;
     }
 
-    if (static_cast<int>(itemGroup->sceneBoundingRect().width()) != static_cast<int>(rect.width())
-            && static_cast<int>(itemGroup->sceneBoundingRect().width()) == static_cast<int>(rect.height()))
+    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        padding = padding * 2.54;
+    }
+    padding = padding * 1016.0;
+
+    if (static_cast<int>(itemGroup->sceneBoundingRect().width()) != static_cast<int>(rect.width()-(padding))
+            && static_cast<int>(itemGroup->sceneBoundingRect().width()) == static_cast<int>(rect.height()-(padding)))
     {
         int translateWidth, translateheight;
         QTransform transform;
@@ -385,13 +460,13 @@ void MainWindow::handle_plotSceneSelectionChanged()
 
     ui->listView->selectionModel()->clearSelection();
 
-    for (int i = 0; i < hpglModel.rowCount(); ++i)
+    for (int i = 0; i < hpglModel->rowCount(); ++i)
     {
-        index = hpglModel.index(i);
+        index = hpglModel->index(i);
         itemGroup = NULL;
         items = NULL;
         QMutex * mutex;
-        hpglModel.dataItemsGroup(index, mutex, itemGroup, items);
+        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
         if (!mutex->tryLock())
         {
             qDebug() << "Mutex already locked, giving up.";
@@ -444,13 +519,13 @@ void MainWindow::handle_listViewClick()
     list = ui->listView->selectionModel()->selectedIndexes();
     QItemSelectionModel * selectionmodel = ui->listView->selectionModel();
 
-    for (int i = 0; i < hpglModel.rowCount(); ++i)
+    for (int i = 0; i < hpglModel->rowCount(); ++i)
     {
-        index = hpglModel.index(i);
+        index = hpglModel->index(i);
         itemGroup = NULL;
         items = NULL;
         QMutex * mutex;
-        hpglModel.dataItemsGroup(index, mutex, itemGroup, items);
+        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
         if (!mutex->tryLock())
         {
             qDebug() << "Mutex already locked, giving up.";
@@ -511,7 +586,7 @@ void MainWindow::handle_selectFileBtn()
 
     // Load file in new thread
     QThread * workerThread = new QThread;
-    ExtLoadFile * worker = new ExtLoadFile(&hpglModel);
+    ExtLoadFile * worker = new ExtLoadFile(hpglModel);
     worker->moveToThread(workerThread);
     connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
     connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
@@ -530,7 +605,7 @@ void MainWindow::do_procEta()
 {
     // Load file in new thread
     QThread * workerThread = new QThread;
-    ExtEta * worker = new ExtEta(&hpglModel);
+    ExtEta * worker = new ExtEta(hpglModel);
     worker->moveToThread(workerThread);
     connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
     connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
@@ -548,7 +623,7 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     ui->listView->setCurrentIndex(_index);
 
     QMutex * mutex;
-    hpglModel.dataGroup(_index, mutex, itemGroup);
+    hpglModel->dataGroup(_index, mutex, itemGroup);
     QMutexLocker rowLocker(mutex);
 
     if (itemGroup == NULL)
@@ -560,12 +635,11 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     plotScene.addItem(itemGroup);
     rowLocker.unlock();
 
-    hpglModel.setGroupFlag(_index, QGraphicsItem::ItemIsMovable, true);
-    hpglModel.setGroupFlag(_index, QGraphicsItem::ItemIsSelectable, true);
+    hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsMovable, true);
+    hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsSelectable, true);
 
     handle_listViewClick();
     sceneSetSceneRect();
-//    emit please_plotter_procEta(&hpglModel);
 }
 
 void MainWindow::handle_deleteFileBtn()
@@ -583,7 +657,7 @@ void MainWindow::handle_deleteFileBtn()
         itemGroup = NULL;
         items = NULL;
         QMutex * mutex;
-        hpglModel.dataItemsGroup(index, mutex, itemGroup, items);
+        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
         if (!mutex->tryLock())
         {
             qDebug() << "Mutex already locked, giving up.";
@@ -609,28 +683,28 @@ void MainWindow::handle_deleteFileBtn()
         }
         plotScene.destroyItemGroup(itemGroup);
         mutex->unlock();
-        hpglModel.removeRow(list[i].row());
+        hpglModel->removeRow(list[i].row());
     }
 }
 
 void MainWindow::handle_rotateLeftBtn()
 {
-    rotateSelectedItems(90);
+    hpglModel->rotateSelectedItems(90);
 }
 
 void MainWindow::handle_rotateRightBtn()
 {
-    rotateSelectedItems(-90);
+    hpglModel->rotateSelectedItems(-90);
 }
 
 void MainWindow::handle_flipXbtn()
 {
-    scaleSelectedItems(-1, 1);
+    hpglModel->scaleSelectedItems(-1, 1);
 }
 
 void MainWindow::handle_flipYbtn()
 {
-    scaleSelectedItems(1, -1);
+    hpglModel->scaleSelectedItems(1, -1);
 }
 
 void MainWindow::handle_plottingPercent(int percent)
@@ -661,7 +735,7 @@ QLineF MainWindow::get_widthLine()
         qDebug() << "Default switch statement reached for device width! D:";
         length = SETDEF_DEVICE_WIDTH;
     }
-    return (QLineF(0, 0, 0, (1016.0*length)));
+    return (QLineF(0, 0, 0, (1016.0 * length)));
 }
 
 void MainWindow::sceneScaleWidth()
@@ -710,12 +784,12 @@ void MainWindow::sceneScaleContain()
     newrect.setWidth(0);
     newrect.setHeight(0);
 
-    for (int i = 0; i < hpglModel.rowCount(); ++i)
+    for (int i = 0; i < hpglModel->rowCount(); ++i)
     {
-        index = hpglModel.index(i);
+        index = hpglModel->index(i);
         QMutex * mutex;
         itemGroup = NULL;
-        hpglModel.dataGroup(index, mutex, itemGroup);
+        hpglModel->dataGroup(index, mutex, itemGroup);
         QMutexLocker rowLocker(mutex);
 
         if (itemGroup == NULL)
@@ -769,7 +843,7 @@ void MainWindow::sceneScaleContainSelected()
         index = selectedItems.at(i);
         QMutex * mutex;
         itemGroup = NULL;
-        hpglModel.dataGroup(index, mutex, itemGroup);
+        hpglModel->dataGroup(index, mutex, itemGroup);
         QMutexLocker rowLocker(mutex);
 
         if (itemGroup == NULL)
@@ -795,76 +869,6 @@ void MainWindow::sceneScaleContainSelected()
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");
-}
-
-void MainWindow::rotateSelectedItems(qreal rotation)
-{
-    QModelIndex index;
-    QGraphicsItemGroup * itemGroup;
-    QTransform transform;
-    qreal translateWidth, translateheight;
-
-    ui->listView->selectionModel()->clearSelection();
-
-    for (int i = 0; i < hpglModel.rowCount(); ++i)
-    {
-        index = hpglModel.index(i);
-        itemGroup = NULL;
-        QMutex * mutex;
-        hpglModel.dataGroup(index, mutex, itemGroup);
-        QMutexLocker rowLocker(mutex);
-
-        if (itemGroup == NULL)
-        {
-            qDebug() << "Error: itemgroup is null in rotateselecteditems().";
-            return;
-        }
-
-        if (itemGroup->isSelected())
-        {
-            translateWidth = itemGroup->boundingRect().width();
-            translateheight = itemGroup->boundingRect().height();
-            transform.translate(translateWidth/2.0, translateheight/2.0);
-            transform.rotate(rotation);
-            transform.translate(-translateWidth/2.0, -translateheight/2.0);
-            itemGroup->setTransform(itemGroup->transform() * transform);
-        }
-    }
-}
-
-void MainWindow::scaleSelectedItems(qreal x, qreal y)
-{
-    QModelIndex index;
-    QGraphicsItemGroup * itemGroup;
-    QTransform transform;
-    qreal translateWidth, translateheight;
-
-    ui->listView->selectionModel()->clearSelection();
-
-    for (int i = 0; i < hpglModel.rowCount(); ++i)
-    {
-        index = hpglModel.index(i);
-        itemGroup = NULL;
-        QMutex * mutex;
-        hpglModel.dataGroup(index, mutex, itemGroup);
-        QMutexLocker rowLocker(mutex);
-
-        if (itemGroup == NULL)
-        {
-            qDebug() << "Error: itemgroup null in scaleselecteditems().";
-            return;
-        }
-
-        if (itemGroup->isSelected())
-        {
-            translateWidth = itemGroup->boundingRect().width();
-            translateheight = itemGroup->boundingRect().height();
-            transform.translate(translateWidth/2.0, translateheight/2.0);
-            transform.scale(x, y);
-            transform.translate(-translateWidth/2.0, -translateheight/2.0);
-            itemGroup->setTransform(itemGroup->transform() * transform);
-        }
-    }
 }
 
 void MainWindow::sceneSetup()
@@ -956,8 +960,6 @@ void MainWindow::sceneSetSceneRect()
     qDebug() << "Graphics view: " << ui->graphicsView_view->size().width() << "," << ui->graphicsView_view->size().height();
     qDebug() << "Scene size: " << plotScene.sceneRect().width() << "," << plotScene.sceneRect().height();
 
-//    plotScene.addRect(ui->graphicsView_view->rect())->setTransform(itemToScene);
-
     if (_rect.width() < _ViewRect.width())
     {
         _rect.setWidth(ui->graphicsView_view->rect().width());
@@ -977,7 +979,7 @@ void MainWindow::sceneConstrainItems()
     QPointF topLeft = widthLine->mapToScene(widthLine->line().p2());
     QPointF bottomLeft = widthLine->mapToScene(widthLine->line().p1());
 
-    hpglModel.constrainItems(bottomLeft, topLeft);
+    hpglModel->constrainItems(bottomLeft, topLeft);
 }
 
 void MainWindow::addPolygon(QPersistentModelIndex index, QPolygonF poly)
@@ -990,7 +992,7 @@ void MainWindow::addPolygon(QPersistentModelIndex index, QPolygonF poly)
 
     QGraphicsPolygonItem * gpoly = plotScene.addPolygon(poly, pen);
 
-    hpglModel.addPolygon(index, gpoly);
+    hpglModel->addPolygon(index, gpoly);
 }
 
 
