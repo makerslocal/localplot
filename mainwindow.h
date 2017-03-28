@@ -33,6 +33,10 @@
 #include <QSplitter>
 #include <QGraphicsLineItem>
 #include <QToolButton>
+#include <QImage>
+#include <QBrush>
+#include <QPixmap>
+#include <qmath.h>
 
 #include "settings.h"
 #include "extplot.h"
@@ -104,6 +108,7 @@ private slots:
     void sceneScale11();
     void sceneScaleContain();
     void sceneScaleContainSelected();
+    void sceneSetGrid(int xSize, int ySize, QTransform _transform);
 
     // View/Scene
     void sceneSetup();

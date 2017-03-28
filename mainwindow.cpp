@@ -762,11 +762,58 @@ QLineF MainWindow::get_widthLine()
 
 void MainWindow::sceneScaleWidth()
 {
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
     ui->graphicsView_view->fitInView(
         plotScene.sceneRect(),
         Qt::KeepAspectRatio);
+    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
     handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
     handle_zoomChanged("Vinyl width");
+}
+
+void MainWindow::sceneSetGrid(int xDpi, int yDpi, QTransform _transform)
+{
+    QTransform hpglToPx;
+    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
+
+    // m11 and m22 are horizontal and vertical scaling
+    qreal mx, my;
+    mx = hpglToPx.m11() / qAbs(_transform.m11());
+    my = hpglToPx.m22() / qAbs(_transform.m22());
+
+    int gridX, gridY;
+    gridX = (xDpi / mx);
+    gridY = (yDpi / my);
+    qDebug() << "grid: " << gridX << gridY << mx << my;
+    QImage grid(gridX, gridY, QImage::Format_RGB32);
+    QRgb value;
+
+    value = qRgb(150, 200, 150);
+    for (int x = 0; x < gridX; ++x)
+    {
+        for (int y = 0; y < gridY; ++y)
+        {
+            grid.setPixelColor(QPoint(x, y), Qt::white);
+        }
+    }
+    for (int i = 0; i < gridX; ++i)
+    {
+        grid.setPixel(i, 0, value);
+    }
+    for (int i = 0; i < gridY; ++i)
+    {
+        grid.setPixel(0, i, value);
+    }
+
+    QBrush gridBrush(grid);
+
+    qDebug() << hpglToPx << _transform;
+    gridBrush.setTransform((_transform.inverted()));
+
+    ui->graphicsView_view->setBackgroundBrush(gridBrush);
+//    plotScene.setBackgroundBrush(gridBrush);
 }
 
 void MainWindow::sceneScale11()
@@ -781,6 +828,7 @@ void MainWindow::sceneScale11()
     viewFlip.scale(1, -1);
 
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
+    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
 
     handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
     handle_zoomChanged("Actual size");
@@ -834,6 +882,7 @@ void MainWindow::sceneScaleContain()
     }
 
     ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
+    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");
@@ -888,6 +937,7 @@ void MainWindow::sceneScaleContainSelected()
     }
 
     ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
+    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");

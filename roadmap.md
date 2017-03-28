@@ -47,6 +47,7 @@ Rewrite that switches from list to data model. Smaller, more task specific threa
 * Run perimeter command.
 * Rotations/scaling on individual hpgl files.
 * Generate cutout boxes.
+* Tiling (QBrush) grid background
 
 #### Unsorted ToDo:
 
@@ -54,7 +55,6 @@ Rewrite that switches from list to data model. Smaller, more task specific threa
 * Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
 * Export to USB plotter.
 * Export to printer.
-* Tiling (QBrush) grid background
 * Side rulers?
 
 <br><br><br><br>
