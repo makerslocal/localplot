@@ -39,17 +39,19 @@ Some bugfixes and minor features:
 
 ### Future
 
-#### v0.4.1
+#### v0.5.0
+
+Rewrite that switches from list to data model. Smaller, more task specific threads.
+
+* Auto arrange (bin packing).
+* Run perimeter command.
+* Rotations/scaling on individual hpgl files.
 
 #### Unsorted ToDo:
 
-* Run perimeter command.
-* Generate perimeter (to plot).
+* Generate cutout boxes.
 * Alert when done.
 * Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
-* Manually drive plotter.
-* Rotations/scaling on individual hpgl files.
-* Auto arrange (bin packing).
 * Export to USB plotter.
 * Export to printer.
 * Tiling (QBrush) grid background
