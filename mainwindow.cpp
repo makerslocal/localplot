@@ -762,19 +762,20 @@ QLineF MainWindow::get_widthLine()
 
 void MainWindow::sceneScaleWidth()
 {
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
     ui->graphicsView_view->fitInView(
         plotScene.sceneRect(),
         Qt::KeepAspectRatio);
-    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
+    sceneSetGrid();
     handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
     handle_zoomChanged("Vinyl width");
 }
 
-void MainWindow::sceneSetGrid(int xDpi, int yDpi, QTransform _transform)
+void MainWindow::sceneSetGrid()
 {
+    QTransform _transform = ui->graphicsView_view->transform();
+    // physicalDpi is the number of pixels in an inch
+    int xDpi = ui->graphicsView_view->physicalDpiX();
+    int yDpi = ui->graphicsView_view->physicalDpiY();
     QSettings settings;
     if (!settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool())
     {
@@ -844,7 +845,7 @@ void MainWindow::sceneScale11()
     viewFlip.scale(1, -1);
 
     ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
-    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
+    sceneSetGrid();
 
     handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
     handle_zoomChanged("Actual size");
@@ -898,7 +899,7 @@ void MainWindow::sceneScaleContain()
     }
 
     ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
-    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
+    sceneSetGrid();
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");
@@ -953,7 +954,7 @@ void MainWindow::sceneScaleContainSelected()
     }
 
     ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
-    sceneSetGrid(xDpi, yDpi, ui->graphicsView_view->transform());
+    sceneSetGrid();
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");

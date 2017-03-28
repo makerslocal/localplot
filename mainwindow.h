@@ -108,7 +108,7 @@ private slots:
     void sceneScale11();
     void sceneScaleContain();
     void sceneScaleContainSelected();
-    void sceneSetGrid(int xSize, int ySize, QTransform _transform);
+    void sceneSetGrid();
 
     // View/Scene
     void sceneSetup();
