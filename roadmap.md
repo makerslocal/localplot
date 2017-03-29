@@ -51,6 +51,9 @@ Rewrite that switches from list to data model. Smaller, more task specific threa
 
 #### Unsorted ToDo:
 
+* Modal progress dialog.
+* Working About dialog.
+* run command on plot finish.
 * Alert when done.
 * Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
 * Export to USB plotter.
