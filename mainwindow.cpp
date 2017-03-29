@@ -223,7 +223,17 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
 
 void MainWindow::handle_plottingEta(double eta)
 {
-    label_eta->setText("ETA: " + QString::number(eta));
+    qDebug() << "ETA: " << eta;
+    QString labelText = "ETA: ";
+    int minutes = (eta / 60);
+    if (minutes)
+    {
+        labelText += QString::number(minutes);
+        labelText += "m ";
+    }
+    labelText += QString::number(eta - (minutes*60),'g',2);
+    labelText += "s";
+    label_eta->setText(labelText);
 }
 
 void MainWindow::handle_zoomChanged(QString text)
