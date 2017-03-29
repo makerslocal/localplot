@@ -112,8 +112,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
     connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
 
-    ui->toolBar->setHidden(false);
-
     sceneSetup();
 }
 

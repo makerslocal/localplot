@@ -4,14 +4,12 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport designer network svg
+QT       += core gui serialport designer svg
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = localplot
 TEMPLATE = app
-
-INCLUDEPATH += qmqtt-master/src/mqtt/
 
 SOURCES += main.cpp\
 		mainwindow.cpp \
@@ -25,20 +23,7 @@ SOURCES += main.cpp\
 	extloadfile.cpp \
 	RectangleBinPack/ShelfBinPack.cpp \
 	RectangleBinPack/GuillotineBinPack.cpp \
-	extbinpack.cpp \
-    qmqtt-master/src/mqtt/qmqtt_client_p.cpp \
-    qmqtt-master/src/mqtt/qmqtt_client.cpp \
-    qmqtt-master/src/mqtt/qmqtt_frame.cpp \
-    qmqtt-master/src/mqtt/qmqtt_message_p.cpp \
-    qmqtt-master/src/mqtt/qmqtt_message.cpp \
-    qmqtt-master/src/mqtt/qmqtt_network.cpp \
-    qmqtt-master/src/mqtt/qmqtt_routedmessage.cpp \
-    qmqtt-master/src/mqtt/qmqtt_router.cpp \
-    qmqtt-master/src/mqtt/qmqtt_routesubscription.cpp \
-    qmqtt-master/src/mqtt/qmqtt_socket.cpp \
-    qmqtt-master/src/mqtt/qmqtt_ssl_network.cpp \
-    qmqtt-master/src/mqtt/qmqtt_ssl_socket.cpp \
-    qmqtt-master/src/mqtt/qmqtt_timer.cpp
+	extbinpack.cpp
 
 HEADERS  += mainwindow.h \
 	dialogabout.h \
@@ -52,32 +37,11 @@ HEADERS  += mainwindow.h \
 	RectangleBinPack/Rect.h \
 	RectangleBinPack/ShelfBinPack.h \
 	RectangleBinPack/GuillotineBinPack.h \
-	extbinpack.h \
-    qmqtt-master/src/mqtt/qmqtt_client_p.h \
-    qmqtt-master/src/mqtt/qmqtt_client.h \
-    qmqtt-master/src/mqtt/qmqtt_frame.h \
-    qmqtt-master/src/mqtt/qmqtt_global.h \
-    qmqtt-master/src/mqtt/qmqtt_message_p.h \
-    qmqtt-master/src/mqtt/qmqtt_message.h \
-    qmqtt-master/src/mqtt/qmqtt_network_p.h \
-    qmqtt-master/src/mqtt/qmqtt_networkinterface.h \
-    qmqtt-master/src/mqtt/qmqtt_routedmessage.h \
-    qmqtt-master/src/mqtt/qmqtt_router.h \
-    qmqtt-master/src/mqtt/qmqtt_routesubscription.h \
-    qmqtt-master/src/mqtt/qmqtt_socket_p.h \
-    qmqtt-master/src/mqtt/qmqtt_socketinterface.h \
-    qmqtt-master/src/mqtt/qmqtt_ssl_network_p.h \
-    qmqtt-master/src/mqtt/qmqtt_ssl_socket_p.h \
-    qmqtt-master/src/mqtt/qmqtt_timer_p.h \
-    qmqtt-master/src/mqtt/qmqtt_timerinterface.h \
-    qmqtt-master/src/mqtt/qmqtt.h
+	extbinpack.h
 
 FORMS    += mainwindow.ui \
 	dialogabout.ui \
 	dialogsettings.ui
-
-SUBDIRS += \
-	qmqtt-master/src/mqtt/mqtt.pro
 
 RESOURCES += \
     icons.qrc
