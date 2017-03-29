@@ -106,6 +106,7 @@ private slots:
     void handle_plotSceneSelectionChanged();
     void handle_plottingEta(double eta);
     void do_enableUI(bool enabled);
+    void handle_splitterMoved();
 
     // View Zooming
     void sceneScaleWidth();

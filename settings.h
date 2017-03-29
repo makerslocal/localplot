@@ -97,6 +97,9 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  * - filePath (string)
  * - windowState (bytearray)
  * - geometry (bytearray)
+ * - splitter
+ * - - state (bytearray)
+ * - - geometry (bytearray)
  * - grid (bool)
  * - - size (int)
  * - command

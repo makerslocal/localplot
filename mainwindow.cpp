@@ -65,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
     connect(ui->actionItems, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContain()));
     connect(ui->actionContain_Selected_Items, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContainSelected()));
+    connect(ui->splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(handle_splitterMoved()));
 
     // View/scene
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
@@ -86,6 +87,14 @@ MainWindow::MainWindow(QWidget *parent) :
     if (settings.contains("mainwindow/windowState"))
     {
         restoreState(settings.value("mainwindow/windowState").toByteArray());
+    }
+    if (settings.contains("mainwindow/splitter/geometry"))
+    {
+        ui->splitter->restoreGeometry(settings.value("mainwindow/splitter/geometry").toByteArray());
+    }
+    if (settings.contains("mainwindow/splitter/state"))
+    {
+        ui->splitter->restoreState(settings.value("mainwindow/splitter/state").toByteArray());
     }
 
     // Setup statusbar
@@ -144,6 +153,13 @@ QFrame * MainWindow::statusBarDivider()
 QString timeStamp()
 {
     return(QTime::currentTime().toString("[HH:mm ss.zzz]"));
+}
+
+void MainWindow::handle_splitterMoved()
+{
+    QSettings settings;
+    settings.setValue("mainwindow/splitter/state", ui->splitter->saveState());
+    settings.setValue("mainwindow/splitter/geometry", ui->splitter->saveGeometry());
 }
 
 /*******************************************************************************
