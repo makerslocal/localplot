@@ -23,7 +23,8 @@ SOURCES += main.cpp\
 	extloadfile.cpp \
 	RectangleBinPack/ShelfBinPack.cpp \
 	RectangleBinPack/GuillotineBinPack.cpp \
-	extbinpack.cpp
+	extbinpack.cpp \
+    dialogprogress.cpp
 
 HEADERS  += mainwindow.h \
 	dialogabout.h \
@@ -37,11 +38,13 @@ HEADERS  += mainwindow.h \
 	RectangleBinPack/Rect.h \
 	RectangleBinPack/ShelfBinPack.h \
 	RectangleBinPack/GuillotineBinPack.h \
-	extbinpack.h
+	extbinpack.h \
+    dialogprogress.h
 
 FORMS    += mainwindow.ui \
 	dialogabout.ui \
-	dialogsettings.ui
+	dialogsettings.ui \
+    dialogprogress.ui
 
 RESOURCES += \
     icons.qrc

@@ -47,6 +47,7 @@
 #include "hpglgraphicsview.h"
 #include "hpgllistmodel.h"
 #include "extbinpack.h"
+#include "dialogprogress.h"
 
 QString timeStamp();
 
@@ -98,7 +99,6 @@ private slots:
     void handle_flipYbtn();
     void handle_extStarted();
     void handle_extFinished();
-    void handle_plottingPercent(int percent);
     void handle_newConsoleText(QString text, QColor textColor);
     void handle_newConsoleText(QString text);
     void handle_zoomChanged(QString text);
@@ -143,7 +143,6 @@ private:
     QGraphicsLineItem * widthLine;
 
     // Status bar
-    QProgressBar * progressBar_plotting;
     QLabel * label_eta;
     QLabel * label_status;
     QLabel * label_zoom;

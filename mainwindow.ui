@@ -256,7 +256,6 @@
    <addaction name="actionFlip_Horizontal"/>
    <addaction name="actionFlip_Vertical"/>
    <addaction name="actionAuto_Arrange"/>
-   <addaction name="actionExit"/>
   </widget>
   <action name="actionLoad_File">
    <property name="text">

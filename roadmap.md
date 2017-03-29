@@ -48,13 +48,12 @@ Rewrite that switches from list to data model. Smaller, more task specific threa
 * Rotations/scaling on individual hpgl files.
 * Generate cutout boxes.
 * Tiling (QBrush) grid background
+* Run command on plot finish.
 
 #### Unsorted ToDo:
 
 * Modal progress dialog.
 * Working About dialog.
-* run command on plot finish.
-* Alert when done.
 * Automatically attempt to parse non hpgl files (inkscape script, imagemagick, gimp?).
 * Export to USB plotter.
 * Export to printer.

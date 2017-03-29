@@ -89,7 +89,6 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     // Setup statusbar
-    progressBar_plotting = new QProgressBar;
     label_eta = new QLabel;
     label_status = new QLabel;
     label_zoom = new QLabel;
@@ -97,8 +96,6 @@ MainWindow::MainWindow(QWidget *parent) :
     label_status->setText("Status label created.");
     label_zoom->setText("Zoom: NA");
     statusBar()->addPermanentWidget(label_status);
-    statusBar()->addPermanentWidget(statusBarDivider());
-    statusBar()->addPermanentWidget(progressBar_plotting);
     statusBar()->addPermanentWidget(statusBarDivider());
     statusBar()->addPermanentWidget(label_eta);
     statusBar()->addPermanentWidget(statusBarDivider());
@@ -331,20 +328,31 @@ void MainWindow::do_plot(bool jogPerimeter)
         worker = new ExtPlot(hpglModel);
     }
 
-    // Process in new thread
+
+    // Create progress window
+    DialogProgress * newwindow;
+    newwindow = new DialogProgress(this);
+    newwindow->setWindowTitle("Plotting Progress");
+
+    // Create plotting process in new thread
     QThread * workerThread = new QThread;
     worker->moveToThread(workerThread);
     connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
-    connect(workerThread, SIGNAL(started()), this, SLOT(handle_extStarted()));
     connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-    connect(workerThread, SIGNAL(finished()), this, SLOT(handle_extFinished()));
     connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
     connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
     connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-    connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
+
+    // Connect progress window
+    connect(newwindow, SIGNAL(do_cancel()), worker, SLOT(cancel()));
+    connect(worker, SIGNAL(finished()), newwindow, SLOT(close()));
+    connect(worker, SIGNAL(progress(int)), newwindow, SLOT(handle_updateProgress(int)));
+
+    // Start
     workerThread->start();
+    newwindow->exec();
 }
 
 void MainWindow::runFinishedCommand()
@@ -376,7 +384,7 @@ void MainWindow::do_binpack()
         connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
         connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
         connect(worker, SIGNAL(packedRect(QPersistentModelIndex,QRectF)), this, SLOT(handle_packedRect(QPersistentModelIndex,QRectF)));
-        connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+//        connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
         connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
         connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
         workerThread->start();
@@ -642,7 +650,7 @@ void MainWindow::do_procEta()
     connect(worker, SIGNAL(finished(double)), workerThread, SLOT(quit()));
     connect(worker, SIGNAL(finished(double)), worker, SLOT(deleteLater()));
     connect(worker, SIGNAL(finished(double)), this, SLOT(handle_plottingEta(double)));
-    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+//    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     workerThread->start();
 }
@@ -781,11 +789,6 @@ void MainWindow::handle_flipXbtn()
 void MainWindow::handle_flipYbtn()
 {
     hpglModel->scaleSelectedItems(1, -1);
-}
-
-void MainWindow::handle_plottingPercent(int percent)
-{
-    progressBar_plotting->setValue(percent);
 }
 
 /*******************************************************************************
