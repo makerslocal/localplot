@@ -195,6 +195,7 @@ void hpglListModel::duplicateSelectedRows()
             QPolygonF polygon = hpglData[i]->hpgl_items.at(i2)->polygon();
 //            addPolygon(newIndex, polygon);
             newPolygon(newIndex, polygon);
+            hpglData[newIndex.row()]->hpgl_items.at(i2)->setPos(hpglData[i]->hpgl_items.at(i2)->pos());
         }
 //        mutex->unlock();
 //        newFileToScene(newIndex);

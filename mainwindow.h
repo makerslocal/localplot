@@ -120,6 +120,7 @@ private slots:
     void sceneConstrainItems();
     void addPolygon(QPersistentModelIndex index, QPolygonF poly);
     void newFileToScene(QPersistentModelIndex _index);
+    void createCutoutBox(QPersistentModelIndex _index);
     void handle_packedRect(QPersistentModelIndex index, QRectF rect);
 
     // plotter thread

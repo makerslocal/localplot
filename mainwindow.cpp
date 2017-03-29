@@ -611,6 +611,10 @@ void MainWindow::handle_selectFileBtn()
             this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
     connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
+    {
+        connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(createCutoutBox(QPersistentModelIndex)));
+    }
     workerThread->start();
 }
 
@@ -630,11 +634,52 @@ void MainWindow::do_procEta()
     workerThread->start();
 }
 
+void MainWindow::createCutoutBox(QPersistentModelIndex _index)
+{
+    QSettings settings;
+    QGraphicsItemGroup * itemGroup = NULL;
+    QVector<QGraphicsPolygonItem *> * items;
+
+    QMutex * mutex;
+    hpglModel->dataItemsGroup(_index, mutex, itemGroup, items);
+    QMutexLocker rowLocker(mutex);
+
+    if (itemGroup == NULL)
+    {
+        qDebug() << "Error: itemgroup is null.";
+        return;
+    }
+    if (items == NULL)
+    {
+        qDebug() << "Error: items is null.";
+        return;
+    }
+
+    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        padding = padding * 2.54;
+    }
+    padding = padding * 1016.0;
+    QRectF cutoutRect = itemGroup->boundingRect();
+    cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
+    cutoutRect.moveTo(0, 0);
+//    itemGroup->moveBy(padding, padding);
+
+    for (int i = 0; i < items->length(); ++i)
+    {
+        items->at(i)->moveBy(padding, padding);
+    }
+
+    rowLocker.unlock();
+    addPolygon(_index, static_cast<QPolygonF>(cutoutRect));
+    rowLocker.relock();
+}
+
 void MainWindow::newFileToScene(QPersistentModelIndex _index)
 {
     QGraphicsItemGroup * itemGroup = NULL;
     ui->listView->setCurrentIndex(_index);
-    QSettings settings;
 
     QMutex * mutex;
     hpglModel->dataGroup(_index, mutex, itemGroup);
@@ -644,23 +689,6 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     {
         qDebug() << "Error: itemgroup is null in newFileToScene().";
         return;
-    }
-
-    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
-    {
-        double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
-        if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
-        {
-            padding = padding * 2.54;
-        }
-        padding = padding * 1016.0;
-        QRectF cutoutRect = itemGroup->boundingRect();
-        cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
-        cutoutRect.moveTo(0, 0);
-        itemGroup->moveBy(padding, padding);
-        rowLocker.unlock();
-        addPolygon(_index, static_cast<QPolygonF>(cutoutRect));
-        rowLocker.relock();
     }
 
     plotScene.addItem(itemGroup);
