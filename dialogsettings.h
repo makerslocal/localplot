@@ -14,6 +14,7 @@
 #include <QSpinBox>
 #include <QLabel>
 #include <QCheckBox>
+#include <QLineEdit>
 
 #include "settings.h"
 

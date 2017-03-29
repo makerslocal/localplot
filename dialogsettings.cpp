@@ -83,6 +83,9 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->checkBox_viewGridEnabled->setChecked(settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool());
     ui->spinBox_viewGridSize->setValue(settings.value("mainwindow/grid/size", SETDEF_MAINWINDOW_GRID_SIZE).toInt());
     ui->doubleSpinBox_cutoutBoxesPadding->setValue(settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble());
+
+    ui->lineEdit_postPlotCmd->setText(settings.value("mainwindow/command/finished", SETDEF_MAINWINDOW_COMMAND_FINISHED).toString());
+
     if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         ui->radioButton_XonXoff->setChecked(true);
@@ -282,6 +285,7 @@ void DialogSettings::do_saveAndClose()
     {
         settings.setValue("grid", ui->checkBox_viewGridEnabled->isChecked());
         settings.setValue("grid/size", ui->spinBox_viewGridSize->value());
+        settings.setValue("command/finished", ui->lineEdit_postPlotCmd->text());
     }
     settings.endGroup();
 

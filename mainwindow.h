@@ -36,6 +36,7 @@
 #include <QImage>
 #include <QBrush>
 #include <QPixmap>
+#include <QProcess>
 
 #include <qmath.h>
 
@@ -81,6 +82,8 @@ signals:
 private slots:
     void do_openDialogAbout();
     void do_openDialogSettings();
+
+    void runFinishedCommand();
 
     // UI
     void handle_selectFileBtn();

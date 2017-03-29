@@ -340,10 +340,25 @@ void MainWindow::do_plot(bool jogPerimeter)
     connect(workerThread, SIGNAL(finished()), this, SLOT(handle_extFinished()));
     connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
     connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
     workerThread->start();
+}
+
+void MainWindow::runFinishedCommand()
+{
+    QSettings settings;
+    QProcess * proc = new QProcess(this);
+    QString procCmd = settings.value("mainwindow/command/finished", SETDEF_MAINWINDOW_COMMAND_FINISHED).toString();
+    if (procCmd.isEmpty())
+    {
+        qDebug() << "Post processing command string empty.";
+        return;
+    }
+    qDebug() << "Running finish command: " << procCmd;
+    proc->start(procCmd);
 }
 
 void MainWindow::do_binpack()

@@ -55,6 +55,7 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
 #define SETDEF_MAINWINDOW_GRID (true)
 #define SETDEF_MAINWINDOW_GRID_SIZE (1)
 #define SETDEF_DIALLOGSETTINGS_INDEX (1)
+#define SETDEF_MAINWINDOW_COMMAND_FINISHED ("echo -ne '\\a'")
 
 #define SETDEF_SERIAL_PORT      ("")
 #define SETDEF_SERIAL_BAUD      (9600)
@@ -98,6 +99,8 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  * - geometry (bytearray)
  * - grid (bool)
  * - - size (int)
+ * - command
+ * - - finished (string)
  *
  * dialogsettings
  * - index (int)
