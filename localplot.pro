@@ -24,7 +24,9 @@ SOURCES += main.cpp\
 	RectangleBinPack/ShelfBinPack.cpp \
 	RectangleBinPack/GuillotineBinPack.cpp \
 	extbinpack.cpp \
-    dialogprogress.cpp
+    dialogprogress.cpp \
+    RectangleBinPack/MaxRectsBinPack.cpp \
+    RectangleBinPack/Rect.cpp
 
 HEADERS  += mainwindow.h \
 	dialogabout.h \
@@ -39,7 +41,8 @@ HEADERS  += mainwindow.h \
 	RectangleBinPack/ShelfBinPack.h \
 	RectangleBinPack/GuillotineBinPack.h \
 	extbinpack.h \
-    dialogprogress.h
+    dialogprogress.h \
+    RectangleBinPack/MaxRectsBinPack.h
 
 FORMS    += mainwindow.ui \
 	dialogabout.ui \

@@ -15,7 +15,8 @@
 
 #include "settings.h"
 #include "hpgllistmodel.h"
-#include "RectangleBinPack/ShelfBinPack.h"
+//#include "RectangleBinPack/ShelfBinPack.h"
+#include "RectangleBinPack/MaxRectsBinPack.h"
 #include "mainwindow.h"
 
 namespace std {

@@ -14,7 +14,8 @@ ExtBinPack::~ExtBinPack()
 void ExtBinPack::process()
 {
     QSettings settings;
-    rbp::ShelfBinPack packer;
+//    rbp::ShelfBinPack packer;
+    rbp::MaxRectsBinPack mrPacker;
     QPersistentModelIndex index;
     QGraphicsItemGroup * itemGroup;
 
@@ -57,7 +58,8 @@ void ExtBinPack::process()
         mutex->unlock();
     }
 
-    packer.Init(initX, initY, true);
+//    packer.Init(initX, initY, true);
+    mrPacker.Init(initX, initY);
 
     for (int i = 0; i < hpglModel->rowCount(); ++i)
     {
@@ -97,9 +99,13 @@ void ExtBinPack::process()
         margin.setTop(padding);
         margin.setRight(padding);
 
-        rbp::Rect thisrect = packer.Insert(itemGroup->boundingRect().marginsAdded(margin).width(),
-                                           itemGroup->boundingRect().marginsAdded(margin).height(),
-                                           rbp::ShelfBinPack::ShelfChoiceHeuristic::ShelfBestHeightFit);
+//        rbp::Rect thisrect = packer.Insert(itemGroup->boundingRect().marginsAdded(margin).width(),
+//                                           itemGroup->boundingRect().marginsAdded(margin).height(),
+//                                           rbp::ShelfBinPack::ShelfChoiceHeuristic::ShelfWorstAreaFit);
+
+        rbp::Rect thisrect = mrPacker.Insert(itemGroup->boundingRect().marginsAdded(margin).width(),
+                                             itemGroup->boundingRect().marginsAdded(margin).height(),
+                                             rbp::MaxRectsBinPack::FreeRectChoiceHeuristic::RectBottomLeftRule);
 
         QRectF rect;
         rect.setX(thisrect.y);
