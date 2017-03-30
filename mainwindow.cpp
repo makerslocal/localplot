@@ -750,6 +750,8 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsMovable, true);
     hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsSelectable, true);
 
+    ui->listView->selectionModel()->clearSelection();
+    handle_listViewClick();
     itemGroup->setSelected(true);
     rowLocker.unlock();
 
