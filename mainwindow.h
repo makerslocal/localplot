@@ -126,7 +126,8 @@ private slots:
     void handle_packedRect(QPersistentModelIndex index, QRectF rect);
 
     // plotter thread
-    void do_plot(bool jogPerimeter);
+    void do_plot();
+    void do_jog();
     void do_cancelPlot();
     void do_procEta();
     void do_binpack();

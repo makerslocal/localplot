@@ -268,12 +268,12 @@ void MainWindow::handle_newConsoleText(QString text)
 
 void MainWindow::handle_jogPerimeterBtn()
 {
-    do_plot(true);
+    do_jog();
 }
 
 void MainWindow::handle_plotFileBtn()
 {
-    do_plot(false);
+    do_plot();
 }
 
 void MainWindow::handle_cancelBtn()
@@ -281,69 +281,11 @@ void MainWindow::handle_cancelBtn()
     emit please_plotter_cancelPlot();
 }
 
-void MainWindow::do_plot(bool jogPerimeter)
+void MainWindow::do_plot()
 {
     ExtPlot * worker;
-    if (jogPerimeter)
-    {
-        QRectF perimeter;
-        QModelIndex index;
-        QGraphicsItemGroup * itemGroup;
-        qreal x1, y1, x2, y2;
 
-        for (int i = 0; i < hpglModel->rowCount(); ++i)
-        {
-            index = hpglModel->index(i);
-            itemGroup = NULL;
-            QMutex * mutex;
-            hpglModel->dataGroup(index, mutex, itemGroup);
-            if (!mutex->tryLock())
-            {
-                qDebug() << "Mutex already locked, giving up.";
-                return;
-            }
-
-            if (itemGroup == NULL)
-            {
-                qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-                mutex->unlock();
-                return;
-            }
-
-            itemGroup->mapRectToScene(itemGroup->boundingRect()).getCoords(&x1, &y1, &x2, &y2);
-            if (x1 < perimeter.x())
-            {
-                perimeter.setX(x1);
-            }
-            if (y1 < perimeter.y())
-            {
-                perimeter.setY(y1);
-            }
-            if (x2 > (perimeter.x() + perimeter.width()))
-            {
-                perimeter.setWidth(x2 - perimeter.width());
-            }
-            if (y2 > (perimeter.y() + perimeter.height()))
-            {
-                perimeter.setHeight(y2 - perimeter.y());
-            }
-            if (perimeter.x() < 0)
-            {
-                perimeter.setX(0);
-            }
-            if (perimeter.y() < 0)
-            {
-                perimeter.setY(0);
-            }
-            mutex->unlock();
-        }
-        worker = new ExtPlot(hpglModel, perimeter);
-    }
-    else
-    {
-        worker = new ExtPlot(hpglModel);
-    }
-
+    worker = new ExtPlot(hpglModel);
 
     // Create progress window
     DialogProgress * newwindow;
@@ -359,6 +301,88 @@ void MainWindow::do_plot(bool jogPerimeter)
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
     connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
 //    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+
+    // Connect progress window
+    connect(newwindow, SIGNAL(do_cancel()), worker, SLOT(cancel()));
+    connect(worker, SIGNAL(finished()), newwindow, SLOT(close()));
+    connect(worker, SIGNAL(progress(int)), newwindow, SLOT(handle_updateProgress(int)));
+
+    // Start
+    workerThread->start();
+    newwindow->exec();
+}
+
+void MainWindow::do_jog()
+{
+    ExtPlot * worker;
+
+    QRectF perimeter;
+    QModelIndex index;
+    QGraphicsItemGroup * itemGroup;
+    qreal x1, y1, x2, y2;
+
+    for (int i = 0; i < hpglModel->rowCount(); ++i)
+    {
+        index = hpglModel->index(i);
+        itemGroup = NULL;
+        QMutex * mutex;
+        hpglModel->dataGroup(index, mutex, itemGroup);
+        if (!mutex->tryLock())
+        {
+            qDebug() << "Mutex already locked, giving up.";
+            return;
+        }
+
+        if (itemGroup == NULL)
+        {
+            qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
+            mutex->unlock();
+            return;
+        }
+
+        itemGroup->mapRectToScene(itemGroup->boundingRect()).getCoords(&x1, &y1, &x2, &y2);
+        if (x1 < perimeter.x())
+        {
+            perimeter.setX(x1);
+        }
+        if (y1 < perimeter.y())
+        {
+            perimeter.setY(y1);
+        }
+        if (x2 > (perimeter.x() + perimeter.width()))
+        {
+            perimeter.setWidth(x2 - perimeter.width());
+        }
+        if (y2 > (perimeter.y() + perimeter.height()))
+        {
+            perimeter.setHeight(y2 - perimeter.y());
+        }
+        if (perimeter.x() < 0)
+        {
+            perimeter.setX(0);
+        }
+        if (perimeter.y() < 0)
+        {
+            perimeter.setY(0);
+        }
+        mutex->unlock();
+    }
+    worker = new ExtPlot(hpglModel, perimeter);
+
+    // Create progress window
+    DialogProgress * newwindow;
+    newwindow = new DialogProgress(this);
+    newwindow->setWindowTitle("Jogging Progress");
+
+    // Create plotting process in new thread
+    QThread * workerThread = new QThread;
+    worker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
+    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
+    connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
 
     // Connect progress window
@@ -486,7 +510,6 @@ void MainWindow::do_enableUI(bool enabled)
     ui->pushButton_fileSelect->setEnabled(enabled);
     ui->graphicsView_view->setEnabled(enabled);
     ui->actionLoad_File->setEnabled(enabled);
-//    progressBar_plotting->setValue(0);
     ui->pushButton_doPlot->setEnabled(enabled);
     ui->pushButton_jogPerimeter->setEnabled(enabled);
     ui->pushButton_cancel->setEnabled(!enabled);
