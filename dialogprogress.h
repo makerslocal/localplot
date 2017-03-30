@@ -6,6 +6,9 @@
 #include <QProgressBar>
 #include <QDialogButtonBox>
 #include <QAbstractButton>
+#include <QCheckBox>
+
+#include "settings.h"
 
 namespace Ui {
 class DialogProgress;
@@ -25,9 +28,12 @@ signals:
 public slots:
     void handle_updateProgress(int percent);
 
+private slots:
+    void handle_postHookCheckboxChanged(bool checked);
+    void handle_abortBtn(QAbstractButton *btn);
+
 private:
     Ui::DialogProgress *ui;
-    void handle_abortBtn(QAbstractButton *btn);
 };
 
 #endif // DIALOGPROGRESS_H

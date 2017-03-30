@@ -358,7 +358,7 @@ void MainWindow::do_plot(bool jogPerimeter)
     connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
     connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
-    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+//    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
 
     // Connect progress window
@@ -375,13 +375,14 @@ void MainWindow::runFinishedCommand()
 {
     QSettings settings;
     QProcess * proc = new QProcess(this);
-    QString procCmd = settings.value("mainwindow/command/finished", SETDEF_MAINWINDOW_COMMAND_FINISHED).toString();
-    if (procCmd.isEmpty())
+    bool doRun = settings.value("hook/finished", SETDEF_HOOK_FINISHED).toBool();
+    QString procCmd = settings.value("hook/finished/path", SETDEF_HOOK_FINISHED_PATH).toString();
+    if (procCmd.isEmpty() || (!doRun) )
     {
-        qDebug() << "Post processing command string empty.";
+        qDebug() << "Not running a post hook.";
         return;
     }
-    qDebug() << "Running finish command: " << procCmd;
+    qDebug() << "Running post hook: " << procCmd;
     proc->start(procCmd);
 }
 
@@ -646,7 +647,7 @@ void MainWindow::handle_selectFileBtn()
     connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(do_procEta()));
     connect(worker, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)),
             this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
-    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
+//    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
     {

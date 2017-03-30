@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1362</width>
-    <height>1149</height>
+    <height>1152</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -912,18 +912,25 @@
           <string>Post Processing</string>
          </property>
          <layout class="QFormLayout" name="formLayout_15">
-          <item row="0" column="0">
+          <item row="1" column="0">
            <widget class="QLabel" name="label_19">
             <property name="toolTip">
              <string>Shell command to run after plotting has finished.</string>
             </property>
             <property name="text">
-             <string>Command </string>
+             <string>Script path</string>
             </property>
            </widget>
           </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineEdit_hookFinishedPath"/>
+          </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="lineEdit_postPlotCmd"/>
+           <widget class="QCheckBox" name="checkBox_hookFinishedEnabled">
+            <property name="text">
+             <string>Enable Finished-Plotting Hook</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
