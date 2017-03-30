@@ -119,6 +119,9 @@ private slots:
     void newFileToScene(QPersistentModelIndex _index);
     void createCutoutBox(QPersistentModelIndex _index);
     void handle_packedRect(QPersistentModelIndex index, QRectF rect);
+    void sceneZoomDelta(int delta);
+    void sceneZoomOut();
+    void sceneZoomIn();
 
     // plotter thread
     void do_plot();

@@ -277,6 +277,8 @@
    <addaction name="actionZoom_Items"/>
    <addaction name="actionZoom_Selected"/>
    <addaction name="actionZoom_Vinyl"/>
+   <addaction name="actionZoom_In"/>
+   <addaction name="actionZoom_Out"/>
   </widget>
   <action name="actionLoad_File">
    <property name="icon">
@@ -315,6 +317,9 @@
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+   <property name="shortcut">
+    <string>?</string>
    </property>
   </action>
   <action name="actionZoom_Actual">
@@ -471,6 +476,39 @@
    </property>
    <property name="toolTip">
     <string>Remove selected items</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+  </action>
+  <action name="actionZoom_In">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/zoom_in.png</normaloff>:/icon/images/icons/zoom_in.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom In</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom in slightly</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+=</string>
+   </property>
+  </action>
+  <action name="actionZoom_Out">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/zoom_out.png</normaloff>:/icon/images/icons/zoom_out.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom Out</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom out slightly</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+-</string>
    </property>
   </action>
  </widget>

@@ -24,6 +24,7 @@ public:
 
 signals:
     void mouseReleased();
+    void zoomDelta(int delta);
 
 protected:
     void mouseReleaseEvent(QMouseEvent *event);

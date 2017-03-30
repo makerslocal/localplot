@@ -17,10 +17,7 @@ void hpglGraphicsView::wheelEvent(QWheelEvent *event)
     if (QApplication::keyboardModifiers() == Qt::ControlModifier)
     {
         int delta = event->delta();
-        QTransform oldtransform = transform();
-        QTransform scaleTransform;
-        scaleTransform.scale((1.0+(5.0/delta)), (1.0+(5.0/delta)));
-        setTransform(oldtransform * scaleTransform);
+        emit zoomDelta(delta);
     }
     else
     {

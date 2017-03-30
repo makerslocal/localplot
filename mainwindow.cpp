@@ -62,6 +62,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAuto_Arrange, SIGNAL(triggered(bool)), this, SLOT(do_binpack()));
     connect(ui->actionPlot, SIGNAL(triggered(bool)), this, SLOT(do_plot()));
     connect(ui->actionJog, SIGNAL(triggered(bool)), this, SLOT(do_jog()));
+    connect(ui->actionZoom_In, SIGNAL(triggered(bool)), this, SLOT(sceneZoomIn()));
+    connect(ui->actionZoom_Out, SIGNAL(triggered(bool)), this, SLOT(sceneZoomOut()));
 
     // Connect UI buttons to actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked(bool)), ui->actionLoad_File, SLOT(trigger()));
@@ -76,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
+    connect(ui->graphicsView_view, SIGNAL(zoomDelta(int)), this, SLOT(sceneZoomDelta(int)));
 
     // Connect everything else
     connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
@@ -1041,6 +1044,27 @@ void MainWindow::sceneZoomSelected()
 
     handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
     handle_zoomChanged("Show all items");
+}
+
+void MainWindow::sceneZoomDelta(int delta)
+{
+    QTransform oldtransform = ui->graphicsView_view->transform();
+    QTransform scaleTransform;
+    scaleTransform.scale((1.0+(5.0/delta)), (1.0+(5.0/delta)));
+    ui->graphicsView_view->setTransform(oldtransform * scaleTransform);
+    sceneSetGrid();
+    handle_newConsoleText("Scene scale set to scroll wheel zoom.");
+    handle_zoomChanged("Custom");
+}
+
+void MainWindow::sceneZoomOut()
+{
+    sceneZoomDelta(-30);
+}
+
+void MainWindow::sceneZoomIn()
+{
+    sceneZoomDelta(30);
 }
 
 void MainWindow::sceneSetup()
