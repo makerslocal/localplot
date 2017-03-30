@@ -42,36 +42,44 @@ MainWindow::MainWindow(QWidget *parent) :
     QSettings settings;
 
     ui->setupUi(this);
+    hpglModel = new hpglListModel(this);
 
-    // Connect UI buttons
-    connect(ui->pushButton_fileSelect, SIGNAL(clicked()), this, SLOT(handle_selectFileBtn()));
-    connect(ui->pushButton_doPlot, SIGNAL(clicked()), this, SLOT(handle_plotFileBtn()));
-    connect(ui->pushButton_jogPerimeter, SIGNAL(clicked(bool)), this, SLOT(handle_jogPerimeterBtn()));
-    connect(ui->pushButton_cancel, SIGNAL(clicked(bool)), this, SLOT(handle_cancelBtn()));
-    connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), this, SLOT(handle_deleteFileBtn()));
-    connect(ui->pushButton_duplicateFile, SIGNAL(clicked(bool)), this, SLOT(handle_duplicateFileBtn()));
+    // Connect UI actions
+    connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
+    connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
+    connect(ui->actionDelete, SIGNAL(triggered(bool)), this, SLOT(handle_deleteFileBtn()));
+    connect(ui->actionDuplicate, SIGNAL(triggered(bool)), this, SLOT(handle_duplicateFileBtn()));
+    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
+    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
+    connect(ui->actionZoom_Actual, SIGNAL(triggered(bool)), this, SLOT(sceneZoomActual()));
+    connect(ui->actionZoom_Vinyl, SIGNAL(triggered(bool)), this, SLOT(sceneZoomVinyl()));
+    connect(ui->actionZoom_Items, SIGNAL(triggered(bool)), this, SLOT(sceneZoomItems()));
+    connect(ui->actionZoom_Selected, SIGNAL(triggered(bool)), this, SLOT(sceneZoomSelected()));
     connect(ui->actionRotate_Left, SIGNAL(triggered(bool)), this, SLOT(handle_rotateLeftBtn()));
     connect(ui->actionRotate_Right, SIGNAL(triggered(bool)), this, SLOT(handle_rotateRightBtn()));
     connect(ui->actionFlip_Horizontal, SIGNAL(triggered(bool)), this, SLOT(handle_flipXbtn()));
     connect(ui->actionFlip_Vertical, SIGNAL(triggered(bool)), this, SLOT(handle_flipYbtn()));
     connect(ui->actionAuto_Arrange, SIGNAL(triggered(bool)), this, SLOT(do_binpack()));
+    connect(ui->actionPlot, SIGNAL(triggered(bool)), this, SLOT(do_plot()));
+    connect(ui->actionJog, SIGNAL(triggered(bool)), this, SLOT(do_jog()));
 
-    // Connect UI actions
-    connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
-    connect(ui->actionLoad_File, SIGNAL(triggered(bool)), this, SLOT(handle_selectFileBtn()));
-    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
-    connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
-    connect(ui->action1_1, SIGNAL(triggered(bool)), this, SLOT(sceneScale11()));
-    connect(ui->actionAll, SIGNAL(triggered(bool)), this, SLOT(sceneScaleWidth()));
-    connect(ui->actionItems, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContain()));
-    connect(ui->actionContain_Selected_Items, SIGNAL(triggered(bool)), this, SLOT(sceneScaleContainSelected()));
+    // Connect UI buttons to actions
+    connect(ui->pushButton_fileSelect, SIGNAL(clicked(bool)), ui->actionLoad_File, SLOT(trigger()));
+    connect(ui->pushButton_doPlot, SIGNAL(clicked(bool)), ui->actionPlot, SLOT(trigger()));
+    connect(ui->pushButton_jogPerimeter, SIGNAL(clicked(bool)), ui->actionJog, SLOT(trigger()));
+    connect(ui->pushButton_fileRemove, SIGNAL(clicked(bool)), ui->actionDelete, SLOT(trigger()));
+    connect(ui->pushButton_duplicateFile, SIGNAL(clicked(bool)), ui->actionDuplicate, SLOT(trigger()));
+
+    // Connect other UI elements
     connect(ui->splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(handle_splitterMoved()));
-
-    // View/scene
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
     connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
+
+    // Connect everything else
+    connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
+    connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
 
 //    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
 //            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
@@ -111,12 +119,7 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->addPermanentWidget(label_zoom);
 
     ui->graphicsView_view->setScene(&plotScene);
-    hpglModel = new hpglListModel(this);
-    // Setup listView and listModel
     ui->listView->setModel(hpglModel);
-
-    connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
-    connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
 
     sceneSetup();
 }
@@ -264,16 +267,6 @@ void MainWindow::handle_newConsoleText(QString text)
     qDebug() << timeStamp() << text;
     label_status->setText(text);
     label_status->setStyleSheet("QLabel { color : #000; }");
-}
-
-void MainWindow::handle_jogPerimeterBtn()
-{
-    do_jog();
-}
-
-void MainWindow::handle_plotFileBtn()
-{
-    do_plot();
 }
 
 void MainWindow::handle_cancelBtn()
@@ -717,8 +710,8 @@ void MainWindow::createCutoutBox(QPersistentModelIndex _index)
     QRectF cutoutRect = itemGroup->boundingRect();
     cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
     cutoutRect.moveTo(0, 0);
-//    itemGroup->moveBy(padding, padding);
 
+//    itemGroup->moveBy(padding, padding);
     for (int i = 0; i < items->length(); ++i)
     {
         items->at(i)->moveBy(padding, padding);
@@ -851,7 +844,7 @@ QLineF MainWindow::get_widthLine()
     return (QLineF(0, 0, 0, (1016.0 * length)));
 }
 
-void MainWindow::sceneScaleWidth()
+void MainWindow::sceneZoomVinyl()
 {
     ui->graphicsView_view->fitInView(
         plotScene.sceneRect(),
@@ -923,7 +916,7 @@ void MainWindow::sceneSetGrid()
 //    plotScene.setBackgroundBrush(gridBrush);
 }
 
-void MainWindow::sceneScale11()
+void MainWindow::sceneZoomActual()
 {
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
@@ -941,7 +934,7 @@ void MainWindow::sceneScale11()
     handle_zoomChanged("Actual size");
 }
 
-void MainWindow::sceneScaleContain()
+void MainWindow::sceneZoomItems()
 {
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
@@ -995,7 +988,7 @@ void MainWindow::sceneScaleContain()
     handle_zoomChanged("Show all items");
 }
 
-void MainWindow::sceneScaleContainSelected()
+void MainWindow::sceneZoomSelected()
 {
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
@@ -1093,7 +1086,7 @@ void MainWindow::sceneSetup()
     ui->graphicsView_view->show();
 
     sceneSetSceneRect();
-    sceneScale11();
+    sceneZoomActual();
 }
 
 void MainWindow::sceneSetSceneRect()

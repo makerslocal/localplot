@@ -5,5 +5,21 @@
         <file>images/icons/flip_horizontal.png</file>
         <file>images/icons/flip_vertical.png</file>
         <file>images/icons/rotate_right.png</file>
+        <file>images/icons/settings.png</file>
+        <file>images/icons/zoom_actual.png</file>
+        <file>images/icons/zoom_fit_all.png</file>
+        <file>images/icons/zoom_fit_selection.png</file>
+        <file>images/icons/zoom_fit_vinyl.png</file>
+        <file>images/icons/select_all.png</file>
+        <file>images/icons/select_none.png</file>
+        <file>images/icons/grid.png</file>
+        <file>images/icons/draw_cutoutbox.png</file>
+        <file>images/icons/delete.png</file>
+        <file>images/icons/load_file.png</file>
+        <file>images/icons/duplicate.png</file>
+        <file>images/icons/zoom_in.png</file>
+        <file>images/icons/zoom_out.png</file>
+        <file>images/icons/jog.png</file>
+        <file>images/icons/plot.png</file>
     </qresource>
 </RCC>

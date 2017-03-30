@@ -92,9 +92,7 @@ private slots:
     void handle_rotateLeftBtn();
     void handle_rotateRightBtn();
     void handle_duplicateFileBtn();
-    void handle_plotFileBtn();
     void handle_cancelBtn();
-    void handle_jogPerimeterBtn();
     void handle_flipXbtn();
     void handle_flipYbtn();
     void handle_newConsoleText(QString text, QColor textColor);
@@ -106,10 +104,10 @@ private slots:
     void handle_splitterMoved();
 
     // View Zooming
-    void sceneScaleWidth();
-    void sceneScale11();
-    void sceneScaleContain();
-    void sceneScaleContainSelected();
+    void sceneZoomVinyl();
+    void sceneZoomActual();
+    void sceneZoomItems();
+    void sceneZoomSelected();
     void sceneSetGrid();
 
     // View/Scene

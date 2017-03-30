@@ -116,16 +116,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_cancel">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Cancel</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="pushButton_doPlot">
             <property name="enabled">
              <bool>false</bool>
@@ -228,10 +218,10 @@
     <property name="title">
      <string>&amp;Zoom</string>
     </property>
-    <addaction name="action1_1"/>
-    <addaction name="actionAll"/>
-    <addaction name="actionItems"/>
-    <addaction name="actionContain_Selected_Items"/>
+    <addaction name="actionZoom_Actual"/>
+    <addaction name="actionZoom_Vinyl"/>
+    <addaction name="actionZoom_Items"/>
+    <addaction name="actionZoom_Selected"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -256,10 +246,48 @@
    <addaction name="actionFlip_Horizontal"/>
    <addaction name="actionFlip_Vertical"/>
    <addaction name="actionAuto_Arrange"/>
+   <addaction name="actionDuplicate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar_2">
+   <property name="windowTitle">
+    <string>toolBar_2</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionSettings"/>
+   <addaction name="actionDelete"/>
+   <addaction name="actionPlot"/>
+   <addaction name="actionJog"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar_3">
+   <property name="windowTitle">
+    <string>toolBar_3</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionZoom_Actual"/>
+   <addaction name="actionZoom_Items"/>
+   <addaction name="actionZoom_Selected"/>
+   <addaction name="actionZoom_Vinyl"/>
   </widget>
   <action name="actionLoad_File">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/load_file.png</normaloff>:/icon/images/icons/load_file.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Load File</string>
+   </property>
+   <property name="toolTip">
+    <string>Open an hpgl file</string>
    </property>
   </action>
   <action name="actionSave_File">
@@ -276,6 +304,10 @@
    </property>
   </action>
   <action name="actionSettings">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/settings.png</normaloff>:/icon/images/icons/settings.png</iconset>
+   </property>
    <property name="text">
     <string>Sett&amp;ings</string>
    </property>
@@ -285,24 +317,52 @@
     <string>&amp;About</string>
    </property>
   </action>
-  <action name="action1_1">
+  <action name="actionZoom_Actual">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/zoom_actual.png</normaloff>:/icon/images/icons/zoom_actual.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Actual Size</string>
    </property>
-  </action>
-  <action name="actionAll">
-   <property name="text">
-    <string>Contain &amp;Vinyl</string>
+   <property name="toolTip">
+    <string>Show items as they will be plotted</string>
    </property>
   </action>
-  <action name="actionItems">
+  <action name="actionZoom_Vinyl">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/zoom_fit_vinyl.png</normaloff>:/icon/images/icons/zoom_fit_vinyl.png</iconset>
+   </property>
    <property name="text">
-    <string>Contain All &amp;Items</string>
+    <string>&amp;Vinyl</string>
+   </property>
+   <property name="toolTip">
+    <string>Show entire vinyl width</string>
    </property>
   </action>
-  <action name="actionContain_Selected_Items">
+  <action name="actionZoom_Items">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/zoom_fit_all.png</normaloff>:/icon/images/icons/zoom_fit_all.png</iconset>
+   </property>
    <property name="text">
-    <string>&amp;Contain Selected Items</string>
+    <string>All &amp;Items</string>
+   </property>
+   <property name="toolTip">
+    <string>Show All Items</string>
+   </property>
+  </action>
+  <action name="actionZoom_Selected">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/zoom_fit_selection.png</normaloff>:/icon/images/icons/zoom_fit_selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Selected Items</string>
+   </property>
+   <property name="toolTip">
+    <string>Show selected items</string>
    </property>
   </action>
   <action name="actionRotate_Left">
@@ -314,7 +374,7 @@
     <string>Rotate Left</string>
    </property>
    <property name="toolTip">
-    <string>Rotate Left (selected)</string>
+    <string>Rotate selected items to the left</string>
    </property>
   </action>
   <action name="actionRotate_Right">
@@ -363,6 +423,54 @@
    </property>
    <property name="toolTip">
     <string>Automatically arrange all items</string>
+   </property>
+  </action>
+  <action name="actionPlot">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/plot.png</normaloff>:/icon/images/icons/plot.png</iconset>
+   </property>
+   <property name="text">
+    <string>Plot</string>
+   </property>
+   <property name="toolTip">
+    <string>Send to plotter or vinyl cutter</string>
+   </property>
+  </action>
+  <action name="actionJog">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/jog.png</normaloff>:/icon/images/icons/jog.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jog</string>
+   </property>
+   <property name="toolTip">
+    <string>Use plotter/cutter to show perimeter of working area without actually drawing or cutting.</string>
+   </property>
+  </action>
+  <action name="actionDuplicate">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/duplicate.png</normaloff>:/icon/images/icons/duplicate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Duplicate</string>
+   </property>
+   <property name="toolTip">
+    <string>Create a copy of all selected items</string>
+   </property>
+  </action>
+  <action name="actionDelete">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/delete.png</normaloff>:/icon/images/icons/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove selected items</string>
    </property>
   </action>
  </widget>
