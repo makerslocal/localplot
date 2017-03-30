@@ -150,7 +150,6 @@ int hpglListModel::rowCount(const QModelIndex &parent) const
 
 void hpglListModel::duplicateSelectedRows()
 {
-
     QModelIndex _index;
     QVector<QPersistentModelIndex> indexes;
 
@@ -165,6 +164,7 @@ void hpglListModel::duplicateSelectedRows()
 
         if (hpglData.at(i)->hpgl_items_group->isSelected())
         {
+            qDebug() << "Index is selected: " << _index;
             indexes.push_back(_index);
         }
 
@@ -177,7 +177,7 @@ void hpglListModel::duplicateSelectedRows()
         QString oldName;
 
         oldName = data(_index, Qt::DisplayRole).toString();
-        if (!hpglData[i]->mutex.tryLock())
+        if (!hpglData[_index.row()]->mutex.tryLock())
         {
             qDebug() << "Mutex already locked, giving up.";
             return;
@@ -187,19 +187,18 @@ void hpglListModel::duplicateSelectedRows()
         insertRow(newRow);
         QPersistentModelIndex newIndex = index(newRow);
 
-        hpglData[i]->mutex.unlock();
+        hpglData[_index.row()]->mutex.unlock();
         setData(newIndex, oldName, Qt::DisplayRole);
 //        mutex->lock();
-        for (int i2 = 0; i2 < hpglData[i]->hpgl_items.length(); ++i2)
+        for (int i2 = 0; i2 < hpglData[_index.row()]->hpgl_items.length(); ++i2)
         {
-            QPolygonF polygon = hpglData[i]->hpgl_items.at(i2)->polygon();
+            QPolygonF polygon = hpglData[_index.row()]->hpgl_items.at(i2)->polygon();
 //            addPolygon(newIndex, polygon);
-            newPolygon(newIndex, polygon);
-            hpglData[newIndex.row()]->hpgl_items.at(i2)->setPos(hpglData[i]->hpgl_items.at(i2)->pos());
+            emit newPolygon(newIndex, polygon);
+            hpglData[newIndex.row()]->hpgl_items.at(i2)->setPos(hpglData[_index.row()]->hpgl_items.at(i2)->pos());
         }
 //        mutex->unlock();
-//        newFileToScene(newIndex);
-        newFileToScene(newIndex);
+        emit newFileToScene(newIndex);
     }
 }
 
