@@ -19,6 +19,11 @@ DialogProgress::~DialogProgress()
     delete ui;
 }
 
+void DialogProgress::enableHookCheckbox()
+{
+    ui->checkBox_hookFinishedEnabled->setEnabled(true);
+}
+
 void DialogProgress::handle_postHookCheckboxChanged(bool checked)
 {
     QSettings settings;

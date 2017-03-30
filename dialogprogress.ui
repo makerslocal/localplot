@@ -23,6 +23,9 @@
    </item>
    <item>
     <widget class="QCheckBox" name="checkBox_hookFinishedEnabled">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Run Post-Plotting Hook</string>
      </property>

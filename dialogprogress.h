@@ -21,6 +21,7 @@ class DialogProgress : public QDialog
 public:
     explicit DialogProgress(QWidget *parent = 0);
     ~DialogProgress();
+    void enableHookCheckbox();
 
 signals:
     void do_cancel();

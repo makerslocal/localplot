@@ -291,6 +291,7 @@ void MainWindow::do_plot()
     DialogProgress * newwindow;
     newwindow = new DialogProgress(this);
     newwindow->setWindowTitle("Plotting Progress");
+    newwindow->enableHookCheckbox();
 
     // Create plotting process in new thread
     QThread * workerThread = new QThread;
@@ -300,7 +301,6 @@ void MainWindow::do_plot()
     connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
     connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
-//    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
 
     // Connect progress window
@@ -382,7 +382,6 @@ void MainWindow::do_jog()
     connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
     connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
-    connect(worker, SIGNAL(finished()), this, SLOT(runFinishedCommand()));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
 
     // Connect progress window
@@ -410,30 +409,98 @@ void MainWindow::runFinishedCommand()
     proc->start(procCmd);
 }
 
+void MainWindow::handle_selectFileBtn()
+{
+    QSettings settings;
+    QString filePath;
+    QString startDir = settings.value("mainwindow/filePath", "").toString();
+
+    filePath = QFileDialog::getOpenFileName(this,
+        tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
+
+    if (filePath.isEmpty())
+    {
+        handle_newConsoleText("File open cancelled.", Qt::darkRed);
+        return;
+    }
+
+    settings.setValue("mainwindow/filePath", filePath);
+
+    // Create progress window
+    DialogProgress * newwindow;
+    newwindow = new DialogProgress(this);
+    newwindow->setWindowTitle("Loading File Progress");
+
+    // Load file in new thread
+    QThread * workerThread = new QThread;
+    ExtLoadFile * worker = new ExtLoadFile(hpglModel);
+    worker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
+    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished(QPersistentModelIndex)), workerThread, SLOT(quit()));
+    connect(worker, SIGNAL(finished(QPersistentModelIndex)), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
+    connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(do_procEta()));
+    connect(worker, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)),
+            this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
+    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
+    {
+        connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(createCutoutBox(QPersistentModelIndex)));
+    }
+
+    // Connect progress window
+    connect(newwindow, SIGNAL(do_cancel()), worker, SLOT(cancel()));
+    connect(worker, SIGNAL(finished(QPersistentModelIndex)), newwindow, SLOT(close()));
+    connect(worker, SIGNAL(progress(int)), newwindow, SLOT(handle_updateProgress(int)));
+
+    // Start
+    workerThread->start();
+    newwindow->exec();
+}
+
+void MainWindow::do_procEta()
+{
+    // Load file in new thread
+    QThread * workerThread = new QThread;
+    ExtEta * worker = new ExtEta(hpglModel);
+    worker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
+    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished(double)), workerThread, SLOT(quit()));
+    connect(worker, SIGNAL(finished(double)), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished(double)), this, SLOT(handle_plottingEta(double)));
+    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+    workerThread->start();
+}
+
 void MainWindow::do_binpack()
 {
-    if (ui->pushButton_doPlot->text() == "Plot!")
-    {
-        // Process in new thread
-        QThread * workerThread = new QThread;
-        ExtBinPack * worker = new ExtBinPack(hpglModel);
-        worker->moveToThread(workerThread);
-        connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
-        connect(workerThread, SIGNAL(started()), this, SLOT(handle_extStarted()));
-        connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(workerThread, SIGNAL(finished()), this, SLOT(handle_extFinished()));
-        connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
-        connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(worker, SIGNAL(packedRect(QPersistentModelIndex,QRectF)), this, SLOT(handle_packedRect(QPersistentModelIndex,QRectF)));
-//        connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
-        connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-        connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
-        workerThread->start();
-    }
-    else
-    {
-        emit please_plotter_cancelPlot();
-    }
+    // Create progress window
+    DialogProgress * newwindow;
+    newwindow = new DialogProgress(this);
+    newwindow->setWindowTitle("Arranging Progress");
+
+    // Process in new thread
+    QThread * workerThread = new QThread;
+    ExtBinPack * worker = new ExtBinPack(hpglModel);
+    worker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
+    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(finished()), workerThread, SLOT(quit()));
+    connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    connect(worker, SIGNAL(packedRect(QPersistentModelIndex,QRectF)), this, SLOT(handle_packedRect(QPersistentModelIndex,QRectF)));
+    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
+    connect(this, SIGNAL(please_plotter_cancelPlot()), worker, SLOT(cancel()));
+
+    // Connect progress window
+    connect(newwindow, SIGNAL(do_cancel()), worker, SLOT(cancel()));
+    connect(worker, SIGNAL(finished()), newwindow, SLOT(close()));
+    connect(worker, SIGNAL(progress(int)), newwindow, SLOT(handle_updateProgress(int)));
+
+    // Start
+    workerThread->start();
+    newwindow->exec();
 }
 
 void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
@@ -502,27 +569,6 @@ void MainWindow::do_cancelPlot()
 void MainWindow::handle_duplicateFileBtn()
 {
     hpglModel->duplicateSelectedRows();
-}
-
-void MainWindow::do_enableUI(bool enabled)
-{
-    ui->pushButton_fileRemove->setEnabled(enabled);
-    ui->pushButton_fileSelect->setEnabled(enabled);
-    ui->graphicsView_view->setEnabled(enabled);
-    ui->actionLoad_File->setEnabled(enabled);
-    ui->pushButton_doPlot->setEnabled(enabled);
-    ui->pushButton_jogPerimeter->setEnabled(enabled);
-    ui->pushButton_cancel->setEnabled(!enabled);
-}
-
-void MainWindow::handle_extStarted()
-{
-    do_enableUI(false);
-}
-
-void MainWindow::handle_extFinished()
-{
-    do_enableUI(true);
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()
@@ -639,60 +685,6 @@ void MainWindow::handle_listViewClick()
         }
         mutex->unlock();
     }
-}
-
-void MainWindow::handle_selectFileBtn()
-{
-    QSettings settings;
-    QString filePath;
-    QString startDir = settings.value("mainwindow/filePath", "").toString();
-
-    filePath = QFileDialog::getOpenFileName(this,
-        tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
-
-    if (filePath.isEmpty())
-    {
-        handle_newConsoleText("File open cancelled.", Qt::darkRed);
-        return;
-    }
-
-    settings.setValue("mainwindow/filePath", filePath);
-
-    // Load file in new thread
-    QThread * workerThread = new QThread;
-    ExtLoadFile * worker = new ExtLoadFile(hpglModel);
-    worker->moveToThread(workerThread);
-    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
-    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-    connect(worker, SIGNAL(finished(QPersistentModelIndex)), workerThread, SLOT(quit()));
-    connect(worker, SIGNAL(finished(QPersistentModelIndex)), worker, SLOT(deleteLater()));
-    connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
-    connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(do_procEta()));
-    connect(worker, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)),
-            this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
-//    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
-    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
-    {
-        connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(createCutoutBox(QPersistentModelIndex)));
-    }
-    workerThread->start();
-}
-
-void MainWindow::do_procEta()
-{
-    // Load file in new thread
-    QThread * workerThread = new QThread;
-    ExtEta * worker = new ExtEta(hpglModel);
-    worker->moveToThread(workerThread);
-    connect(workerThread, SIGNAL(started()), worker, SLOT(process()));
-    connect(workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-    connect(worker, SIGNAL(finished(double)), workerThread, SLOT(quit()));
-    connect(worker, SIGNAL(finished(double)), worker, SLOT(deleteLater()));
-    connect(worker, SIGNAL(finished(double)), this, SLOT(handle_plottingEta(double)));
-//    connect(worker, SIGNAL(progress(int)), this, SLOT(handle_plottingPercent(int)));
-    connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-    workerThread->start();
 }
 
 void MainWindow::createCutoutBox(QPersistentModelIndex _index)

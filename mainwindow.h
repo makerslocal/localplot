@@ -97,15 +97,12 @@ private slots:
     void handle_jogPerimeterBtn();
     void handle_flipXbtn();
     void handle_flipYbtn();
-    void handle_extStarted();
-    void handle_extFinished();
     void handle_newConsoleText(QString text, QColor textColor);
     void handle_newConsoleText(QString text);
     void handle_zoomChanged(QString text);
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
     void handle_plottingEta(double eta);
-    void do_enableUI(bool enabled);
     void handle_splitterMoved();
 
     // View Zooming
