@@ -258,8 +258,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionSettings"/>
+   <addaction name="actionLoad_File"/>
    <addaction name="actionDelete"/>
+   <addaction name="actionSettings"/>
    <addaction name="actionPlot"/>
    <addaction name="actionJog"/>
   </widget>

@@ -103,13 +103,6 @@ private slots:
     void handle_plottingEta(double eta);
     void handle_splitterMoved();
 
-    // View Zooming
-    void sceneZoomVinyl();
-    void sceneZoomActual();
-    void sceneZoomItems();
-    void sceneZoomSelected();
-    void sceneSetGrid();
-
     // View/Scene
     void sceneSetup();
     void get_pen(QPen *_pen, QString _name);
@@ -119,9 +112,6 @@ private slots:
     void newFileToScene(QPersistentModelIndex _index);
     void createCutoutBox(QPersistentModelIndex _index);
     void handle_packedRect(QPersistentModelIndex index, QRectF rect);
-    void sceneZoomDelta(int delta);
-    void sceneZoomOut();
-    void sceneZoomIn();
 
     // plotter thread
     void do_plot();

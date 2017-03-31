@@ -51,10 +51,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionDuplicate, SIGNAL(triggered(bool)), this, SLOT(handle_duplicateFileBtn()));
     connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(do_openDialogAbout()));
     connect(ui->actionSettings, SIGNAL(triggered(bool)), this, SLOT(do_openDialogSettings()));
-    connect(ui->actionZoom_Actual, SIGNAL(triggered(bool)), this, SLOT(sceneZoomActual()));
-    connect(ui->actionZoom_Vinyl, SIGNAL(triggered(bool)), this, SLOT(sceneZoomVinyl()));
-    connect(ui->actionZoom_Items, SIGNAL(triggered(bool)), this, SLOT(sceneZoomItems()));
-    connect(ui->actionZoom_Selected, SIGNAL(triggered(bool)), this, SLOT(sceneZoomSelected()));
+    connect(ui->actionZoom_Actual, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomActual()));
+    connect(ui->actionZoom_Vinyl, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomSceneRect()));
+    connect(ui->actionZoom_Items, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomGraphicsItems()));
+    connect(ui->actionZoom_Selected, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomSelectedItems()));
     connect(ui->actionRotate_Left, SIGNAL(triggered(bool)), this, SLOT(handle_rotateLeftBtn()));
     connect(ui->actionRotate_Right, SIGNAL(triggered(bool)), this, SLOT(handle_rotateRightBtn()));
     connect(ui->actionFlip_Horizontal, SIGNAL(triggered(bool)), this, SLOT(handle_flipXbtn()));
@@ -62,8 +62,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAuto_Arrange, SIGNAL(triggered(bool)), this, SLOT(do_binpack()));
     connect(ui->actionPlot, SIGNAL(triggered(bool)), this, SLOT(do_plot()));
     connect(ui->actionJog, SIGNAL(triggered(bool)), this, SLOT(do_jog()));
-    connect(ui->actionZoom_In, SIGNAL(triggered(bool)), this, SLOT(sceneZoomIn()));
-    connect(ui->actionZoom_Out, SIGNAL(triggered(bool)), this, SLOT(sceneZoomOut()));
+    connect(ui->actionZoom_In, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomIn()));
+    connect(ui->actionZoom_Out, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomOut()));
 
     // Connect UI buttons to actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked(bool)), ui->actionLoad_File, SLOT(trigger()));
@@ -78,7 +78,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
-    connect(ui->graphicsView_view, SIGNAL(zoomDelta(int)), this, SLOT(sceneZoomDelta(int)));
 
     // Connect everything else
     connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
@@ -203,7 +202,7 @@ void MainWindow::do_openDialogSettings()
     newwindow->setWindowTitle("localplot settings");
     newwindow->exec();
     widthLine->setLine(get_widthLine());
-    sceneSetGrid();
+    ui->graphicsView_view->setGrid();
 }
 
 /*******************************************************************************
@@ -847,226 +846,6 @@ QLineF MainWindow::get_widthLine()
     return (QLineF(0, 0, 0, (1016.0 * length)));
 }
 
-void MainWindow::sceneZoomVinyl()
-{
-    ui->graphicsView_view->fitInView(
-        plotScene.sceneRect(),
-        Qt::KeepAspectRatio);
-    sceneSetGrid();
-    handle_newConsoleText("Scene scale set to view all", Qt::darkGreen);
-    handle_zoomChanged("Vinyl width");
-}
-
-void MainWindow::sceneSetGrid()
-{
-    QTransform _transform = ui->graphicsView_view->transform();
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
-    QSettings settings;
-    if (!settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool())
-    {
-        ui->graphicsView_view->setBackgroundBrush(Qt::NoBrush);
-        return;
-    }
-    int size = settings.value("mainwindow/grid/size", SETDEF_MAINWINDOW_GRID_SIZE).toInt();
-
-    QTransform hpglToPx;
-    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
-
-    // m11 and m22 are horizontal and vertical scaling
-    qreal mx, my;
-    mx = hpglToPx.m11() / qAbs(_transform.m11());
-    my = hpglToPx.m22() / qAbs(_transform.m22());
-
-    int gridX, gridY;
-    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
-    {
-        gridX = (((xDpi*size)/2.54) / mx);
-        gridY = (((yDpi*size)/2.54) / my);
-    }
-    else
-    {
-        gridX = ((xDpi*size) / mx);
-        gridY = ((yDpi*size) / my);
-    }
-
-    QImage grid(gridX, gridY, QImage::Format_RGB32);
-    QRgb value;
-
-    value = qRgb(150, 200, 150);
-    for (int x = 0; x < gridX; ++x)
-    {
-        for (int y = 0; y < gridY; ++y)
-        {
-            grid.setPixelColor(QPoint(x, y), Qt::white);
-        }
-    }
-    for (int i = 0; i < gridX; ++i)
-    {
-        grid.setPixel(i, 0, value);
-    }
-    for (int i = 0; i < gridY; ++i)
-    {
-        grid.setPixel(0, i, value);
-    }
-
-    QBrush gridBrush(grid);
-
-    gridBrush.setTransform((_transform.inverted()));
-
-    ui->graphicsView_view->setBackgroundBrush(gridBrush);
-//    plotScene.setBackgroundBrush(gridBrush);
-}
-
-void MainWindow::sceneZoomActual()
-{
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
-    // Transforms
-    QTransform hpglToPx, itemToScene, viewFlip;
-    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
-    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
-    viewFlip.scale(1, -1);
-
-    ui->graphicsView_view->setTransform(hpglToPx * viewFlip);
-    sceneSetGrid();
-
-    handle_newConsoleText("Scene scale set to 1:1", Qt::darkGreen);
-    handle_zoomChanged("Actual size");
-}
-
-void MainWindow::sceneZoomItems()
-{
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
-    // Transforms
-    QTransform hpglToPx, itemToScene, viewFlip;
-    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
-    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
-    viewFlip.scale(1, -1);
-
-    QModelIndex index;
-    QGraphicsItemGroup * itemGroup;
-    QRectF newrect;
-
-    newrect.setX(0);
-    newrect.setY(0);
-    newrect.setWidth(0);
-    newrect.setHeight(0);
-
-    for (int i = 0; i < hpglModel->rowCount(); ++i)
-    {
-        index = hpglModel->index(i);
-        QMutex * mutex;
-        itemGroup = NULL;
-        hpglModel->dataGroup(index, mutex, itemGroup);
-        QMutexLocker rowLocker(mutex);
-
-        if (itemGroup == NULL)
-        {
-            qDebug() << "Error: itemgroup is null in scenescalecontain().";
-            return;
-        }
-
-        QRectF compRect = itemGroup->boundingRect();
-        QPointF compPoint = itemGroup->pos();
-
-        if ((compPoint.x()+compRect.width()) > newrect.width())
-        {
-            newrect.setWidth(compPoint.x()+compRect.width());
-        }
-        if ((compPoint.y()+compRect.height()) > newrect.height())
-        {
-            newrect.setHeight(compPoint.y()+compRect.height());
-        }
-    }
-
-    ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
-    sceneSetGrid();
-
-    handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
-    handle_zoomChanged("Show all items");
-}
-
-void MainWindow::sceneZoomSelected()
-{
-    // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
-    // Transforms
-    QTransform hpglToPx, itemToScene, viewFlip;
-    hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
-    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
-    viewFlip.scale(1, -1);
-
-    QModelIndex index;
-    QGraphicsItemGroup * itemGroup;
-    QRectF newrect;
-    QModelIndexList selectedItems = ui->listView->selectionModel()->selectedIndexes();
-
-    newrect.setX(0);
-    newrect.setY(0);
-    newrect.setWidth(0);
-    newrect.setHeight(0);
-
-    for (int i = 0; i < selectedItems.length(); ++i)
-    {
-        index = selectedItems.at(i);
-        QMutex * mutex;
-        itemGroup = NULL;
-        hpglModel->dataGroup(index, mutex, itemGroup);
-        QMutexLocker rowLocker(mutex);
-
-        if (itemGroup == NULL)
-        {
-            qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            return;
-        }
-
-        QRectF compRect = itemGroup->boundingRect();
-        QPointF compPoint = itemGroup->pos();
-
-        if ((compPoint.x()+compRect.width()) > newrect.width())
-        {
-            newrect.setWidth(compPoint.x()+compRect.width());
-        }
-        if ((compPoint.y()+compRect.height()) > newrect.height())
-        {
-            newrect.setHeight(compPoint.y()+compRect.height());
-        }
-    }
-
-    ui->graphicsView_view->fitInView(newrect, Qt::KeepAspectRatio);
-    sceneSetGrid();
-
-    handle_newConsoleText("Scene scale set to contain items", Qt::darkGreen);
-    handle_zoomChanged("Show all items");
-}
-
-void MainWindow::sceneZoomDelta(int delta)
-{
-    QTransform oldtransform = ui->graphicsView_view->transform();
-    QTransform scaleTransform;
-    scaleTransform.scale((1.0+(5.0/delta)), (1.0+(5.0/delta)));
-    ui->graphicsView_view->setTransform(oldtransform * scaleTransform);
-    sceneSetGrid();
-    handle_newConsoleText("Scene scale set to scroll wheel zoom.");
-    handle_zoomChanged("Custom");
-}
-
-void MainWindow::sceneZoomOut()
-{
-    sceneZoomDelta(-30);
-}
-
-void MainWindow::sceneZoomIn()
-{
-    sceneZoomDelta(30);
-}
-
 void MainWindow::sceneSetup()
 {
     QPen pen;
@@ -1110,7 +889,7 @@ void MainWindow::sceneSetup()
     ui->graphicsView_view->show();
 
     sceneSetSceneRect();
-    sceneZoomActual();
+    ui->graphicsView_view->zoomActual();
 }
 
 void MainWindow::sceneSetSceneRect()
