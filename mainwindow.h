@@ -37,6 +37,8 @@
 #include <QBrush>
 #include <QPixmap>
 #include <QProcess>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include <qmath.h>
 
@@ -119,6 +121,11 @@ private slots:
     void do_cancelPlot();
     void do_procEta();
     void do_binpack();
+
+    // URLs
+    void handle_openSourceCode();
+    void handle_openBugTracker();
+    void handle_openWiki();
 
 protected:
     void closeEvent(QCloseEvent *event);

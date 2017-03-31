@@ -64,6 +64,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionJog, SIGNAL(triggered(bool)), this, SLOT(do_jog()));
     connect(ui->actionZoom_In, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomIn()));
     connect(ui->actionZoom_Out, SIGNAL(triggered(bool)), ui->graphicsView_view, SLOT(zoomOut()));
+    connect(ui->actionSource_Code, SIGNAL(triggered(bool)), this, SLOT(handle_openSourceCode()));
+    connect(ui->actionReport_Bug, SIGNAL(triggered(bool)), this, SLOT(handle_openBugTracker()));
+    connect(ui->actionWiki, SIGNAL(triggered(bool)), this, SLOT(handle_openWiki()));
 
     // Connect UI buttons to actions
     connect(ui->pushButton_fileSelect, SIGNAL(clicked(bool)), ui->actionLoad_File, SLOT(trigger()));
@@ -76,6 +79,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(handle_splitterMoved()));
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
     connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
+    connect(ui->graphicsView_view, SIGNAL(zoomUpdate(QString)), this, SLOT(handle_zoomChanged(QString)));
+    connect(ui->graphicsView_view, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
     connect(&plotScene, SIGNAL(selectionChanged()), this, SLOT(handle_plotSceneSelectionChanged()));
 
@@ -236,6 +241,21 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
 /*******************************************************************************
  * Worker thread slots
  ******************************************************************************/
+
+void MainWindow::handle_openSourceCode()
+{
+    QDesktopServices::openUrl(QUrl(URL_SOURCE_CODE));
+}
+
+void MainWindow::handle_openBugTracker()
+{
+    QDesktopServices::openUrl(QUrl(URL_REPORT_BUG));
+}
+
+void MainWindow::handle_openWiki()
+{
+    QDesktopServices::openUrl(QUrl(URL_WIKI));
+}
 
 void MainWindow::handle_plottingEta(double eta)
 {

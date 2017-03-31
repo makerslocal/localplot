@@ -17,6 +17,13 @@ void init_localplot_settings();
 #define ORGANIZATION_DOMAIN ("256.makerslocal.org")
 #define APPLICATION_NAME    ("localplot")
 
+/**
+ * URLs
+ */
+#define URL_SOURCE_CODE ("https://github.com/makerslocal/localplot")
+#define URL_REPORT_BUG ("https://github.com/makerslocal/localplot/issues")
+#define URL_WIKI ("https://github.com/makerslocal/localplot/wiki")
+
 // Data type of device width setting
 // http://stackoverflow.com/a/9150607/1349825
 enum deviceWidth_t {

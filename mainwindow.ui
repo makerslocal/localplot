@@ -204,6 +204,8 @@
     </property>
     <addaction name="actionLoad_File"/>
     <addaction name="actionSave_File"/>
+    <addaction name="actionPlot"/>
+    <addaction name="actionJog"/>
     <addaction name="actionSettings"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -212,6 +214,9 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionSource_Code"/>
+    <addaction name="actionReport_Bug"/>
+    <addaction name="actionWiki"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -222,8 +227,23 @@
     <addaction name="actionZoom_Vinyl"/>
     <addaction name="actionZoom_Items"/>
     <addaction name="actionZoom_Selected"/>
+    <addaction name="separator"/>
+    <addaction name="actionZoom_In"/>
+    <addaction name="actionZoom_Out"/>
+   </widget>
+   <widget class="QMenu" name="menuItem">
+    <property name="title">
+     <string>Ite&amp;m</string>
+    </property>
+    <addaction name="actionRotate_Left"/>
+    <addaction name="actionRotate_Right"/>
+    <addaction name="actionFlip_Horizontal"/>
+    <addaction name="actionFlip_Vertical"/>
+    <addaction name="actionAuto_Arrange"/>
+    <addaction name="actionDelete"/>
    </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuItem"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -510,6 +530,30 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+-</string>
+   </property>
+  </action>
+  <action name="actionSource_Code">
+   <property name="text">
+    <string>Source Code</string>
+   </property>
+   <property name="toolTip">
+    <string>Opens the webpage for this project's source</string>
+   </property>
+  </action>
+  <action name="actionReport_Bug">
+   <property name="text">
+    <string>Report Bug</string>
+   </property>
+   <property name="toolTip">
+    <string>Opens the webpage for this project's bug tracker</string>
+   </property>
+  </action>
+  <action name="actionWiki">
+   <property name="text">
+    <string>Wiki</string>
+   </property>
+   <property name="toolTip">
+    <string>Open project wiki in web browser</string>
    </property>
   </action>
  </widget>
