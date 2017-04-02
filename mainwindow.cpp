@@ -91,8 +91,8 @@ MainWindow::MainWindow(QWidget *parent) :
 //    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
 //            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
 
-    ui->pushButton_doPlot->setEnabled(true);
-    ui->pushButton_fileRemove->setEnabled(true);
+    ui->actionToggle_CutoutBoxes->setChecked(settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool());
+    connect(ui->actionToggle_CutoutBoxes, SIGNAL(toggled(bool)), this, SLOT(handle_cutoutBoxesToggle(bool)));
 
     // Restore saved window geometry
     if (settings.contains("mainwindow/geometry"))
@@ -255,6 +255,22 @@ void MainWindow::handle_openBugTracker()
 void MainWindow::handle_openWiki()
 {
     QDesktopServices::openUrl(QUrl(URL_WIKI));
+}
+
+void MainWindow::handle_cutoutBoxesToggle(bool checked)
+{
+//    QPersistentModelIndex _index;
+    QSettings settings;
+//    _index = hpglModel->index(hpglModel->rowCount() - 1);
+    settings.setValue("device/cutoutboxes", checked);
+    if (checked)
+    {
+        hpglModel->createCutoutBoxes();
+    }
+    else
+    {
+        hpglModel->removeCutoutBoxes();
+    }
 }
 
 void MainWindow::handle_plottingEta(double eta)
@@ -461,11 +477,10 @@ void MainWindow::handle_selectFileBtn()
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
     {
-        connect(worker, SIGNAL(finished(QPersistentModelIndex)), this, SLOT(createCutoutBox(QPersistentModelIndex)));
+        connect(worker, SIGNAL(finished(QPersistentModelIndex)), hpglModel, SLOT(createCutoutBox(QPersistentModelIndex)));
     }
 
     // Connect progress window
-    connect(newwindow, SIGNAL(do_cancel()), worker, SLOT(cancel()));
     connect(worker, SIGNAL(finished(QPersistentModelIndex)), newwindow, SLOT(close()));
     connect(worker, SIGNAL(progress(int)), newwindow, SLOT(handle_updateProgress(int)));
 
@@ -700,48 +715,6 @@ void MainWindow::handle_listViewClick()
         }
         mutex->unlock();
     }
-}
-
-void MainWindow::createCutoutBox(QPersistentModelIndex _index)
-{
-    QSettings settings;
-    QGraphicsItemGroup * itemGroup = NULL;
-    QVector<QGraphicsPolygonItem *> * items;
-
-    QMutex * mutex;
-    hpglModel->dataItemsGroup(_index, mutex, itemGroup, items);
-    QMutexLocker rowLocker(mutex);
-
-    if (itemGroup == NULL)
-    {
-        qDebug() << "Error: itemgroup is null.";
-        return;
-    }
-    if (items == NULL)
-    {
-        qDebug() << "Error: items is null.";
-        return;
-    }
-
-    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
-    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
-    {
-        padding = padding * 2.54;
-    }
-    padding = padding * 1016.0;
-    QRectF cutoutRect = itemGroup->boundingRect();
-    cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
-    cutoutRect.moveTo(0, 0);
-
-//    itemGroup->moveBy(padding, padding);
-    for (int i = 0; i < items->length(); ++i)
-    {
-        items->at(i)->moveBy(padding, padding);
-    }
-
-    rowLocker.unlock();
-    addPolygon(_index, static_cast<QPolygonF>(cutoutRect));
-    rowLocker.relock();
 }
 
 void MainWindow::newFileToScene(QPersistentModelIndex _index)

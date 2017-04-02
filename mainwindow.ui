@@ -52,7 +52,7 @@
              <item>
               <widget class="QPushButton" name="pushButton_fileRemove">
                <property name="enabled">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -267,6 +267,7 @@
    <addaction name="actionFlip_Vertical"/>
    <addaction name="actionAuto_Arrange"/>
    <addaction name="actionDuplicate"/>
+   <addaction name="actionToggle_CutoutBoxes"/>
   </widget>
   <widget class="QToolBar" name="toolBar_2">
    <property name="windowTitle">
@@ -554,6 +555,21 @@
    </property>
    <property name="toolTip">
     <string>Open project wiki in web browser</string>
+   </property>
+  </action>
+  <action name="actionToggle_CutoutBoxes">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icon/images/icons/draw_cutoutbox.png</normaloff>:/icon/images/icons/draw_cutoutbox.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle CutoutBoxes</string>
+   </property>
+   <property name="toolTip">
+    <string>Controls whether a square is cut/drawn around each item</string>
    </property>
   </action>
  </widget>

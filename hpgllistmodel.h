@@ -69,6 +69,12 @@ public:
     void rotateSelectedItems(qreal rotation);
     void scaleSelectedItems(qreal x, qreal y);
 
+public slots:
+    void createCutoutBox(QPersistentModelIndex _index);
+    void createCutoutBoxes();
+    void removeCutoutBoxes();
+    void removeCutoutBox(QPersistentModelIndex _index);
+
 signals:
     void newPolygon(QPersistentModelIndex,QPolygonF);
     void newFileToScene(QPersistentModelIndex);

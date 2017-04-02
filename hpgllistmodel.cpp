@@ -394,6 +394,145 @@ void hpglListModel::scaleSelectedItems(qreal x, qreal y)
     }
 }
 
+void hpglListModel::createCutoutBox(QPersistentModelIndex _index)
+{
+    QSettings settings;
+    QVector<QGraphicsPolygonItem *> * items;
+
+    if (_index.row() < 0 || _index.row() >= hpglData.length() || !_index.isValid())
+    {
+        return;
+    }
+
+    QMutexLocker rowLocker(&(hpglData[_index.row()]->mutex));
+
+    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        padding = padding * 2.54;
+    }
+    padding = padding * 1016.0;
+    QRectF cutoutRect = hpglData.at(_index.row())->hpgl_items_group->sceneBoundingRect();
+    cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
+//    cutoutRect.moveTo(0, 0);
+
+    items = &(hpglData[_index.row()]->hpgl_items);
+    qDebug() << items->last()->pos();
+
+//    itemGroup->moveBy(padding, padding);
+//    for (int i = 0; i < items->length(); ++i)
+//    {
+//        items->at(i)->moveBy(padding*3, padding*3);
+//    }
+
+    rowLocker.unlock();
+    emit newPolygon(_index, static_cast<QPolygonF>(cutoutRect));
+}
+
+void hpglListModel::createCutoutBoxes()
+{
+    QSettings settings;
+
+    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        padding = padding * 2.54;
+    }
+    padding = padding * 1016.0;
+
+    for (int i = 0; i < hpglData.length(); ++i)
+    {
+//        QVector<QGraphicsPolygonItem *> * items;
+        QMutexLocker rowLocker(&(hpglData[i]->mutex));
+        QRectF cutoutRect = hpglData.at(i)->hpgl_items_group->sceneBoundingRect();
+        cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
+    //    cutoutRect.moveTo(0, 0);
+
+//        items = &(hpglData[i]->hpgl_items);
+        rowLocker.unlock();
+        emit newPolygon(index(i), static_cast<QPolygonF>(cutoutRect));
+    }
+
+
+//    itemGroup->moveBy(padding, padding);
+//    for (int i = 0; i < items->length(); ++i)
+//    {
+//        items->at(i)->moveBy(padding*3, padding*3);
+//    }
+}
+
+void hpglListModel::removeCutoutBox(QPersistentModelIndex _index)
+{
+    QSettings settings;
+    QVector<QGraphicsPolygonItem *> * items;
+
+    if (_index.row() < 0 || _index.row() >= hpglData.length() || !_index.isValid())
+    {
+        return;
+    }
+
+    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+    {
+        padding = padding * 2.54;
+    }
+    padding = padding * 1016.0;
+    QRectF cutoutRect = hpglData.at(_index.row())->hpgl_items_group->boundingRect();
+    cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
+//    cutoutRect.moveTo(0, 0);
+
+    items = &(hpglData[_index.row()]->hpgl_items);
+
+//    items->last()->scene()->removeItem(items->last());
+    hpglData[_index.row()]->hpgl_items_group->removeFromGroup(items->last());
+    delete items->last();
+    items->removeLast();
+
+//    qDebug() << items->last()->pos();
+
+//    itemGroup->moveBy(padding, padding);
+//    for (int i = 0; i < items->length(); ++i)
+//    {
+////        items->at(i)->moveBy(-padding, -padding);
+//        items->at(i)->setPos(0, 0);
+//    }
+//    items->last()->scene()->update(cutoutRect);
+}
+
+void hpglListModel::removeCutoutBoxes()
+{
+    QSettings settings;
+    QVector<QGraphicsPolygonItem *> * items;
+
+//    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
+//    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
+//    {
+//        padding = padding * 2.54;
+//    }
+//    padding = padding * 1016.0;
+//    QRectF cutoutRect = hpglData.at(_index.row())->hpgl_items_group->boundingRect();
+//    cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
+//    cutoutRect.moveTo(0, 0);
+
+//    items->last()->scene()->removeItem(items->last());
+    for (int i = 0; i < hpglData.length(); ++i)
+    {
+        items = &(hpglData[i]->hpgl_items);
+        hpglData[i]->hpgl_items_group->removeFromGroup(items->last());
+        delete items->last();
+        items->removeLast();
+    }
+
+    qDebug() << items->last()->pos();
+
+//    itemGroup->moveBy(padding, padding);
+//    for (int i = 0; i < items->length(); ++i)
+//    {
+////        items->at(i)->moveBy(-padding, -padding);
+//        items->at(i)->setPos(0, 0);
+//    }
+//    items->last()->scene()->update(cutoutRect);
+}
 
 
 
