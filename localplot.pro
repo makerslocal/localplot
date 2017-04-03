@@ -50,4 +50,5 @@ FORMS    += mainwindow.ui \
     dialogprogress.ui
 
 RESOURCES += \
-    icons.qrc
+    icons.qrc \
+    images.qrc

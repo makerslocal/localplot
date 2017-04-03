@@ -11,8 +11,12 @@ DialogAbout::DialogAbout(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    qDebug() << "I'm alive!";
     connect(ui->pushButton_close, SIGNAL(clicked(bool)), this, SIGNAL(please_close()));
+
+    QPixmap _image(":/image/images/logo.png");
+    logoScene = new QGraphicsScene;
+    ui->graphicsView->setScene(logoScene);
+    logoScene->addPixmap(_image);
 }
 
 DialogAbout::~DialogAbout()

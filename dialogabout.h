@@ -7,6 +7,11 @@
 
 #include <QtCore>
 #include <QDialog>
+#include <QTextBrowser>
+#include <QGraphicsView>
+#include <QGraphicsScene>
+#include <QImage>
+#include <QPixmap>
 
 namespace Ui {
 class DialogAbout;
@@ -25,6 +30,7 @@ signals:
 
 private:
     Ui::DialogAbout *ui;
+    QGraphicsScene * logoScene;
 };
 
 #endif // DIALOGABOUT_H
