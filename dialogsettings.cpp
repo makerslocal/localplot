@@ -79,7 +79,10 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->spinBox_deviceWidth->setValue(settings.value("device/width", SETDEF_DEVICE_WIDTH).toInt());
     ui->comboBox_deviceWidthType->setCurrentIndex(settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt());
     ui->tabWidget->setCurrentIndex(settings.value("dialogsettings/index", SETDEF_DIALLOGSETTINGS_INDEX).toInt());
-    ui->checkBox_enableCutoutBoxes->setChecked(settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool());
+
+    oldCutoutBoxes = settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool();
+    ui->checkBox_enableCutoutBoxes->setChecked(oldCutoutBoxes);
+
     ui->checkBox_viewGridEnabled->setChecked(settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool());
     ui->spinBox_viewGridSize->setValue(settings.value("mainwindow/grid/size", SETDEF_MAINWINDOW_GRID_SIZE).toInt());
     ui->doubleSpinBox_cutoutBoxesPadding->setValue(settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble());
@@ -279,6 +282,12 @@ void DialogSettings::do_saveAndClose()
         settings.setValue("width/type", ui->comboBox_deviceWidthType->currentData().toInt());
         settings.setValue("cutoutboxes", ui->checkBox_enableCutoutBoxes->isChecked());
         settings.setValue("cutoutboxes/padding", ui->doubleSpinBox_cutoutBoxesPadding->value());
+        // Signal cutoutbox toggle if necessary
+        bool newCutoutBoxes = settings.value("cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool();
+        if (oldCutoutBoxes != newCutoutBoxes)
+        {
+            emit toggleCutoutBoxes(newCutoutBoxes);
+        }
     }
     settings.endGroup();
 

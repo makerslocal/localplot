@@ -210,6 +210,7 @@ void MainWindow::do_openDialogSettings()
     DialogSettings * newwindow;
     newwindow = new DialogSettings(this);
     newwindow->setWindowTitle("localplot settings");
+    connect(newwindow, SIGNAL(toggleCutoutBoxes(bool)), ui->actionToggle_CutoutBoxes, SLOT(setChecked(bool)));
     newwindow->exec();
     widthLine->setLine(get_widthLine());
     ui->graphicsView_view->setGrid();

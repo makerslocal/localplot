@@ -30,6 +30,9 @@ public:
     explicit DialogSettings(QWidget *parent = 0);
     ~DialogSettings();
 
+signals:
+    void toggleCutoutBoxes(bool);
+
 public slots:
     void do_refreshSerialList();
     void do_drawDemoView();
@@ -52,6 +55,7 @@ private:
     QGraphicsScene penUpDemoScene;
     QPen downPen;
     QPen upPen;
+    bool oldCutoutBoxes;
 };
 
 #endif // DIALOGSETTINGS_H
