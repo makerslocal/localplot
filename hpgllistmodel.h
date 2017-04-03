@@ -78,6 +78,7 @@ public slots:
 signals:
     void newPolygon(QPersistentModelIndex,QPolygonF);
     void newFileToScene(QPersistentModelIndex);
+    void vinylLength(int);
 
 private:
     QVector<hpgl_file *> hpglData;

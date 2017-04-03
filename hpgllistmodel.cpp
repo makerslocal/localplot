@@ -288,6 +288,7 @@ void hpglListModel::addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem
 void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
 {
     int modCount;
+    int length = 0;
 
     for (int i = 0; i < hpglData.length(); ++i)
     {
@@ -328,8 +329,14 @@ void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
         {
             itemGroup->setPos(pos);
         }
+
+        if ((rect.x() + rect.width()) > length)
+        {
+            length = (rect.x() + rect.width());
+        }
         hpglData[i]->mutex.unlock();
     }
+    emit vinylLength(length);
 }
 
 void hpglListModel::sort()

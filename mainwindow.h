@@ -100,6 +100,7 @@ private slots:
     void handle_newConsoleText(QString text, QColor textColor);
     void handle_newConsoleText(QString text);
     void handle_zoomChanged(QString text);
+    void handle_vinylLengthChanged(int length);
     void handle_listViewClick();
     void handle_plotSceneSelectionChanged();
     void handle_plottingEta(double eta);
@@ -143,6 +144,7 @@ private:
     QLabel * label_eta;
     QLabel * label_status;
     QLabel * label_zoom;
+    QLabel * label_length;
 };
 
 #endif // MAINWINDOW_H

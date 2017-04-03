@@ -87,6 +87,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Connect everything else
     connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
     connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
+    connect(hpglModel, SIGNAL(vinylLength(int)), this, SLOT(handle_vinylLengthChanged(int)));
 
 //    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
 //            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
@@ -116,12 +117,16 @@ MainWindow::MainWindow(QWidget *parent) :
     label_eta = new QLabel;
     label_status = new QLabel;
     label_zoom = new QLabel;
+    label_length = new QLabel;
     label_eta->setText("ETA: NA");
     label_status->setText("Status label created.");
     label_zoom->setText("Zoom: NA");
+    label_length->setText("Vinyl used: NA");
     statusBar()->addPermanentWidget(label_status);
     statusBar()->addPermanentWidget(statusBarDivider());
     statusBar()->addPermanentWidget(label_eta);
+    statusBar()->addPermanentWidget(statusBarDivider());
+    statusBar()->addPermanentWidget(label_length);
     statusBar()->addPermanentWidget(statusBarDivider());
     statusBar()->addPermanentWidget(label_zoom);
 
@@ -291,6 +296,11 @@ void MainWindow::handle_plottingEta(double eta)
 void MainWindow::handle_zoomChanged(QString text)
 {
     label_zoom->setText("Zoom: " + text);
+}
+
+void MainWindow::handle_vinylLengthChanged(int length)
+{
+    label_length->setText("Vinyl used: "+QString::number(length/1016.0, 'g', 2)+" inches");
 }
 
 void MainWindow::handle_newConsoleText(QString text, QColor textColor)
