@@ -150,6 +150,7 @@ int hpglListModel::rowCount(const QModelIndex &parent) const
 
 void hpglListModel::duplicateSelectedRows()
 {
+    QSettings settings;
     QModelIndex _index;
     QVector<QPersistentModelIndex> indexes;
 
@@ -190,13 +191,20 @@ void hpglListModel::duplicateSelectedRows()
         hpglData[_index.row()]->mutex.unlock();
         setData(newIndex, oldName, Qt::DisplayRole);
 //        mutex->lock();
-        for (int i2 = 0; i2 < hpglData[_index.row()]->hpgl_items.length(); ++i2)
+
+        int loopOffset = 0;
+        if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
+        {
+            loopOffset = 1;
+        }
+        for (int i2 = 0; i2 < (hpglData[_index.row()]->hpgl_items.length() - loopOffset); ++i2)
         {
             QPolygonF polygon = hpglData[_index.row()]->hpgl_items.at(i2)->polygon();
 //            addPolygon(newIndex, polygon);
             emit newPolygon(newIndex, polygon);
-            hpglData[newIndex.row()]->hpgl_items.at(i2)->setPos(hpglData[_index.row()]->hpgl_items.at(i2)->pos());
+//            hpglData[newIndex.row()]->hpgl_items.at(i2)->setPos(hpglData[_index.row()]->hpgl_items.at(i2)->pos());
         }
+
 //        mutex->unlock();
         emit newFileToScene(newIndex);
     }

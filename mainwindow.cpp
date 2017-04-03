@@ -475,10 +475,6 @@ void MainWindow::handle_selectFileBtn()
     connect(worker, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)),
             this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
     connect(worker, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
-    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
-    {
-        connect(worker, SIGNAL(finished(QPersistentModelIndex)), hpglModel, SLOT(createCutoutBox(QPersistentModelIndex)));
-    }
 
     // Connect progress window
     connect(worker, SIGNAL(finished(QPersistentModelIndex)), newwindow, SLOT(close()));
@@ -719,8 +715,14 @@ void MainWindow::handle_listViewClick()
 
 void MainWindow::newFileToScene(QPersistentModelIndex _index)
 {
+    QSettings settings;
     QGraphicsItemGroup * itemGroup = NULL;
     ui->listView->setCurrentIndex(_index);
+
+    if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
+    {
+        hpglModel->createCutoutBox(_index);
+    }
 
     QMutex * mutex;
     hpglModel->dataGroup(_index, mutex, itemGroup);
