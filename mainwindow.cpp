@@ -114,10 +114,10 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     // Setup statusbar
-    label_eta = new QLabel;
-    label_status = new QLabel;
-    label_zoom = new QLabel;
-    label_length = new QLabel;
+    label_eta = new QLabel("ETA: NA", this);
+    label_status = new QLabel("Status label created.", this);
+    label_zoom = new QLabel("Zoom: NA", this);
+    label_length = new QLabel("Vinyl used: NA", this);
 
 #define LABEL_MARGIN (10)
     label_zoom->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
@@ -125,10 +125,6 @@ MainWindow::MainWindow(QWidget *parent) :
     label_length->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
     label_status->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
 
-    label_eta->setText("ETA: NA");
-    label_status->setText("Status label created.");
-    label_zoom->setText("Zoom: NA");
-    label_length->setText("Vinyl used: NA");
     statusBar()->addPermanentWidget(label_status);
     statusBar()->addPermanentWidget(statusBarDivider());
     statusBar()->addPermanentWidget(label_eta);
