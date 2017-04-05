@@ -119,8 +119,8 @@ MainWindow::MainWindow(QWidget *parent) :
     label_zoom = new QLabel("Zoom: NA", this);
     label_length = new QLabel("Vinyl used: NA", this);
 
-#define LABEL_MARGIN (10)
-    label_zoom->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
+#define LABEL_MARGIN (20)
+    label_zoom->setContentsMargins(LABEL_MARGIN, 0, 0, 0);
     label_eta->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
     label_length->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
     label_status->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
@@ -461,7 +461,7 @@ void MainWindow::handle_selectFileBtn()
     QString startDir = settings.value("mainwindow/filePath", "").toString();
 
     filePath = QFileDialog::getOpenFileName(this,
-        tr("Open File"), startDir, tr("HPGL Files (*.hpgl *.HPGL)"));
+        tr("Open File"), startDir, tr("Image Files (*.hpgl *.HPGL *.svg *.SVG)"));
 
     if (filePath.isEmpty())
     {
@@ -731,6 +731,12 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
 {
     QSettings settings;
     QGraphicsItemGroup * itemGroup = NULL;
+
+    if (!_index.isValid())
+    {
+        return;
+    }
+
     ui->listView->setCurrentIndex(_index);
 
     if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())

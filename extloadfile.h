@@ -12,6 +12,7 @@
 #include <QGraphicsPolygonItem>
 #include <QVector>
 #include <QtMath>
+#include <QProcess>
 
 #include "settings.h"
 #include "hpgllistmodel.h"

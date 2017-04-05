@@ -26,11 +26,53 @@ void ExtLoadFile::process()
         return;
     }
 
-    inputFile.setFileName(filePath);
-    if (!inputFile.open(QIODevice::ReadOnly))
+    if (filePath.endsWith(".svg", Qt::CaseInsensitive))
     {
-        // failed to open
-        qDebug() << "Failed to open file.";
+        qDebug() << "File is SVG: " << filePath;
+        QProcess * svgToHpgl = new QProcess(this);
+        QString program = "python2.7";
+        QStringList arguments;
+        arguments << "/usr/share/inkscape/extensions/hpgl_output.py"
+                  << "--precut=FALSE"
+                  << "--force=0"
+                  << "--speed=0"
+                  << filePath;
+        svgToHpgl->setProcessChannelMode(QProcess::MergedChannels);
+        svgToHpgl->start(program, arguments);
+        svgToHpgl->waitForStarted();
+        svgToHpgl->waitForReadyRead();
+        QByteArray data = svgToHpgl->readLine();
+        buffer = QString::fromUtf8(data.data(), data.length());
+        qDebug() << "Output: " << buffer;
+        svgToHpgl->waitForFinished();
+    }
+    else if (filePath.endsWith(".hpgl", Qt::CaseInsensitive))
+    {
+        qDebug() << "File is HPGL: " << filePath;
+        inputFile.setFileName(filePath);
+        if (!inputFile.open(QIODevice::ReadOnly))
+        {
+            // failed to open
+            qDebug() << "Failed to open file.";
+            return;
+        }
+        QTextStream fstream(&inputFile);
+        buffer = fstream.readAll();
+        inputFile.close();
+    }
+    else
+    {
+        qDebug() << "File type not recognized D:";
+        emit statusUpdate("File type not recognized.", Qt::darkRed);
+        emit finished(QModelIndex());
+        return;
+    }
+
+    if (buffer.isEmpty())
+    {
+        qDebug() << "Input text buffer is empty.";
+        emit statusUpdate("Input buffer empty.", Qt::darkRed);
+        emit finished(QModelIndex());
         return;
     }
 
@@ -45,10 +87,6 @@ void ExtLoadFile::process()
         inputFile.close();
         return;
     }
-
-    QTextStream fstream(&inputFile);
-    buffer = fstream.readAll();
-    inputFile.close();
 
     parseHPGL(index, &buffer);
     emit statusUpdate("Finished parsing file.");
@@ -148,6 +186,10 @@ bool ExtLoadFile::parseHPGL(const QPersistentModelIndex index, QString * hpgl_te
             // Set pen
             pen = cmdText.mid(2,1).toInt();
             qDebug() << "[" << QString::number(pen) << "]";
+        }
+        else if (opcode == "FS" || opcode == "VS")
+        {
+            // Real hpgl that we don't care about
         }
         else
         {

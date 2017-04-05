@@ -118,7 +118,7 @@
           <item>
            <widget class="QPushButton" name="pushButton_doPlot">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -386,7 +386,7 @@
      <normaloff>:/icon/images/icons/zoom_fit_selection.png</normaloff>:/icon/images/icons/zoom_fit_selection.png</iconset>
    </property>
    <property name="text">
-    <string>Selected Items</string>
+    <string>&amp;Selected Items</string>
    </property>
    <property name="toolTip">
     <string>Show selected items</string>
@@ -398,7 +398,7 @@
      <normaloff>:/icon/images/icons/rotate_left.png</normaloff>:/icon/images/icons/rotate_left.png</iconset>
    </property>
    <property name="text">
-    <string>Rotate Left</string>
+    <string>&amp;Rotate Left</string>
    </property>
    <property name="toolTip">
     <string>Rotate selected items to the left</string>
@@ -410,7 +410,7 @@
      <normaloff>:/icon/images/icons/rotate_right.png</normaloff>:/icon/images/icons/rotate_right.png</iconset>
    </property>
    <property name="text">
-    <string>Rotate Right</string>
+    <string>R&amp;otate Right</string>
    </property>
    <property name="toolTip">
     <string>Rotate selected items to the right</string>
@@ -422,7 +422,7 @@
      <normaloff>:/icon/images/icons/flip_horizontal.png</normaloff>:/icon/images/icons/flip_horizontal.png</iconset>
    </property>
    <property name="text">
-    <string>Flip Horizontal</string>
+    <string>&amp;Flip Horizontal</string>
    </property>
    <property name="toolTip">
     <string>Flip selected items horizontally</string>
@@ -434,7 +434,7 @@
      <normaloff>:/icon/images/icons/flip_vertical.png</normaloff>:/icon/images/icons/flip_vertical.png</iconset>
    </property>
    <property name="text">
-    <string>Flip Vertical</string>
+    <string>Flip &amp;Vertical</string>
    </property>
    <property name="toolTip">
     <string>Flip selected items vertically</string>
@@ -446,7 +446,7 @@
      <normaloff>:/icon/images/icons/bin_pack.png</normaloff>:/icon/images/icons/bin_pack.png</iconset>
    </property>
    <property name="text">
-    <string>Auto Arrange</string>
+    <string>&amp;Auto Arrange</string>
    </property>
    <property name="toolTip">
     <string>Automatically arrange all items</string>
@@ -458,7 +458,7 @@
      <normaloff>:/icon/images/icons/plot.png</normaloff>:/icon/images/icons/plot.png</iconset>
    </property>
    <property name="text">
-    <string>Plot</string>
+    <string>&amp;Plot</string>
    </property>
    <property name="toolTip">
     <string>Send to plotter or vinyl cutter</string>
@@ -470,7 +470,7 @@
      <normaloff>:/icon/images/icons/jog.png</normaloff>:/icon/images/icons/jog.png</iconset>
    </property>
    <property name="text">
-    <string>Jog</string>
+    <string>&amp;Jog</string>
    </property>
    <property name="toolTip">
     <string>Use plotter/cutter to show perimeter of working area without actually drawing or cutting.</string>
@@ -494,7 +494,7 @@
      <normaloff>:/icon/images/icons/delete.png</normaloff>:/icon/images/icons/delete.png</iconset>
    </property>
    <property name="text">
-    <string>Delete</string>
+    <string>&amp;Delete</string>
    </property>
    <property name="toolTip">
     <string>Remove selected items</string>
@@ -509,7 +509,7 @@
      <normaloff>:/icon/images/icons/zoom_in.png</normaloff>:/icon/images/icons/zoom_in.png</iconset>
    </property>
    <property name="text">
-    <string>Zoom In</string>
+    <string>&amp;Zoom In</string>
    </property>
    <property name="toolTip">
     <string>Zoom in slightly</string>
@@ -524,7 +524,7 @@
      <normaloff>:/icon/images/icons/zoom_out.png</normaloff>:/icon/images/icons/zoom_out.png</iconset>
    </property>
    <property name="text">
-    <string>Zoom Out</string>
+    <string>Zoom &amp;Out</string>
    </property>
    <property name="toolTip">
     <string>Zoom out slightly</string>
@@ -535,7 +535,7 @@
   </action>
   <action name="actionSource_Code">
    <property name="text">
-    <string>Source Code</string>
+    <string>&amp;Source Code</string>
    </property>
    <property name="toolTip">
     <string>Opens the webpage for this project's source</string>
@@ -543,7 +543,7 @@
   </action>
   <action name="actionReport_Bug">
    <property name="text">
-    <string>Report Bug</string>
+    <string>&amp;Report Bug</string>
    </property>
    <property name="toolTip">
     <string>Opens the webpage for this project's bug tracker</string>
@@ -551,7 +551,7 @@
   </action>
   <action name="actionWiki">
    <property name="text">
-    <string>Wiki</string>
+    <string>&amp;Wiki</string>
    </property>
    <property name="toolTip">
     <string>Open project wiki in web browser</string>
