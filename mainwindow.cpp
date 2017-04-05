@@ -118,6 +118,13 @@ MainWindow::MainWindow(QWidget *parent) :
     label_status = new QLabel;
     label_zoom = new QLabel;
     label_length = new QLabel;
+
+#define LABEL_MARGIN (10)
+    label_zoom->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
+    label_eta->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
+    label_length->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
+    label_status->setContentsMargins(LABEL_MARGIN, 0, LABEL_MARGIN, 0);
+
     label_eta->setText("ETA: NA");
     label_status->setText("Status label created.");
     label_zoom->setText("Zoom: NA");
@@ -161,7 +168,7 @@ QFrame * MainWindow::statusBarDivider()
     QFrame * line;
     line = new QFrame(this);
     line->setFrameShape(QFrame::VLine);
-    line->setFrameShadow(QFrame::Sunken);
+    line->setFrameShadow(QFrame::Plain);
     return line;
 }
 
