@@ -456,6 +456,7 @@ void hpglListModel::removeCutoutBox(QPersistentModelIndex _index)
     items = &(hpglData[_index.row()]->hpgl_items);
 
     hpglData[_index.row()]->hpgl_items_group->removeFromGroup(items->last());
+    hpglData[_index.row()]->hpgl_items_group->scene()->removeItem(items->last());
     delete items->last();
     items->removeLast();
 }
