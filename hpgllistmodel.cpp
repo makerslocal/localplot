@@ -415,7 +415,6 @@ void hpglListModel::scaleSelectedItems(qreal x, qreal y)
 void hpglListModel::createCutoutBox(QPersistentModelIndex _index)
 {
     QSettings settings;
-    QVector<QGraphicsPolygonItem *> * items;
 
     if (_index.row() < 0 || _index.row() >= hpglData.length() || !_index.isValid())
     {
@@ -433,32 +432,15 @@ void hpglListModel::createCutoutBox(QPersistentModelIndex _index)
     QRectF cutoutRect = hpglData.at(_index.row())->hpgl_items_group->sceneBoundingRect();
     cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
 
-    items = &(hpglData[_index.row()]->hpgl_items);
-    qDebug() << items->last()->pos();
-
     rowLocker.unlock();
     emit newPolygon(_index, static_cast<QPolygonF>(cutoutRect));
 }
 
 void hpglListModel::createCutoutBoxes()
 {
-    QSettings settings;
-
-    double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
-    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
-    {
-        padding = padding * 2.54;
-    }
-    padding = padding * 1016.0;
-
     for (int i = 0; i < hpglData.length(); ++i)
     {
-        QMutexLocker rowLocker(&(hpglData[i]->mutex));
-        QRectF cutoutRect = hpglData.at(i)->hpgl_items_group->sceneBoundingRect();
-        cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
-
-        rowLocker.unlock();
-        emit newPolygon(index(i), static_cast<QPolygonF>(cutoutRect));
+        createCutoutBox(index(i));
     }
 }
 
@@ -480,14 +462,9 @@ void hpglListModel::removeCutoutBox(QPersistentModelIndex _index)
 
 void hpglListModel::removeCutoutBoxes()
 {
-    QVector<QGraphicsPolygonItem *> * items;
-
     for (int i = 0; i < hpglData.length(); ++i)
     {
-        items = &(hpglData[i]->hpgl_items);
-        hpglData[i]->hpgl_items_group->removeFromGroup(items->last());
-        delete items->last();
-        items->removeLast();
+        removeCutoutBox(index(i));
     }
 }
 
