@@ -26,25 +26,44 @@ void ExtLoadFile::process()
         return;
     }
 
+    QString filename = filePath.split("/").last();
+    newFile.filename = filename;
+    newFile.path = filePath;
+
     if (filePath.endsWith(".svg", Qt::CaseInsensitive))
     {
         qDebug() << "File is SVG: " << filePath;
-        QProcess * svgToHpgl = new QProcess(this);
-        QString program = "python2.7";
-        QStringList arguments;
-        arguments << "/usr/share/inkscape/extensions/hpgl_output.py"
-                  << "--precut=FALSE"
-                  << "--force=0"
-                  << "--speed=0"
-                  << filePath;
-        svgToHpgl->setProcessChannelMode(QProcess::MergedChannels);
-        svgToHpgl->start(program, arguments);
-        svgToHpgl->waitForStarted();
-        svgToHpgl->waitForReadyRead();
-        QByteArray data = svgToHpgl->readLine();
-        buffer = QString::fromUtf8(data.data(), data.length());
+        buffer = importSvg(filePath);
         qDebug() << "Output: " << buffer;
-        svgToHpgl->waitForFinished();
+    }
+    else if (filePath.endsWith(".dxf", Qt::CaseInsensitive))
+    {
+        qDebug() << "File is DXF: " << filePath;
+
+        // Parse DXF
+        QByteArray data = importDxf(filePath);
+        qDebug() << "DXF output: " << data;
+
+        // Write SVG to file
+        QFile tmpSVG;
+        QString svgFilePath = "/tmp/localplot_"+filename+".svg";
+        tmpSVG.setFileName(svgFilePath);
+        if (!tmpSVG.open(QIODevice::WriteOnly))
+        {
+            // failed to open
+            qDebug() << "Failed to open file.";
+            return;
+        }
+        tmpSVG.write(data.data(), data.length());
+        tmpSVG.close();
+
+        // Convert everything to paths in SVG
+        svgCreatePaths(svgFilePath);
+
+        // Parse SVG
+        buffer = importSvg(svgFilePath);
+
+        qDebug() << "Output: " << buffer;
     }
     else if (filePath.endsWith(".hpgl", Qt::CaseInsensitive))
     {
@@ -76,10 +95,6 @@ void ExtLoadFile::process()
         return;
     }
 
-    QString filename = filePath.split("/").last();
-    newFile.filename = filename;
-    newFile.path = filePath;
-
     index = createHpglFile(newFile);
     if (!index.isValid())
     {
@@ -91,6 +106,65 @@ void ExtLoadFile::process()
     parseHPGL(index, &buffer);
     emit statusUpdate("Finished parsing file.");
     emit finished(index);
+}
+
+void ExtLoadFile::svgCreatePaths(QString filePath)
+{
+    QProcess * svgPaths = new QProcess(this);
+    QString program = "inkscape";
+    QStringList arguments;
+    QString buffer;
+    QByteArray data;
+    arguments << "-z"
+              << "-l"
+              << filePath
+              << filePath;
+    svgPaths->setProcessChannelMode(QProcess::MergedChannels);
+    svgPaths->start(program, arguments);
+    while (svgPaths->waitForReadyRead())
+    {
+        qDebug() << "svg paths output: " << svgPaths->readLine();
+    }
+    svgPaths->waitForFinished();
+}
+
+QByteArray ExtLoadFile::importDxf(QString filePath)
+{
+    QProcess * dxfToSvg = new QProcess(this);
+    QString program = "python2.7";
+    QStringList arguments;
+    QByteArray data;
+    arguments << "/usr/share/inkscape/extensions/dxf_input.py"
+              << filePath;
+    dxfToSvg->setProcessChannelMode(QProcess::MergedChannels);
+    dxfToSvg->start(program, arguments);
+    while (dxfToSvg->waitForReadyRead())
+    {
+        data = data + dxfToSvg->readAll();
+    }
+    return data;
+}
+
+QString ExtLoadFile::importSvg(QString filePath)
+{
+    QProcess * svgToHpgl = new QProcess(this);
+    QString program = "python2.7";
+    QStringList arguments;
+    QString buffer;
+    QByteArray data;
+    arguments << "/usr/share/inkscape/extensions/hpgl_output.py"
+              << "--precut=FALSE"
+              << "--force=0"
+              << "--speed=0"
+              << filePath;
+    svgToHpgl->setProcessChannelMode(QProcess::MergedChannels);
+    svgToHpgl->start(program, arguments);
+    while (svgToHpgl->waitForReadyRead())
+    {
+        data = data + svgToHpgl->readAll();
+    }
+    buffer = QString::fromUtf8(data.data(), data.length());
+    return buffer;
 }
 
 QPersistentModelIndex ExtLoadFile::createHpglFile(file_uid _file)

@@ -41,6 +41,9 @@ signals:
 private:
     bool parseHPGL(const QPersistentModelIndex index, QString * hpgl_text);
     QPersistentModelIndex createHpglFile(file_uid _file);
+    QString importSvg(QString filePath);
+    QByteArray importDxf(QString filePath);
+    void svgCreatePaths(QString filePath);
 
     void statusUpdate(QString _consoleStatus);
     hpglListModel * hpglModel;

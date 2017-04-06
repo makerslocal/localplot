@@ -461,7 +461,7 @@ void MainWindow::handle_selectFileBtn()
     QString startDir = settings.value("mainwindow/filePath", "").toString();
 
     filePath = QFileDialog::getOpenFileName(this,
-        tr("Open File"), startDir, tr("Image Files (*.hpgl *.HPGL *.svg *.SVG)"));
+        tr("Open File"), startDir, tr("Image Files (*.hpgl *.HPGL *.svg *.SVG *.dxf *.DXF)"));
 
     if (filePath.isEmpty())
     {
