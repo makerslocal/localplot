@@ -1,4 +1,4 @@
-#include "exteta.h"
+#include "eta.h"
 
 ExtEta::ExtEta(hpglListModel * model)
 {

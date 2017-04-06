@@ -1,4 +1,4 @@
-#include "extbinpack.h"
+#include "binpack.h"
 
 ExtBinPack::ExtBinPack(hpglListModel *model)
 {

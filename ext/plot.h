@@ -15,7 +15,7 @@
 
 #include "settings.h"
 #include "hpgllistmodel.h"
-#include "exteta.h"
+#include "eta.h"
 
 namespace std {
 class ExtPlot;

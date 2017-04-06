@@ -18,15 +18,15 @@ SOURCES += main.cpp\
 	settings.cpp \
 	hpglgraphicsview.cpp \
 	hpgllistmodel.cpp \
-	extplot.cpp \
-	exteta.cpp \
-	extloadfile.cpp \
 	RectangleBinPack/ShelfBinPack.cpp \
 	RectangleBinPack/GuillotineBinPack.cpp \
-	extbinpack.cpp \
     dialogprogress.cpp \
     RectangleBinPack/MaxRectsBinPack.cpp \
-    RectangleBinPack/Rect.cpp
+    RectangleBinPack/Rect.cpp \
+    ext/plot.cpp \
+    ext/binpack.cpp \
+    ext/eta.cpp \
+    ext/loadfile.cpp
 
 HEADERS  += mainwindow.h \
 	dialogabout.h \
@@ -34,15 +34,15 @@ HEADERS  += mainwindow.h \
 	settings.h \
 	hpglgraphicsview.h \
 	hpgllistmodel.h \
-	extplot.h \
-	exteta.h \
-	extloadfile.h \
 	RectangleBinPack/Rect.h \
 	RectangleBinPack/ShelfBinPack.h \
 	RectangleBinPack/GuillotineBinPack.h \
-	extbinpack.h \
     dialogprogress.h \
-    RectangleBinPack/MaxRectsBinPack.h
+    RectangleBinPack/MaxRectsBinPack.h \
+    ext/plot.h \
+    ext/binpack.h \
+    ext/eta.h \
+    ext/loadfile.h
 
 FORMS    += mainwindow.ui \
 	dialogabout.ui \

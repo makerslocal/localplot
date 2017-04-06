@@ -1,4 +1,4 @@
-#include "extloadfile.h"
+#include "loadfile.h"
 
 ExtLoadFile::ExtLoadFile(hpglListModel *model)
 {

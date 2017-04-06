@@ -2,7 +2,7 @@
  * Ancilla - worker thread
  * Christopher Bero <bigbero@gmail.com>
  */
-#include "extplot.h"
+#include "plot.h"
 
 ExtPlot::ExtPlot(hpglListModel * model)
 {

@@ -44,12 +44,12 @@
 #include <unistd.h>
 
 #include "settings.h"
-#include "extplot.h"
-#include "extloadfile.h"
-#include "exteta.h"
+#include "ext/plot.h"
+#include "ext/loadfile.h"
+#include "ext/eta.h"
 #include "hpglgraphicsview.h"
 #include "hpgllistmodel.h"
-#include "extbinpack.h"
+#include "ext/binpack.h"
 #include "dialogprogress.h"
 
 QString timeStamp();
