@@ -50,7 +50,7 @@
 #include "hpglgraphicsview.h"
 #include "hpgllistmodel.h"
 #include "ext/binpack.h"
-#include "dialogprogress.h"
+#include "dialog/dialogprogress.h"
 
 QString timeStamp();
 

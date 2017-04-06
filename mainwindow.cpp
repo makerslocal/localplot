@@ -6,10 +6,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "dialogabout.h"
+#include "dialog/dialogabout.h"
 #include "ui_dialogabout.h"
 
-#include "dialogsettings.h"
+#include "dialog/dialogsettings.h"
 #include "ui_dialogsettings.h"
 
 /**
