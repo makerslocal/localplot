@@ -13,41 +13,41 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
 		mainwindow.cpp \
-	dialogabout.cpp \
-	dialogsettings.cpp \
 	settings.cpp \
 	hpglgraphicsview.cpp \
 	hpgllistmodel.cpp \
 	RectangleBinPack/ShelfBinPack.cpp \
 	RectangleBinPack/GuillotineBinPack.cpp \
-    dialogprogress.cpp \
     RectangleBinPack/MaxRectsBinPack.cpp \
     RectangleBinPack/Rect.cpp \
     ext/plot.cpp \
     ext/binpack.cpp \
     ext/eta.cpp \
-    ext/loadfile.cpp
+    ext/loadfile.cpp \
+    dialog/dialogabout.cpp \
+    dialog/dialogprogress.cpp \
+    dialog/dialogsettings.cpp
 
 HEADERS  += mainwindow.h \
-	dialogabout.h \
-	dialogsettings.h \
 	settings.h \
 	hpglgraphicsview.h \
 	hpgllistmodel.h \
 	RectangleBinPack/Rect.h \
 	RectangleBinPack/ShelfBinPack.h \
 	RectangleBinPack/GuillotineBinPack.h \
-    dialogprogress.h \
     RectangleBinPack/MaxRectsBinPack.h \
     ext/plot.h \
     ext/binpack.h \
     ext/eta.h \
-    ext/loadfile.h
+    ext/loadfile.h \
+    dialog/dialogabout.h \
+    dialog/dialogprogress.h \
+    dialog/dialogsettings.h
 
 FORMS    += mainwindow.ui \
-	dialogabout.ui \
-	dialogsettings.ui \
-    dialogprogress.ui
+    dialog/dialogabout.ui \
+    dialog/dialogprogress.ui \
+    dialog/dialogsettings.ui
 
 RESOURCES += \
     icons.qrc \
