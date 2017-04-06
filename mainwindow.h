@@ -41,6 +41,7 @@
 #include <QUrl>
 
 #include <qmath.h>
+#include <unistd.h>
 
 #include "settings.h"
 #include "extplot.h"
@@ -127,6 +128,9 @@ private slots:
     void handle_openSourceCode();
     void handle_openBugTracker();
     void handle_openWiki();
+
+    // imports
+    void checkImportScripts();
 
 protected:
     void closeEvent(QCloseEvent *event);

@@ -136,6 +136,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->graphicsView_view->setScene(&plotScene);
     ui->listView->setModel(hpglModel);
 
+    checkImportScripts();
+
     sceneSetup();
 }
 
@@ -217,6 +219,7 @@ void MainWindow::do_openDialogSettings()
     newwindow->exec();
     widthLine->setLine(get_widthLine());
     ui->graphicsView_view->setGrid();
+    checkImportScripts();
 }
 
 /*******************************************************************************
@@ -250,6 +253,66 @@ void MainWindow::get_pen(QPen * _pen, QString _name)
 /*******************************************************************************
  * Worker thread slots
  ******************************************************************************/
+
+void MainWindow::checkImportScripts()
+{
+    QProcess shell;
+    QSettings settings;
+
+    // Test inkscape
+    shell.start("inkscape -V");
+    shell.waitForFinished();
+    if (shell.exitStatus() == QProcess::NormalExit && shell.exitCode() == 0)
+    {
+        settings.setValue("import/inkscape", true);
+    }
+    else
+    {
+        handle_newConsoleText("Inkscape not found on system.", Qt::darkRed);
+        settings.setValue("import/inkscape", false);
+    }
+
+    // Test python
+    shell.start("python2 -V");
+    shell.waitForFinished();
+    if (shell.exitStatus() == QProcess::NormalExit && shell.exitCode() == 0)
+    {
+        settings.setValue("import/python", true);
+    }
+    else
+    {
+        handle_newConsoleText("Python2 not found on system.", Qt::darkRed);
+        settings.setValue("import/python", false);
+    }
+
+    // Test hpgl_output.py
+    QString scriptPath = settings.value("import/svg/path", SETDEF_IMPORT_SVG_PATH).toString();
+    int result = access(scriptPath.toStdString().c_str(), X_OK);
+    qDebug() << "hpgl_output.py test: " << result;
+    if (result == 0)
+    {
+        settings.setValue("import/svg", true);
+    }
+    else
+    {
+        handle_newConsoleText("hpgl_output.py not found on system.", Qt::darkRed);
+        settings.setValue("import/svg", false);
+    }
+
+    // Test dxf_input.py
+    scriptPath = settings.value("import/dxf/path", SETDEF_IMPORT_DXF_PATH).toString();
+    result = access(scriptPath.toStdString().c_str(), X_OK);
+    qDebug() << "dxf_input.py test: " << result;
+    if (result == 0)
+    {
+        settings.setValue("import/dxf", true);
+    }
+    else
+    {
+        handle_newConsoleText("dxf_input.py not found on system.", Qt::darkRed);
+        settings.setValue("import/dxf", false);
+    }
+}
 
 void MainWindow::handle_openSourceCode()
 {
@@ -460,8 +523,25 @@ void MainWindow::handle_selectFileBtn()
     QString filePath;
     QString startDir = settings.value("mainwindow/filePath", "").toString();
 
+    QString fileFilter = "Image Files (*.hpgl *.HPGL";
+
+    if (settings.value("import/inkscape", SETDEF_IMPORT_INKSCAPE).toBool()
+            && settings.value("import/python", SETDEF_IMPORT_PYTHON).toBool())
+    {
+        if (settings.value("import/svg", SETDEF_IMPORT_SVG).toBool())
+        {
+            fileFilter += " *.svg *.SVG";
+        }
+        if (settings.value("import/dxf", SETDEF_IMPORT_DXF).toBool())
+        {
+            fileFilter += " *.dxf *.DXF";
+        }
+    }
+
+    fileFilter += ")";
+
     filePath = QFileDialog::getOpenFileName(this,
-        tr("Open File"), startDir, tr("Image Files (*.hpgl *.HPGL *.svg *.SVG *.dxf *.DXF)"));
+        tr("Open File"), startDir, tr(qPrintable(fileFilter)));
 
     if (filePath.isEmpty())
     {

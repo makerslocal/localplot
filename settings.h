@@ -34,7 +34,7 @@ enum deviceWidth_t {
 static const char* deviceWidth_names[] = {"inch", "cm"};
 
 // statically check that the size of ColorNames fits the number of Colors
-  static_assert(sizeof(deviceWidth_names)/sizeof(char*) == deviceWidth_t::SIZE_OF_ENUM
+static_assert(sizeof(deviceWidth_names)/sizeof(char*) == deviceWidth_t::SIZE_OF_ENUM
     , "Settings device width sizes dont match");
 
 /**
@@ -59,12 +59,21 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
 #define SETDEF_DEVICE_CUTOUTBOXES_PADDING (0.25)
 
 #define SETDEF_MAINWINDOW_FILEPATH  ("")
-#define SETDEF_MAINWINDOW_GRID (true)
+#define SETDEF_MAINWINDOW_GRID      (true)
 #define SETDEF_MAINWINDOW_GRID_SIZE (1)
 #define SETDEF_DIALLOGSETTINGS_INDEX (1)
 
 #define SETDEF_HOOK_FINISHED (false)
 #define SETDEF_HOOK_FINISHED_PATH ("")
+
+#define SETDEF_IMPORT_INKSCAPE      (false)
+#define SETDEF_IMPORT_INKSCAPE_PATH ("inkscape")
+#define SETDEF_IMPORT_PYTHON      (false)
+#define SETDEF_IMPORT_PYTHON_PATH ("python2")
+#define SETDEF_IMPORT_SVG           (false)
+#define SETDEF_IMPORT_SVG_PATH      ("/usr/share/inkscape/extensions/hpgl_output.py")
+#define SETDEF_IMPORT_DXF           (false)
+#define SETDEF_IMPORT_DXF_PATH      ("/usr/share/inkscape/extensions/dxf_input.py")
 
 #define SETDEF_SERIAL_PORT      ("")
 #define SETDEF_SERIAL_BAUD      (9600)
@@ -114,6 +123,16 @@ static const char* deviceWidth_names[] = {"inch", "cm"};
  *
  * hook
  * - finished (bool)
+ * - - path (string)
+ *
+ * import
+ * - inkscape (bool)
+ * - - path (string)
+ * - python (bool)
+ * - - path (string)
+ * - svg (bool)
+ * - - path (string)
+ * - dxf (bool)
  * - - path (string)
  *
  * dialogsettings

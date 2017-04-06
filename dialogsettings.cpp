@@ -90,6 +90,10 @@ DialogSettings::DialogSettings(QWidget *parent) :
     ui->checkBox_hookFinishedEnabled->setChecked(settings.value("hook/finished", SETDEF_HOOK_FINISHED).toBool());
     ui->lineEdit_hookFinishedPath->setText(settings.value("hook/finished/path", SETDEF_HOOK_FINISHED_PATH).toString());
 
+    // load import script paths
+    ui->lineEdit_importSvgPath->setText(settings.value("import/svg/path", SETDEF_IMPORT_SVG_PATH).toString());
+    ui->lineEdit_importDxfPath->setText(settings.value("import/dxf/path", SETDEF_IMPORT_DXF_PATH).toString());
+
     if (settings.value("serial/xonxoff", SETDEF_SERIAL_XONOFF).toBool())
     {
         ui->radioButton_XonXoff->setChecked(true);
@@ -225,6 +229,7 @@ void DialogSettings::do_settingsClear()
     do_settingsPrint();
     settings.clear();
     qDebug() << "... Done.";
+    this->close();
 }
 
 void DialogSettings::do_settingsPrint()
@@ -295,6 +300,13 @@ void DialogSettings::do_saveAndClose()
     {
         settings.setValue("grid", ui->checkBox_viewGridEnabled->isChecked());
         settings.setValue("grid/size", ui->spinBox_viewGridSize->value());
+    }
+    settings.endGroup();
+
+    settings.beginGroup("import");
+    {
+        settings.setValue("svg/path", ui->lineEdit_importSvgPath->text());
+        settings.setValue("dxf/path", ui->lineEdit_importDxfPath->text());
     }
     settings.endGroup();
 
