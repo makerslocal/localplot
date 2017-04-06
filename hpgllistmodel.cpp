@@ -262,9 +262,12 @@ bool hpglListModel::removeRows(int row, int count, const QModelIndex &parent)
     beginRemoveRows(parent, row, (row + count - 1));
     for (int i = (row+count-1); i >= row; --i)
     {
-        QMutexLocker locker(&(hpglData[i]->mutex));
-//        delete hpglData[i]->hpgl_items_group;
-        hpglData[i]->hpgl_items.clear();
+        {
+            QMutexLocker locker(&(hpglData[i]->mutex));
+    //        delete hpglData[i]->hpgl_items_group;
+            hpglData[i]->hpgl_items.clear();
+            locker.unlock();
+        }
         delete hpglData[i];
         hpglData.remove(i);
     }
