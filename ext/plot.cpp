@@ -169,20 +169,6 @@ void ExtPlot::process()
     qDebug() << "do perim: " << runPerimeterFlag;
     if (runPerimeterFlag)
     {
-        QModelIndex index;
-        QGraphicsItemGroup * itemGroup;
-
-        index = hpglModel->index(hpglList_index);
-        QMutex * mutex;
-        hpglModel->dataGroup(index, mutex, itemGroup);
-        QMutexLocker rowLocker(mutex);
-
-        if (itemGroup == NULL)
-        {
-            qDebug() << "Error: itemgroup is null in do_plotnext().";
-            emit finished();
-            return;
-        }
         QPointF point;
         QString retval = "IN;SP1;PU";
         point = perimeterRect.topLeft();
@@ -246,9 +232,7 @@ void ExtPlot::do_plotNext()
     }
 
     index = hpglModel->index(hpglList_index);
-    QMutex * mutex;
-    hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
-    QMutexLocker rowLocker(mutex);
+    hpglModel->dataItemsGroup(index, itemGroup, items);
 
     if (itemGroup == NULL)
     {
@@ -261,8 +245,11 @@ void ExtPlot::do_plotNext()
         return;
     }
 
+    hpglModel->mutexLock();
+
     if (hpgl_obj_index >= items->length())
     {
+        hpglModel->mutexUnlock();
         hpglList_index++;
         hpgl_obj_index = 0;
         do_plotNext();
@@ -271,6 +258,7 @@ void ExtPlot::do_plotNext()
     index = hpglModel->index(hpglList_index);
     if (cancelPlotFlag == true)
     {
+        hpglModel->mutexUnlock();
         emit statusUpdate("Bailing out of plot, cancelled!", Qt::darkRed);
         closeSerial();
         emit finished();
@@ -285,8 +273,10 @@ void ExtPlot::do_plotNext()
 
     QString printThis = print(items->at(hpgl_obj_index)->polygon(),
                               itemGroup);
+
     if (printThis == "OOB")
     {
+        hpglModel->mutexUnlock();
         emit finished();
         return;
     }
@@ -307,6 +297,8 @@ void ExtPlot::do_plotNext()
         time += ExtEta::plotTime(last_line);
         last_point = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().last());
     }
+
+    hpglModel->mutexUnlock();
 
     ++hpgl_obj_index;
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));

@@ -30,7 +30,6 @@ struct hpgl_file {
     file_uid name;
     QVector<QGraphicsPolygonItem *> hpgl_items;
     QGraphicsItemGroup * hpgl_items_group;
-    QMutex mutex;
 };
 bool operator==(const file_uid& lhs, const file_uid& rhs);
 
@@ -47,16 +46,15 @@ public:
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
-    bool dataGroup(const QPersistentModelIndex index, QMutex *&retLocker,
+    bool dataGroup(const QPersistentModelIndex index,
                     QGraphicsItemGroup *&itemGroup);
-    bool dataItemsGroup(const QPersistentModelIndex index, QMutex *&retLocker,
+    bool dataItemsGroup(const QPersistentModelIndex index,
                         QGraphicsItemGroup *&itemGroup, QVector<QGraphicsPolygonItem *> *&items);
-    bool dataItems(const QPersistentModelIndex index, QMutex *&retLocker,
+    bool dataItems(const QPersistentModelIndex index,
                    QVector<QGraphicsPolygonItem *> *&items);
     bool setData(const QModelIndex &index, const QVariant &value, int role);
     bool setGroupFlag(const QModelIndex &index, QGraphicsItem::GraphicsItemFlag flag, bool flagValue);
     QModelIndex index(int row, int column = 0, const QModelIndex &parent = QModelIndex()) const;
-    void duplicateSelectedRows();
     bool insertRow(int row, const QModelIndex &parent = QModelIndex());
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
@@ -68,12 +66,17 @@ public:
     // Item transformations
     void rotateSelectedItems(qreal rotation);
     void scaleSelectedItems(qreal x, qreal y);
+    // Mutex
+    void mutexLock();
+    void mutexUnlock();
+    bool mutexIsLocked();
 
 public slots:
     void createCutoutBox(QPersistentModelIndex _index);
     void createCutoutBoxes();
     void removeCutoutBoxes();
     void removeCutoutBox(QPersistentModelIndex _index);
+    void duplicateSelectedRows();
 
 signals:
     void newPolygon(QPersistentModelIndex,QPolygonF);
@@ -83,6 +86,7 @@ signals:
 private:
     QVector<hpgl_file *> hpglData;
     QObject * modelParent;
+    QMutex mutex;
 };
 
 #endif // HPGLLISTMODEL_H

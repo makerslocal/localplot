@@ -93,9 +93,8 @@ void ExtEta::process()
         index = hpglModel->index(i);
         itemGroup = NULL;
         items = NULL;
-        QMutex * mutex;
-        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
-        QMutexLocker rowLocker(mutex);
+        hpglModel->dataItemsGroup(index, itemGroup, items);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
@@ -118,6 +117,7 @@ void ExtEta::process()
 //            qDebug() << "File: " << i << ", Object: " << i2 << ", time: " << time;
             pu_line.setP1(itemGroup->mapToScene(poly.last()));
         }
+        hpglModel->mutexUnlock();
         emit progress((int)(100 * ((qreal)i / (hpglModel->rowCount()-1))));
     }
     emit finished(time);

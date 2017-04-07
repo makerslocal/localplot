@@ -36,26 +36,20 @@ void ExtBinPack::process()
         }
         index = hpglModel->index(i);
         itemGroup = NULL;
-        QMutex * mutex;
-        hpglModel->dataGroup(index, mutex, itemGroup);
-        if (!mutex->tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            emit finished();
-            return;
-        }
+        hpglModel->dataGroup(index, itemGroup);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
             qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             emit finished();
             return;
         }
 
         initY += qMax(itemGroup->boundingRect().width(), itemGroup->boundingRect().height());
 
-        mutex->unlock();
+        hpglModel->mutexUnlock();
     }
 
 //    packer.Init(initX, initY, true);
@@ -71,19 +65,13 @@ void ExtBinPack::process()
         }
         index = hpglModel->index(i);
         itemGroup = NULL;
-        QMutex * mutex;
-        hpglModel->dataGroup(index, mutex, itemGroup);
-        if (!mutex->tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            emit finished();
-            return;
-        }
+        hpglModel->dataGroup(index, itemGroup);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
             qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             emit finished();
             return;
         }
@@ -114,7 +102,7 @@ void ExtBinPack::process()
         rect.setHeight(thisrect.width);
         emit packedRect(index, rect);
 
-        mutex->unlock();
+        hpglModel->mutexUnlock();
     }
 
     emit statusUpdate("Finished arranging files.");

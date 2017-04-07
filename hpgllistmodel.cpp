@@ -31,7 +31,7 @@ QVariant hpglListModel::data(const QModelIndex &index, int role) const
     return(QVariant());
 }
 
-bool hpglListModel::dataGroup(const QPersistentModelIndex index, QMutex *& retLocker,
+bool hpglListModel::dataGroup(const QPersistentModelIndex index,
                                    QGraphicsItemGroup *& itemGroup)
 {
     if (!index.isValid())
@@ -43,13 +43,12 @@ bool hpglListModel::dataGroup(const QPersistentModelIndex index, QMutex *& retLo
         return false;
     }
 
-    retLocker = &(hpglData[index.row()]->mutex);
     itemGroup = hpglData.at(index.row())->hpgl_items_group;
 
     return true;
 }
 
-bool hpglListModel::dataItemsGroup(const QPersistentModelIndex index, QMutex *& retLocker,
+bool hpglListModel::dataItemsGroup(const QPersistentModelIndex index,
                                    QGraphicsItemGroup *& itemGroup, QVector<QGraphicsPolygonItem*> *& items)
 {
     if (!index.isValid())
@@ -61,13 +60,12 @@ bool hpglListModel::dataItemsGroup(const QPersistentModelIndex index, QMutex *& 
         return false;
     }
 
-    retLocker = &(hpglData[index.row()]->mutex);
     itemGroup = hpglData.at(index.row())->hpgl_items_group;
     items = &(hpglData.at(index.row())->hpgl_items);
     return true;
 }
 
-bool hpglListModel::dataItems(const QPersistentModelIndex index, QMutex *& retLocker, QVector<QGraphicsPolygonItem*> *& items)
+bool hpglListModel::dataItems(const QPersistentModelIndex index, QVector<QGraphicsPolygonItem*> *& items)
 {
     if (!index.isValid())
     {
@@ -78,7 +76,6 @@ bool hpglListModel::dataItems(const QPersistentModelIndex index, QMutex *& retLo
         return false;
     }
 
-    retLocker = &(hpglData[index.row()]->mutex);
     items = &(hpglData.at(index.row())->hpgl_items);
     return true;
 }
@@ -98,8 +95,9 @@ bool hpglListModel::setData(const QModelIndex &index, const QVariant &value, int
 
     if (role == Qt::DisplayRole)
     {
-        QMutexLocker locker(&(hpglData[index.row()]->mutex));
+        mutexLock();
         hpglData[index.row()]->name.filename = value.toString();
+        mutexUnlock();
         changedRoles.push_back(Qt::DisplayRole);
         emit dataChanged(index, index, changedRoles);
         return true;
@@ -111,9 +109,10 @@ bool hpglListModel::setFileUid(const QModelIndex &index, const file_uid filename
 {
     if (index.isValid())
     {
-        QMutexLocker locker(&(hpglData[index.row()]->mutex));
+        mutexLock();
         hpglData.at(index.row())->name.filename = filename.filename;
         hpglData.at(index.row())->name.path = filename.path;
+        mutexUnlock();
         return true;
     }
     return false;
@@ -123,8 +122,9 @@ bool hpglListModel::setGroupFlag(const QModelIndex &index, QGraphicsItem::Graphi
 {
     if (index.row() >= 0 && index.row() < hpglData.length())
     {
-        QMutexLocker locker(&(hpglData[index.row()]->mutex));
+        mutexLock();
         hpglData[index.row()]->hpgl_items_group->setFlag(flag, flagValue);
+        mutexUnlock();
         return true;
     }
     return false;
@@ -157,11 +157,7 @@ void hpglListModel::duplicateSelectedRows()
     for (int i = 0; i < hpglData.length(); ++i)
     {
         _index = index(i);
-        if (!hpglData[i]->mutex.tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+        mutexLock();
 
         if (hpglData.at(i)->hpgl_items_group->isSelected())
         {
@@ -169,7 +165,7 @@ void hpglListModel::duplicateSelectedRows()
             indexes.push_back(_index);
         }
 
-        hpglData[i]->mutex.unlock();
+        mutexUnlock();
     }
 
     for (int i = 0; i < indexes.length(); ++i)
@@ -178,19 +174,16 @@ void hpglListModel::duplicateSelectedRows()
         QString oldName;
 
         oldName = data(_index, Qt::DisplayRole).toString();
-        if (!hpglData[_index.row()]->mutex.tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+
+        mutexLock();
 
         int newRow = hpglData.length();
         insertRow(newRow);
         QPersistentModelIndex newIndex = index(newRow);
 
-        hpglData[_index.row()]->mutex.unlock();
+        mutexUnlock();
+
         setData(newIndex, oldName, Qt::DisplayRole);
-//        mutex->lock();
 
         int loopOffset = 0;
         if (settings.value("device/cutoutboxes", SETDEF_DEVICE_CUTOUTBOXES).toBool())
@@ -199,13 +192,12 @@ void hpglListModel::duplicateSelectedRows()
         }
         for (int i2 = 0; i2 < (hpglData[_index.row()]->hpgl_items.length() - loopOffset); ++i2)
         {
-            QPolygonF polygon = hpglData[_index.row()]->hpgl_items.at(i2)->polygon();
+            const QPolygonF polygon = hpglData[_index.row()]->hpgl_items.at(i2)->polygon();
 //            addPolygon(newIndex, polygon);
             emit newPolygon(newIndex, polygon);
 //            hpglData[newIndex.row()]->hpgl_items.at(i2)->setPos(hpglData[_index.row()]->hpgl_items.at(i2)->pos());
         }
 
-//        mutex->unlock();
         emit newFileToScene(newIndex);
     }
 }
@@ -232,7 +224,6 @@ bool hpglListModel::insertRows(int row, int count, const QModelIndex &parent)
         hpgl_file * newFile;
         QModelIndex index = createIndex(i, 0);
         newFile = new hpgl_file;
-        QMutexLocker locker(&(newFile->mutex));
         newFile->hpgl_items_group = new QGraphicsItemGroup;
         newFile->hpgl_items_group->setData(QMODELINDEX_KEY, QPersistentModelIndex(index));
         newFile->name.filename = "NA";
@@ -260,17 +251,15 @@ bool hpglListModel::removeRows(int row, int count, const QModelIndex &parent)
         return false;
     }
     beginRemoveRows(parent, row, (row + count - 1));
+    mutexLock();
     for (int i = (row+count-1); i >= row; --i)
     {
-        {
-            QMutexLocker locker(&(hpglData[i]->mutex));
-    //        delete hpglData[i]->hpgl_items_group;
-            hpglData[i]->hpgl_items.clear();
-            locker.unlock();
-        }
+//        delete hpglData[i]->hpgl_items_group;
+        hpglData[i]->hpgl_items.clear();
         delete hpglData[i];
         hpglData.remove(i);
     }
+    mutexUnlock();
     endRemoveRows();
     return true;
 }
@@ -283,9 +272,10 @@ void hpglListModel::addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem
         return;
     }
 
-    QMutexLocker locker(&(hpglData[index.row()]->mutex));
+    mutexLock();
     hpglData[index.row()]->hpgl_items.push_back(poly);
     hpglData[index.row()]->hpgl_items_group->addToGroup(static_cast<QGraphicsItem*>(poly));
+    mutexUnlock();
 }
 
 void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
@@ -300,11 +290,7 @@ void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
         QGraphicsItemGroup * itemGroup;
         modCount = 0;
 
-        if (!hpglData[i]->mutex.tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+        mutexLock();
 
         itemGroup = hpglData.at(i)->hpgl_items_group;
         pos = itemGroup->pos();
@@ -337,7 +323,8 @@ void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
         {
             length = (rect.x() + rect.width());
         }
-        hpglData[i]->mutex.unlock();
+
+        mutexUnlock();
     }
     emit vinylLength(length);
 }
@@ -368,10 +355,10 @@ void hpglListModel::rotateSelectedItems(qreal rotation)
     QModelIndex _index;
     qreal translateWidth, translateheight, xOffset, yOffset;
 
+    mutexLock();
     for (int i = 0; i < rowCount(); ++i)
     {
         _index = index(i);
-        QMutexLocker rowLocker(&(hpglData[i]->mutex));
 
         QGraphicsItemGroup * itemGroup = hpglData.at(i)->hpgl_items_group;
 
@@ -385,6 +372,7 @@ void hpglListModel::rotateSelectedItems(qreal rotation)
             itemGroup->setRotation(itemGroup->rotation() + rotation);
         }
     }
+    mutexUnlock();
 }
 
 void hpglListModel::scaleSelectedItems(qreal x, qreal y)
@@ -393,10 +381,10 @@ void hpglListModel::scaleSelectedItems(qreal x, qreal y)
     QTransform transform;
     qreal translateWidth, translateheight;
 
+    mutexLock();
     for (int i = 0; i < rowCount(); ++i)
     {
         _index = index(i);
-        QMutexLocker rowLocker(&(hpglData[i]->mutex));
 
         QGraphicsItemGroup * itemGroup = hpglData.at(i)->hpgl_items_group;
 
@@ -410,6 +398,7 @@ void hpglListModel::scaleSelectedItems(qreal x, qreal y)
             itemGroup->setTransform(itemGroup->transform() * transform);
         }
     }
+    mutexUnlock();
 }
 
 void hpglListModel::createCutoutBox(QPersistentModelIndex _index)
@@ -421,7 +410,7 @@ void hpglListModel::createCutoutBox(QPersistentModelIndex _index)
         return;
     }
 
-    QMutexLocker rowLocker(&(hpglData[_index.row()]->mutex));
+    mutexLock();
 
     double padding = settings.value("device/cutoutboxes/padding", SETDEF_DEVICE_CUTOUTBOXES_PADDING).toDouble();
     if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
@@ -432,7 +421,8 @@ void hpglListModel::createCutoutBox(QPersistentModelIndex _index)
     QRectF cutoutRect = hpglData.at(_index.row())->hpgl_items_group->sceneBoundingRect();
     cutoutRect = cutoutRect.marginsAdded(QMarginsF(padding, padding, padding, padding));
 
-    rowLocker.unlock();
+    mutexUnlock();
+
     emit newPolygon(_index, static_cast<QPolygonF>(cutoutRect));
 }
 
@@ -468,6 +458,33 @@ void hpglListModel::removeCutoutBoxes()
         removeCutoutBox(index(i));
     }
 }
+
+void hpglListModel::mutexLock()
+{
+    mutex.lock();
+}
+
+void hpglListModel::mutexUnlock()
+{
+    mutex.unlock();
+}
+
+bool hpglListModel::mutexIsLocked()
+{
+    if (!mutex.tryLock())
+    {
+        // Mutex already locked
+        return true;
+    }
+    mutex.unlock();
+    return false;
+}
+
+
+
+
+
+
 
 
 

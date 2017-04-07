@@ -434,18 +434,13 @@ void MainWindow::do_jog()
     {
         index = hpglModel->index(i);
         itemGroup = NULL;
-        QMutex * mutex;
-        hpglModel->dataGroup(index, mutex, itemGroup);
-        if (!mutex->tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+        hpglModel->dataGroup(index, itemGroup);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
             qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
 
@@ -474,7 +469,7 @@ void MainWindow::do_jog()
         {
             perimeter.setY(0);
         }
-        mutex->unlock();
+        hpglModel->mutexUnlock();
     }
     worker = new ExtPlot(hpglModel, perimeter);
 
@@ -627,20 +622,15 @@ void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
 {
     QGraphicsItemGroup * itemGroup;
     itemGroup = NULL;
-    QMutex * mutex;
     QSettings settings;
 
-    hpglModel->dataGroup(index, mutex, itemGroup);
-    if (!mutex->tryLock())
-    {
-        qDebug() << "Mutex already locked, giving up.";
-        return;
-    }
+    hpglModel->dataGroup(index, itemGroup);
+    hpglModel->mutexLock();
 
     if (itemGroup == NULL)
     {
         qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-        mutex->unlock();
+        hpglModel->mutexUnlock();
         return;
     }
 
@@ -662,9 +652,9 @@ void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
         transform.rotate(90);
         transform.translate(-translateWidth/2.0, -translateheight/2.0);
         itemGroup->setTransform(itemGroup->transform() * transform);
-        mutex->unlock();
+        hpglModel->mutexUnlock();
         sceneConstrainItems();
-        mutex->lock();
+        hpglModel->mutexLock();
     }
     QPointF posFinal, posItem, posScene;
     QRectF grect;
@@ -678,7 +668,7 @@ void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
     qDebug() << posItem;
     itemGroup->setPos(posItem);
 
-    mutex->unlock();
+    hpglModel->mutexUnlock();
 }
 
 void MainWindow::do_cancelPlot()
@@ -688,7 +678,12 @@ void MainWindow::do_cancelPlot()
 
 void MainWindow::handle_duplicateFileBtn()
 {
-    hpglModel->duplicateSelectedRows();
+    QThread * tempThread;
+    tempThread = new QThread(this);
+    moveToThread(tempThread);
+    connect(tempThread, SIGNAL(started()), hpglModel, SLOT(duplicateSelectedRows()));
+    connect(tempThread, SIGNAL(finished()), tempThread, SLOT(deleteLater()));
+    tempThread->start();
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()
@@ -705,24 +700,19 @@ void MainWindow::handle_plotSceneSelectionChanged()
         index = hpglModel->index(i);
         itemGroup = NULL;
         items = NULL;
-        QMutex * mutex;
-        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
-        if (!mutex->tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+        hpglModel->dataItemsGroup(index, itemGroup, items);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
             qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
         if (items == NULL)
         {
             qDebug() << "Error: items is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
 
@@ -744,7 +734,7 @@ void MainWindow::handle_plotSceneSelectionChanged()
         {
             (*items)[i3]->setPen(_selectedPen);
         }
-        mutex->unlock();
+        hpglModel->mutexUnlock();
     }
 }
 
@@ -764,28 +754,25 @@ void MainWindow::handle_listViewClick()
         index = hpglModel->index(i);
         itemGroup = NULL;
         items = NULL;
-        QMutex * mutex;
-        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
-        if (!mutex->tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+        hpglModel->dataItemsGroup(index, itemGroup, items);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
             qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
         if (items == NULL)
         {
             qDebug() << "Error: items is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
 
         get_pen(&_selectedPen, "down");
+
+        hpglModel->mutexUnlock();
 
         if (selectionmodel->isSelected(index))
         {
@@ -799,11 +786,12 @@ void MainWindow::handle_listViewClick()
             itemGroup->setZValue(-1);
         }
 
+        hpglModel->mutexLock();
         for (int i3 = 0; i3 < items->length(); ++i3)
         {
             (*items)[i3]->setPen(_selectedPen);
         }
-        mutex->unlock();
+        hpglModel->mutexUnlock();
     }
 }
 
@@ -824,9 +812,8 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
         hpglModel->createCutoutBox(_index);
     }
 
-    QMutex * mutex;
-    hpglModel->dataGroup(_index, mutex, itemGroup);
-    QMutexLocker rowLocker(mutex);
+    hpglModel->dataGroup(_index, itemGroup);
+    hpglModel->mutexLock();
 
     if (itemGroup == NULL)
     {
@@ -835,7 +822,7 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     }
 
     plotScene.addItem(itemGroup);
-    rowLocker.unlock();
+    hpglModel->mutexUnlock();
 
     hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsMovable, true);
     hpglModel->setGroupFlag(_index, QGraphicsItem::ItemIsSelectable, true);
@@ -843,7 +830,7 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     ui->listView->selectionModel()->clearSelection();
     handle_listViewClick();
     itemGroup->setSelected(true);
-    rowLocker.unlock();
+    hpglModel->mutexUnlock();
 
     handle_plotSceneSelectionChanged();
     sceneConstrainItems();
@@ -864,24 +851,19 @@ void MainWindow::handle_deleteFileBtn()
         index = list.at(i);
         itemGroup = NULL;
         items = NULL;
-        QMutex * mutex;
-        hpglModel->dataItemsGroup(index, mutex, itemGroup, items);
-        if (!mutex->tryLock())
-        {
-            qDebug() << "Mutex already locked, giving up.";
-            return;
-        }
+        hpglModel->dataItemsGroup(index, itemGroup, items);
+        hpglModel->mutexLock();
 
         if (itemGroup == NULL)
         {
             qDebug() << "Error: itemgroup is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
         if (items == NULL)
         {
             qDebug() << "Error: items is null in scenescalecontainselected().";
-            mutex->unlock();
+            hpglModel->mutexUnlock();
             return;
         }
 
@@ -890,7 +872,9 @@ void MainWindow::handle_deleteFileBtn()
             plotScene.removeItem(items->at(i2));
         }
         plotScene.destroyItemGroup(itemGroup);
-        mutex->unlock();
+
+        hpglModel->mutexUnlock();
+
         hpglModel->removeRow(list[i].row());
     }
 }
