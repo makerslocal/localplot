@@ -143,10 +143,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    for (int i = (hpglModel->rowCount() - 1); i >= 0; --i)
-    {
-        hpglModel->removeRow(i);
-    }
+    disconnect(&plotScene, 0, 0, 0);
+    hpglModel->removeRows(0, hpglModel->rowCount()-1);
     plotScene.clear();
     plotScene.deleteLater();
 
@@ -673,17 +671,13 @@ void MainWindow::handle_packedRect(QPersistentModelIndex index, QRectF rect)
 
 void MainWindow::do_cancelPlot()
 {
+    qDebug() << "Cancelling plot!";
     emit please_plotter_cancelPlot();
 }
 
 void MainWindow::handle_duplicateFileBtn()
 {
-    QThread * tempThread;
-    tempThread = new QThread(this);
-    moveToThread(tempThread);
-    connect(tempThread, SIGNAL(started()), hpglModel, SLOT(duplicateSelectedRows()));
-    connect(tempThread, SIGNAL(finished()), tempThread, SLOT(deleteLater()));
-    tempThread->start();
+    QFuture<void> tThread = QtConcurrent::run(this->hpglModel, &hpglListModel::duplicateSelectedRows);
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()
@@ -928,7 +922,6 @@ QLineF MainWindow::get_widthLine()
 void MainWindow::sceneSetup()
 {
     QPen pen;
-    QSettings settings;
 
     // physicalDpi is the number of pixels in an inch
     int xDpi = ui->graphicsView_view->physicalDpiX();
@@ -954,6 +947,7 @@ void MainWindow::sceneSetup()
 
     // Width line
     widthLine = plotScene.addLine(get_widthLine(), pen);
+//    vinyl = plotScene.addRect(0, 0, 1016, get_widthLine().p2().y(), pen);
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
@@ -1032,6 +1026,9 @@ void MainWindow::sceneConstrainItems()
 {
     QPointF topLeft = widthLine->mapToScene(widthLine->line().p2());
     QPointF bottomLeft = widthLine->mapToScene(widthLine->line().p1());
+
+//    QPointF topLeft = vinyl->mapToScene(vinyl->rect().topLeft());
+//    QPointF bottomLeft = vinyl->mapToScene(vinyl->rect().bottomLeft());
 
     hpglModel->constrainItems(bottomLeft, topLeft);
 }

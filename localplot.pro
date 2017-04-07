@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport designer svg
+QT       += core gui serialport designer svg concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

@@ -39,6 +39,7 @@
 #include <QProcess>
 #include <QDesktopServices>
 #include <QUrl>
+#include <qtconcurrentrun.h>
 
 #include <qmath.h>
 #include <unistd.h>
@@ -143,6 +144,7 @@ private:
     QGraphicsScene plotScene;
     hpglListModel * hpglModel;
     QGraphicsLineItem * widthLine;
+    QGraphicsRectItem * vinyl;
 
     // Status bar
     QLabel * label_eta;
