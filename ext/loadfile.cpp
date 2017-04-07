@@ -218,7 +218,6 @@ bool ExtLoadFile::parseHPGL(const QPersistentModelIndex index, QString * hpgl_te
             int commaCount, newX, newY;
             cmdText.remove(0,2);
             commaCount = cmdText.count(',');
-//            qDebug() << "= Comma count: " << commaCount;
             int i = commaCount - 1;
             newX = cmdText.section(',', i, i).toInt();
             i++;
@@ -231,7 +230,6 @@ bool ExtLoadFile::parseHPGL(const QPersistentModelIndex index, QString * hpgl_te
             // Pen down
             cmdText.remove(0,2);
             int commaCount = cmdText.count(',');
-//            qDebug() << "= Comma count: " << commaCount;
             newItem << tail; // Begin from last PU location
             for (int i = 0; i < commaCount; i++)
             {
@@ -241,13 +239,6 @@ bool ExtLoadFile::parseHPGL(const QPersistentModelIndex index, QString * hpgl_te
                 int newY = cmdText.section(',', i, i).toInt();
 //                qDebug() << "= Found x: " << newX << " y: " << newY;
                 newItem << QPointF(newX, newY);
-//                if (i < (commaCount-2) && ((i+1) % 500) == 0)
-//                {
-//                    qDebug() << "Breaking line";
-//                    cmdList.push_back(newCmd);
-//                    newCmd.coordList.clear();
-//                    newCmd.coordList.push_back(QPoint(newX, newY));
-//                }
             }
             emit newPolygon(index, newItem);
         }
@@ -263,7 +254,7 @@ bool ExtLoadFile::parseHPGL(const QPersistentModelIndex index, QString * hpgl_te
         }
         else if (opcode == "FS" || opcode == "VS")
         {
-            // Real hpgl that we don't care about
+            // Real hpgl commands that our USCutter doesn't accept
         }
         else
         {

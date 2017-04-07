@@ -118,7 +118,7 @@ QPointer<QSerialPort> ExtPlot::openSerial()
     if (_port->isOpen())
     {
         qDebug() << "Flow control: " << _port->flowControl();
-        emit serialOpened(); //handle_serialOpened();
+        emit serialOpened();
     }
     else
     {
@@ -136,7 +136,7 @@ void ExtPlot::closeSerial()
         _port.clear();
     }
     delete _port;
-    emit serialClosed(); //handle_serialClosed();
+    emit serialClosed();
 }
 
 void ExtPlot::cancel()
@@ -185,25 +185,21 @@ void ExtPlot::process()
         }
         QPointF point;
         QString retval = "IN;SP1;PU";
-//        point = itemGroup->mapToScene(perimeterRect.topLeft());
         point = perimeterRect.topLeft();
         retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
         retval += QString::number(static_cast<int>(point.y()));
         retval += ",";
-//        point = itemGroup->mapToScene(perimeterRect.topRight());
         point = perimeterRect.topRight();
         retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
         retval += QString::number(static_cast<int>(point.y()));
         retval += ",";
-//        point = itemGroup->mapToScene(perimeterRect.bottomRight());
         point = perimeterRect.bottomRight();
         retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
         retval += QString::number(static_cast<int>(point.y()));
         retval += ",";
-//        point = itemGroup->mapToScene(perimeterRect.bottomLeft());
         point = perimeterRect.bottomLeft();
         retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
@@ -310,10 +306,6 @@ void ExtPlot::do_plotNext()
         last_line.setP2(itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().first()));
         time += ExtEta::plotTime(last_line);
         last_point = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().last());
-    }
-    else
-    {
-        // leave time as 0
     }
 
     ++hpgl_obj_index;
