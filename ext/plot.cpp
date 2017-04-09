@@ -132,6 +132,7 @@ void ExtPlot::closeSerial()
 {
     if (!_port.isNull())
     {
+        _port->flush();
         _port->close();
         _port.clear();
     }
@@ -190,8 +191,7 @@ void ExtPlot::process()
         retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
         retval += QString::number(static_cast<int>(point.y()));
-        retval += ";";
-        retval += "PU0,0;SP0;IN;";
+        retval += ",0,0;SP0;IN;";
         qDebug() << "perimeter: " << retval;
         _port->write(retval.toStdString().c_str());
         _port->flush();
