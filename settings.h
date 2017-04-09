@@ -40,9 +40,9 @@ static_assert(sizeof(deviceWidth_names)/sizeof(char*) == deviceWidth_t::SIZE_OF_
 /**
  * Settings Defaults
  */
-#define SETDEF_PEN_DOWN_SIZE    (1)
-#define SETDEF_PEN_DOWN_RED     (100)
-#define SETDEF_PEN_DOWN_GREEN   (150)
+#define SETDEF_PEN_DOWN_SIZE    (3)
+#define SETDEF_PEN_DOWN_RED     (200)
+#define SETDEF_PEN_DOWN_GREEN   (40)
 #define SETDEF_PEN_DOWN_BLUE    (200)
 
 #define SETDEF_PEN_UP_SIZE    (1)
