@@ -33,6 +33,8 @@ void hpglGraphicsView::statusUpdate(QString _consoleStatus)
 
 void hpglGraphicsView::setGrid()
 {
+    return;
+
     QTransform _transform = transform();
     // physicalDpi is the number of pixels in an inch
     int xDpi = physicalDpiX();
@@ -68,12 +70,13 @@ void hpglGraphicsView::setGrid()
     QImage grid(gridX, gridY, QImage::Format_RGB32);
     QRgb value;
 
-    value = qRgb(150, 200, 150);
+    value = qRgb(100, 240, 100);
+
     for (int x = 0; x < gridX; ++x)
     {
         for (int y = 0; y < gridY; ++y)
         {
-            grid.setPixelColor(QPoint(x, y), Qt::white);
+            grid.setPixelColor(QPoint(x, y), QColor(40, 40, 40));
         }
     }
     for (int i = 0; i < gridX; ++i)

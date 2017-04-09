@@ -14,6 +14,7 @@
 #include <QMutexLocker>
 #include <QGraphicsScene>
 #include <math.h>
+#include <QGraphicsRectItem>
 
 #include "settings.h"
 
@@ -60,7 +61,7 @@ public:
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());
     void addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem * poly);
-    void constrainItems(QPointF bottomLeft, QPointF topLeft);
+    void constrainItems(QPointF bottomLeft, QPointF topLeft, QGraphicsRectItem *vinyl);
     bool setFileUid(const QModelIndex &index, const file_uid filename);
     void sort();
     // Item transformations

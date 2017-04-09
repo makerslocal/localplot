@@ -278,7 +278,7 @@ void hpglListModel::addPolygon(QPersistentModelIndex index, QGraphicsPolygonItem
     mutexUnlock();
 }
 
-void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
+void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft, QGraphicsRectItem * vinyl)
 {
     int modCount;
     int length = 0;
@@ -326,6 +326,32 @@ void hpglListModel::constrainItems(QPointF bottomLeft, QPointF topLeft)
 
         mutexUnlock();
     }
+
+    // Have the vinyl rectangle contain the objects
+    QRectF newVinylRect = vinyl->rect();
+    if (length > 1016 && newVinylRect.width() < length)
+    {
+        newVinylRect.setWidth(length);
+    }
+//    else
+//    {
+//        newVinylRect.setWidth(1016);
+//    }
+    vinyl->setRect(newVinylRect);
+
+    // Keep the scene from expanding into negatives
+    QRectF newSceneRect = vinyl->scene()->sceneRect();
+    if (newSceneRect.left() < (-508))
+    {
+        newSceneRect.setLeft(-508);
+    }
+    if (newSceneRect.top() < (-508))
+    {
+        newSceneRect.setTop(-508);
+    }
+    newSceneRect.setRight(newVinylRect.right()+508);
+    vinyl->scene()->setSceneRect(newSceneRect);
+
     emit vinylLength(length);
 }
 

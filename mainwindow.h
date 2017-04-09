@@ -40,6 +40,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <qtconcurrentrun.h>
+#include <QGraphicsDropShadowEffect>
 
 #include <qmath.h>
 #include <unistd.h>
@@ -111,12 +112,13 @@ private slots:
     // View/Scene
     void sceneSetup();
     void get_pen(QPen *_pen, QString _name);
-    void sceneSetSceneRect();
+    void sceneSetSceneRect(QRectF rect = QRectF());
     void sceneConstrainItems();
     void addPolygon(QPersistentModelIndex index, QPolygonF poly);
     void newFileToScene(QPersistentModelIndex _index);
     void handle_packedRect(QPersistentModelIndex index, QRectF rect);
     void handle_cutoutBoxesToggle(bool checked);
+    void setGrid();
 
     // plotter thread
     void do_plot();

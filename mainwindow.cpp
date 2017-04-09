@@ -78,7 +78,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // Connect other UI elements
     connect(ui->splitter, SIGNAL(splitterMoved(int,int)), this, SLOT(handle_splitterMoved()));
     connect(&plotScene, SIGNAL(changed(QList<QRectF>)), this, SLOT(sceneConstrainItems()));
-    connect(ui->graphicsView_view, SIGNAL(mouseReleased()), this, SLOT(sceneSetSceneRect()));
+//    connect(&plotScene, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(sceneSetSceneRect(QRectF)));
     connect(ui->graphicsView_view, SIGNAL(zoomUpdate(QString)), this, SLOT(handle_zoomChanged(QString)));
     connect(ui->graphicsView_view, SIGNAL(statusUpdate(QString,QColor)), this, SLOT(handle_newConsoleText(QString,QColor)));
     connect(ui->listView, SIGNAL(clicked(QModelIndex)), this, SLOT(handle_listViewClick()));
@@ -88,6 +88,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(hpglModel, SIGNAL(newPolygon(QPersistentModelIndex,QPolygonF)), this, SLOT(addPolygon(QPersistentModelIndex,QPolygonF)));
     connect(hpglModel, SIGNAL(newFileToScene(QPersistentModelIndex)), this, SLOT(newFileToScene(QPersistentModelIndex)));
     connect(hpglModel, SIGNAL(vinylLength(int)), this, SLOT(handle_vinylLengthChanged(int)));
+
+    connect(ui->graphicsView_view, SIGNAL(zoomUpdate(QString)), this, SLOT(setGrid()));
 
 //    connect(QGuiApplication::primaryScreen(), SIGNAL(physicalDotsPerInchChanged(qreal)),
 //            this, SLOT(sceneSetup())); // Update view if the pixel DPI changes
@@ -215,8 +217,10 @@ void MainWindow::do_openDialogSettings()
     newwindow->setWindowTitle("localplot settings");
     connect(newwindow, SIGNAL(toggleCutoutBoxes(bool)), ui->actionToggle_CutoutBoxes, SLOT(setChecked(bool)));
     newwindow->exec();
-    widthLine->setLine(get_widthLine());
+//    widthLine->setLine(get_widthLine());
+    // TODO: fix vinyl box height resizing
     ui->graphicsView_view->setGrid();
+    setGrid();
     checkImportScripts();
 }
 
@@ -828,7 +832,6 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
 
     handle_plotSceneSelectionChanged();
     sceneConstrainItems();
-    sceneSetSceneRect();
 }
 
 void MainWindow::handle_deleteFileBtn()
@@ -865,9 +868,9 @@ void MainWindow::handle_deleteFileBtn()
         {
             plotScene.removeItem(items->at(i2));
         }
-        plotScene.destroyItemGroup(itemGroup);
-
         hpglModel->mutexUnlock();
+
+        plotScene.destroyItemGroup(itemGroup);
 
         hpglModel->removeRow(list[i].row());
     }
@@ -935,6 +938,7 @@ void MainWindow::sceneSetup()
 
     // Auto-position scene to bottom left of view.
     ui->graphicsView_view->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+    ui->graphicsView_view->setTransformationAnchor(QGraphicsView::NoAnchor);
 
     // Set up new graphics view.
     plotScene.clear();
@@ -946,91 +950,121 @@ void MainWindow::sceneSetup()
     plotScene.addLine(0, 0, xDpi, 0, pen)->setTransform(itemToScene);
 
     // Width line
-    widthLine = plotScene.addLine(get_widthLine(), pen);
-//    vinyl = plotScene.addRect(0, 0, 1016, get_widthLine().p2().y(), pen);
+//    widthLine = plotScene.addLine(get_widthLine(), pen);
+    vinyl = plotScene.addRect(0, 0, 1016, get_widthLine().p2().y(), pen);
+//    vinyl->setBrush(QBrush(QColor(250, 250, 250, 150)));
+    vinyl->setZValue(-100);
+
+    // Drop shadow?
+    QGraphicsDropShadowEffect * shadow;
+    shadow = new QGraphicsDropShadowEffect;
+    shadow->setBlurRadius(50);
+    vinyl->setGraphicsEffect(shadow);
 
     // Draw origin text
     QGraphicsTextItem * label = plotScene.addText("Front of Plotter");
+//    label->setDefaultTextColor(Qt::white);
     label->setTransform(itemToScene * viewFlip);
     label->setRotation(-90);
     label->moveBy(-1 * label->mapRectToScene(label->boundingRect()).width(), 0);
 
     QGraphicsTextItem * originText = plotScene.addText("(0,0)");
+//    originText->setDefaultTextColor(Qt::white);
     originText->setTransform(itemToScene * viewFlip);
 
     // Set scene to view
+    ui->graphicsView_view->setBackgroundBrush(QBrush(QColor(200, 200, 200)));
     ui->graphicsView_view->show();
 
-    sceneSetSceneRect();
     ui->graphicsView_view->zoomActual();
 }
 
-void MainWindow::sceneSetSceneRect()
+void MainWindow::setGrid()
 {
-    qreal marginX, marginY;
+    QTransform _transform = ui->graphicsView_view->transform();
     // physicalDpi is the number of pixels in an inch
-    int xDpi = ui->graphicsView_view->physicalDpiX();
-    int yDpi = ui->graphicsView_view->physicalDpiY();
+    int xDpi = physicalDpiX();
+    int yDpi = physicalDpiY();
+    QSettings settings;
+    if (!settings.value("mainwindow/grid", SETDEF_MAINWINDOW_GRID).toBool())
+    {
+        vinyl->setBrush(Qt::NoBrush);
+        return;
+    }
+    int size = settings.value("mainwindow/grid/size", SETDEF_MAINWINDOW_GRID_SIZE).toInt();
 
-    // Transforms
-    QTransform hpglToPx, itemToScene, viewFlip;
+    QTransform hpglToPx;
     hpglToPx.scale(xDpi/1016.0, yDpi/1016.0);
-    itemToScene.scale(1016.0/xDpi, 1016.0/yDpi);
-    viewFlip.scale(1, -1);
 
-    // Quarter inch margins
-    marginX = (xDpi / 4.0) * (1016.0 / xDpi);
-    marginY = (yDpi / 4.0) * (1016.0 / yDpi);
+    // m11 and m22 are horizontal and vertical scaling
+    qreal mx, my;
+    mx = hpglToPx.m11() / qAbs(_transform.m11());
+    my = hpglToPx.m22() / qAbs(_transform.m22());
 
-    qDebug() << "Setting scene rect.";
-
-    QRectF srect = plotScene.itemsBoundingRect();
-
-    if (srect.x() < 0)
+    int gridX, gridY;
+    if (settings.value("device/width/type", SETDEF_DEVICE_WDITH_TYPE).toInt() == deviceWidth_t::CM)
     {
-        srect.setX(0);
+        gridX = (((xDpi*size)/2.54) / mx);
+        gridY = (((yDpi*size)/2.54) / my);
     }
-    if (srect.y() < 0)
+    else
     {
-        srect.setY(0);
+        gridX = ((xDpi*size) / mx);
+        gridY = ((yDpi*size) / my);
     }
 
-    plotScene.setSceneRect(srect.marginsAdded(QMarginsF(marginX, marginY, marginX, marginY)));
+    QImage grid(gridX, gridY, QImage::Format_RGB32);
+    QRgb value;
 
-    return;
+    value = qRgb(100, 240, 100);
 
-    QRectF _rect = plotScene.sceneRect();
-    QRectF _ViewRect = ui->graphicsView_view->rect();
-
-    _ViewRect = itemToScene.mapRect(_ViewRect);
-
-    qDebug() << "Graphics view: " << ui->graphicsView_view->rect().width() << "," << ui->graphicsView_view->rect().height();
-    qDebug() << "Graphics view: " << ui->graphicsView_view->size().width() << "," << ui->graphicsView_view->size().height();
-    qDebug() << "Scene size: " << plotScene.sceneRect().width() << "," << plotScene.sceneRect().height();
-
-    if (_rect.width() < _ViewRect.width())
+    for (int x = 0; x < gridX; ++x)
     {
-        _rect.setWidth(ui->graphicsView_view->rect().width());
-        qDebug() << "Increasing scene width." << _rect.width();
-        plotScene.setSceneRect(_rect);
+        for (int y = 0; y < gridY; ++y)
+        {
+            grid.setPixelColor(QPoint(x, y), QColor(40, 40, 40));
+        }
     }
-    if (_rect.height() < ui->graphicsView_view->rect().height())
+    for (int i = 0; i < gridX; ++i)
     {
-        _rect.setHeight(ui->graphicsView_view->rect().height());
-        qDebug() << "Increasing scene height: " << _rect.height();
-        plotScene.setSceneRect(_rect);
+        grid.setPixel(i, 0, value);
     }
+    for (int i = 0; i < gridY; ++i)
+    {
+        grid.setPixel(0, i, value);
+    }
+
+    QBrush gridBrush(grid);
+
+    gridBrush.setTransform((_transform.inverted()));
+
+    vinyl->setBrush(gridBrush);
+//    plotScene.setBackgroundBrush(gridBrush);
+}
+
+void MainWindow::sceneSetSceneRect(QRectF rect)
+{
+    qDebug() << "scene set rect: " << rect.bottom();
+    if (rect.left() < -508)
+    {
+        rect.setLeft(-508);
+    }
+    if (rect.top() < -508)
+    {
+        rect.setTop(-508);
+    }
+    plotScene.setSceneRect(rect);
 }
 
 void MainWindow::sceneConstrainItems()
 {
-    QPointF topLeft = widthLine->mapToScene(widthLine->line().p2());
-    QPointF bottomLeft = widthLine->mapToScene(widthLine->line().p1());
+//    QPointF topLeft = widthLine->mapToScene(widthLine->line().p2());
+//    QPointF bottomLeft = widthLine->mapToScene(widthLine->line().p1());
 
-//    QPointF topLeft = vinyl->mapToScene(vinyl->rect().topLeft());
-//    QPointF bottomLeft = vinyl->mapToScene(vinyl->rect().bottomLeft());
+    QPointF topLeft = vinyl->mapToScene(vinyl->rect().bottomLeft());
+    QPointF bottomLeft = vinyl->mapToScene(vinyl->rect().topLeft());
 
-    hpglModel->constrainItems(bottomLeft, topLeft);
+    hpglModel->constrainItems(bottomLeft, topLeft, vinyl);
 }
 
 void MainWindow::addPolygon(QPersistentModelIndex index, QPolygonF poly)
