@@ -260,9 +260,12 @@ void MainWindow::checkImportScripts()
 {
     QProcess shell;
     QSettings settings;
+    QStringList argsVers;
+
+    argsVers << "-V";
 
     // Test inkscape
-    shell.start("inkscape -V");
+    shell.start("inkscape", argsVers);
     shell.waitForFinished();
     if (shell.exitStatus() == QProcess::NormalExit && shell.exitCode() == 0)
     {
@@ -275,7 +278,7 @@ void MainWindow::checkImportScripts()
     }
 
     // Test python
-    shell.start("python2 -V");
+    shell.start("python2", argsVers);
     shell.waitForFinished();
     if (shell.exitStatus() == QProcess::NormalExit && shell.exitCode() == 0)
     {
@@ -502,7 +505,6 @@ void MainWindow::do_jog()
 void MainWindow::runFinishedCommand()
 {
     QSettings settings;
-    QProcess * proc = new QProcess(this);
     bool doRun = settings.value("hook/finished", SETDEF_HOOK_FINISHED).toBool();
     QString procCmd = settings.value("hook/finished/path", SETDEF_HOOK_FINISHED_PATH).toString();
     if (procCmd.isEmpty() || (!doRun) )
@@ -511,7 +513,9 @@ void MainWindow::runFinishedCommand()
         return;
     }
     qDebug() << "Running post hook: " << procCmd;
-    proc->start(procCmd);
+    QProcess * proc = new QProcess(this);
+    QStringList arguments;
+    proc->start(procCmd, arguments);
 }
 
 void MainWindow::handle_selectFileBtn()

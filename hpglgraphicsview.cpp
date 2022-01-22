@@ -16,8 +16,8 @@ void hpglGraphicsView::wheelEvent(QWheelEvent *event)
 {
     if (QApplication::keyboardModifiers() == Qt::ControlModifier)
     {
-        int delta = event->delta();
-        zoomDelta(delta);
+        QPoint delta = event->angleDelta();
+        zoomDelta(delta.y());
     }
     else
     {
