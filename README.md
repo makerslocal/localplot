@@ -2,7 +2,7 @@
 Qt HPGL plotting software
 
 
-![Drew it maself.](https://raw.githubusercontent.com/makerslocal/localplot/master/images/logo.png  "Localplot Logo")
+<img src="https://raw.githubusercontent.com/makerslocal/localplot/master/images/logo.png" width="200px" >
 
 ## What is this
 
