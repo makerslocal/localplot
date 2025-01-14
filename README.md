@@ -18,6 +18,10 @@ We've tried the alternatives, all [one of them](http://inkcut.sourceforge.net/).
 
 So we're here, creating a small utility which accepts .hpgl files from Inkscape, and then drives a vinyl cutter with them. Right now it does the bare minimum to make the magic happen, but I look forward to making this into a fully-fledged layout and arrangement tool.
 
+## Notes
+
+[Serial settings](https://github.com/makerslocal/localplot/issues/1#issuecomment-181924425)
+
 ## We can use your help
 
 If there's a feature you'd like to see, tell us and we'll look into it.
