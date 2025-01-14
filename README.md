@@ -22,6 +22,8 @@ So we're here, creating a small utility which accepts .hpgl files from Inkscape,
 
 [Serial settings](https://github.com/makerslocal/localplot/issues/1#issuecomment-181924425)
 
+[Issue when using USB->serial adapters](https://github.com/makerslocal/localplot/issues/3#issue-628804953)
+
 ## We can use your help
 
 If there's a feature you'd like to see, tell us and we'll look into it.
