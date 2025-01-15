@@ -278,7 +278,7 @@ void MainWindow::checkImportScripts()
     }
 
     // Test python
-    shell.start("python2", argsVers);
+    shell.start("python3", argsVers);
     shell.waitForFinished();
     if (shell.exitStatus() == QProcess::NormalExit && shell.exitCode() == 0)
     {
@@ -286,7 +286,7 @@ void MainWindow::checkImportScripts()
     }
     else
     {
-        handle_newConsoleText("Python2 not found on system.", Qt::darkRed);
+        handle_newConsoleText("Python3 not found on system.", Qt::darkRed);
         settings.setValue("import/python", false);
     }
 

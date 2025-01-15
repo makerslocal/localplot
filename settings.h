@@ -69,7 +69,7 @@ static_assert(sizeof(deviceWidth_names)/sizeof(char*) == deviceWidth_t::SIZE_OF_
 #define SETDEF_IMPORT_INKSCAPE      (false)
 #define SETDEF_IMPORT_INKSCAPE_PATH ("inkscape")
 #define SETDEF_IMPORT_PYTHON      (false)
-#define SETDEF_IMPORT_PYTHON_PATH ("python2")
+#define SETDEF_IMPORT_PYTHON_PATH ("python3")
 #define SETDEF_IMPORT_SVG           (false)
 #define SETDEF_IMPORT_SVG_PATH      ("/usr/share/inkscape/extensions/hpgl_output.py")
 #define SETDEF_IMPORT_DXF           (false)

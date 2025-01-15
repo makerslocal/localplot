@@ -131,7 +131,7 @@ void ExtLoadFile::svgCreatePaths(QString filePath)
 QByteArray ExtLoadFile::importDxf(QString filePath)
 {
     QProcess * dxfToSvg = new QProcess(this);
-    QString program = "python2";
+    QString program = "python3";
     QStringList arguments;
     QByteArray data;
     arguments << "/usr/share/inkscape/extensions/dxf_input.py"
@@ -148,7 +148,7 @@ QByteArray ExtLoadFile::importDxf(QString filePath)
 QString ExtLoadFile::importSvg(QString filePath)
 {
     QProcess * svgToHpgl = new QProcess(this);
-    QString program = "python2";
+    QString program = "python3";
     QStringList arguments;
     QString buffer;
     QByteArray data;
