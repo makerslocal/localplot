@@ -292,7 +292,8 @@ void MainWindow::checkImportScripts()
 
     // Test hpgl_output.py
     QString scriptPath = settings.value("import/svg/path", SETDEF_IMPORT_SVG_PATH).toString();
-    int result = access(scriptPath.toStdString().c_str(), X_OK);
+    int result = access(scriptPath.toStdString().c_str(), R_OK);
+    qDebug() << "hpgl_output.py path: " << scriptPath;
     qDebug() << "hpgl_output.py test: " << result;
     if (result == 0)
     {
@@ -306,7 +307,7 @@ void MainWindow::checkImportScripts()
 
     // Test dxf_input.py
     scriptPath = settings.value("import/dxf/path", SETDEF_IMPORT_DXF_PATH).toString();
-    result = access(scriptPath.toStdString().c_str(), X_OK);
+    result = access(scriptPath.toStdString().c_str(), R_OK);
     qDebug() << "dxf_input.py test: " << result;
     if (result == 0)
     {

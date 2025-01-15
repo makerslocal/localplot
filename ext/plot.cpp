@@ -153,6 +153,7 @@ void ExtPlot::process()
 
     hpglList_index = 0;
     hpgl_obj_index = 0;
+    end_of_chunk = 1;
     cancelPlotFlag = false;
     _port = openSerial();
 
@@ -222,6 +223,7 @@ void ExtPlot::do_plotNext()
     QModelIndex index;
     QGraphicsItemGroup * itemGroup;
     QVector<QGraphicsPolygonItem*> * items;
+    QString printThis;
 
     if (hpglList_index >= hpglModel->rowCount())
     {
@@ -231,76 +233,86 @@ void ExtPlot::do_plotNext()
         return;
     }
 
-    index = hpglModel->index(hpglList_index);
-    hpglModel->dataItemsGroup(index, itemGroup, items);
-
-    if (itemGroup == NULL)
+    if (hpglList_index == (hpglModel->rowCount()) && hpgl_obj_index == (items->length()))
     {
-        qDebug() << "Error: itemgroup is null in do_plotnext().";
-        return;
-    }
-    if (items == NULL)
-    {
-        qDebug() << "Error: items is null in do_plotnext().";
-        return;
-    }
-
-    hpglModel->mutexLock();
-
-    if (hpgl_obj_index >= items->length())
-    {
-        hpglModel->mutexUnlock();
+        printThis = "PU0,0;SP0;IN;"; // Ending commands
         hpglList_index++;
-        hpgl_obj_index = 0;
-        do_plotNext();
-        return;
     }
-    index = hpglModel->index(hpglList_index);
-    if (cancelPlotFlag == true)
+    else
     {
-        hpglModel->mutexUnlock();
-        emit statusUpdate("Bailing out of plot, cancelled!", Qt::darkRed);
-        closeSerial();
-        emit finished();
-        return;
-    }
 
-//    qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
-//    qDebug() << "Total file count: " << hpglList->count();
+        index = hpglModel->index(hpglList_index);
+        hpglModel->dataItemsGroup(index, itemGroup, items);
 
-    int progressPercent = (((double)hpglList_index+((double)hpgl_obj_index/(items->count()-1)))/(hpglModel->rowCount()))*100;
-    emit progress(progressPercent);
+        if (itemGroup == NULL)
+        {
+            qDebug() << "Error: itemgroup is null in do_plotnext().";
+            return;
+        }
+        if (items == NULL)
+        {
+            qDebug() << "Error: items is null in do_plotnext().";
+            return;
+        }
 
-    QString printThis = print(items->at(hpgl_obj_index)->polygon(),
-                              itemGroup);
+        hpglModel->mutexLock();
 
-    if (printThis == "OOB")
-    {
-        hpglModel->mutexUnlock();
-        emit finished();
-        return;
-    }
+        if (hpgl_obj_index >= items->length())
+        {
+            hpglModel->mutexUnlock();
+            hpglList_index++;
+            hpgl_obj_index = 0;
+            do_plotNext();
+            return;
+        }
+        index = hpglModel->index(hpglList_index);
+        if (cancelPlotFlag == true)
+        {
+            hpglModel->mutexUnlock();
+            emit statusUpdate("Bailing out of plot, cancelled!", Qt::darkRed);
+            closeSerial();
+            emit finished();
+            return;
+        }
 
-    if (hpglList_index == (hpglModel->rowCount()-1) && hpgl_obj_index == (items->length()-1))
-    {
-        printThis += "PU0,0;SP0;IN;"; // Ending commands
-    }
+        qDebug() << "Plotting file number: " << hpglList_index << ", object number: " << hpgl_obj_index;
+        //qDebug() << "Total file count: " << hpglList->count();
 
-    _port->write(printThis.toStdString().c_str());
-    if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
-    {
-        _port->flush();
-        time = ExtEta::plotTime(items->at(hpgl_obj_index)->polygon());
-        QLineF last_line;
-        last_line.setP1(last_point);
-        last_line.setP2(itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().first()));
-        time += ExtEta::plotTime(last_line);
-        last_point = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().last());
+        if (settings.value("device/incremental", SETDEF_DEVICE_INCREMENTAL).toBool())
+        {
+            _port->flush();
+            time = ExtEta::plotTime(items->at(hpgl_obj_index)->polygon());
+            if (items->at(hpgl_obj_index)->polygon().count() > chunk_max_size)
+            {
+                time = time / (items->at(hpgl_obj_index)->polygon().count() / chunk_max_size);
+                time += 5;
+            }
+            QLineF last_line;
+            last_line.setP1(last_point);
+            last_line.setP2(itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().first()));
+            time += ExtEta::plotTime(last_line);
+            last_point = itemGroup->mapToScene(items->at(hpgl_obj_index)->polygon().last());
+        }
+
+        int progressPercent = (((double)hpglList_index+((double)hpgl_obj_index/(items->count()-1)))/(hpglModel->rowCount()))*100;
+        emit progress(progressPercent);
+
+        printThis = print(items->at(hpgl_obj_index)->polygon(),
+                                  itemGroup);
+
+        if (printThis == "OOB")
+        {
+            hpglModel->mutexUnlock();
+            emit finished();
+            return;
+        }
+
     }
 
     hpglModel->mutexUnlock();
 
-    ++hpgl_obj_index;
+    _port->write(printThis.toStdString().c_str());
+    qDebug() << "Timer: " << time * 1000;
     QTimer::singleShot(time*1000, this, SLOT(do_plotNext()));
 }
 
@@ -308,20 +320,39 @@ QString ExtPlot::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup)
 {
     QString retval = "";
     QPointF point;
+    int chunk_start;
+    int index;
 
-    // Create PU command
-    point = itemGroup->mapToScene(hpgl_poly.first());
-    retval += "PU";
-    retval += QString::number(static_cast<int>(point.x()));
-    retval += ",";
-    retval += QString::number(static_cast<int>(point.y()));
-    retval += ";";
+    qDebug() << "things in poly: " << hpgl_poly.count();
+
+    if (hpgl_poly.count() > chunk_max_size)
+    {
+        qDebug() << "Plotting chunk..." << hpgl_poly.count() << chunk_max_size;
+        chunk_start = end_of_chunk;
+        qDebug() << chunk_start;
+    }
+    else
+    {
+        qDebug() << "Plotting whole thing...";
+        chunk_start = 1;
+    }
+
+    if (chunk_start == 1)
+    {
+        // Create PU command
+        point = itemGroup->mapToScene(hpgl_poly.first());
+        retval += "PU";
+        retval += QString::number(static_cast<int>(point.x()));
+        retval += ",";
+        retval += QString::number(static_cast<int>(point.y()));
+        retval += ";";
+    }
 
     // Create PD command
     retval += "PD";
-    for (int idx = 1; idx < hpgl_poly.count(); idx++)
+    for (index = chunk_start; index < hpgl_poly.count() && index < (chunk_start + chunk_max_size); index++)
     {
-        point = itemGroup->mapToScene(hpgl_poly.at(idx));
+        point = itemGroup->mapToScene(hpgl_poly.at(index));
 
         if (point.x() < 0 || point.y() < 0)
         {
@@ -332,12 +363,28 @@ QString ExtPlot::print(QPolygonF hpgl_poly, QGraphicsItemGroup * itemGroup)
         retval += QString::number(static_cast<int>(point.x()));
         retval += ",";
         retval += QString::number(static_cast<int>(point.y()));
-        if (idx < (hpgl_poly.length()-1))
+        if (index < (hpgl_poly.length()-1) && index < (chunk_start + chunk_max_size - 1))
         {
             retval += ",";
         }
     }
     retval += ";";
+
+    if (hpgl_poly.count() > index)
+    {
+        end_of_chunk = index;
+        qDebug() << "Next chunk starts at: " << end_of_chunk;
+    }
+    else
+    {
+        qDebug() << "Last chunk in poly.";
+        end_of_chunk = 1;
+        ++hpgl_obj_index;
+    }
+
+    qDebug() << "Done with chunk";
+
+    qDebug() << retval;
 
     return(retval);
 }

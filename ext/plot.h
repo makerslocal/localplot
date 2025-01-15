@@ -60,6 +60,8 @@ private:
     hpglListModel * hpglModel;
     int hpglList_index, hpgl_obj_index;
     QPointF last_point;
+    int end_of_chunk;
+    static const int chunk_max_size = 500;
 };
 
 #endif // EXTPLOT_H
