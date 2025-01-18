@@ -686,7 +686,7 @@ void MainWindow::do_cancelPlot()
 
 void MainWindow::handle_duplicateFileBtn()
 {
-    QFuture<void> tThread = QtConcurrent::run(this->hpglModel, &hpglListModel::duplicateSelectedRows);
+    QFuture<void> tThread = QtConcurrent::run(&hpglListModel::duplicateSelectedRows, this->hpglModel);
 }
 
 void MainWindow::handle_plotSceneSelectionChanged()
