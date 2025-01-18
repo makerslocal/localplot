@@ -833,7 +833,7 @@ void MainWindow::newFileToScene(QPersistentModelIndex _index)
     ui->listView->selectionModel()->clearSelection();
     handle_listViewClick();
     itemGroup->setSelected(true);
-    hpglModel->mutexUnlock();
+    //hpglModel->mutexUnlock();
 
     handle_plotSceneSelectionChanged();
     sceneConstrainItems();
